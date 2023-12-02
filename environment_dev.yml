@@ -1,0 +1,17 @@
+name: AutoPrompt
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python~=3.9.7
+  - pip>=2.22.0
+  - openai
+  - langchain
+  - wandb
+  - pip:
+      - schedule
+      - prodict
+      - tiktoken
+      - argilla==1.18.0
+      - easydict
