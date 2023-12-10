@@ -1,6 +1,6 @@
-# A file containing the json scema for the output of all the LLM chains
+# A file containing the json schema for the output of all the LLM chains
 
-sample_generation_schema = {
+initial_schema = step_samples_schema = {
   "description": "A List of all results",
   "properties": {
     "samples": {
@@ -84,3 +84,14 @@ step_prompt_schema = {
   "title": "Suggested_Prompt",
   "type": "object"
 }
+
+def update_classification_prediction_schema(label_schema:list)->dict:
+  """
+  Updates the classification prediction schema with the label schema from the yaml file
+  :param yaml_data: The yaml data
+  """
+
+  classification_prediction_schema['$defs']['Result']['properties']['prediction']['enum'] = label_schema
+  classification_prediction_schema['$defs']['Result']['properties']['prediction'][
+    'description'] += 'The answer must be one of the following options: {} !!'.format(label_schema)
+  return classification_prediction_schema

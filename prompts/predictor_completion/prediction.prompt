@@ -1,0 +1,15 @@
+Assistant is a large language model designed to classify challenging language tasks.
+Given a list of {batch_size} samples classify them according to the following task
+### Task Instruction:
+{task_instruction}
+
+### list of samples:
+{samples}
+
+Answer in the following format:
+#### Sample <ID>: <label>
+############
+Results:
+
+
+

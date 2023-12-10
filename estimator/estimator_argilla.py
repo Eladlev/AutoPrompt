@@ -17,13 +17,16 @@ class ArgillaEstimator:
         """
         Initialize a new instance of the ArgillaEstimator class.
         """
-        self.opt = opt
-        rg.init(
-            api_url=opt.api_url,
-            api_key=opt.api_key,
-            workspace=opt.workspace
-        )
-        self.time_interval = opt.time_interval
+        try:
+            self.opt = opt
+            rg.init(
+                api_url=opt.api_url,
+                api_key=opt.api_key,
+                workspace=opt.workspace
+            )
+            self.time_interval = opt.time_interval
+        except:
+            raise Exception("Failed to connect to argilla, check connection details")
 
     @staticmethod
     def initialize_dataset(dataset_name: str, label_schema: set[str]):

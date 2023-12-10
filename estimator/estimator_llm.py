@@ -1,5 +1,5 @@
-from utils.llm_chain import ChainWrapper
-import json
+from utils.llm_chain import ChainWrapper, get_chain_metadata
+from pathlib import Path
 import asyncio
 from tqdm import trange
 from dataset.base_dataset import DatasetBase
@@ -15,7 +15,8 @@ class LLMEstimator:
         Initialize a new instance of the LLMEstimator class.
         :param opt: The configuration file (EasyDict)
         """
-        self.chain = ChainWrapper(opt.llm, opt.prompt, json.loads(opt.json_schema))
+        self.opt = opt
+        self.chain = None
         self.mini_batch_size = opt.mini_batch_size
         self.mode = opt.mode
         self.num_workers = opt.num_workers
@@ -37,6 +38,20 @@ class LLMEstimator:
         """
         return self.chain.accumulate_usage
 
+    def init_chain(self, label_schema: set[str]):
+        """
+        Initialize the chain
+        :param label_schema: The label schema
+        """
+        chain_metadata = get_chain_metadata(Path(self.opt.prompt), retrieve_module=True)
+        if hasattr(chain_metadata['module'], 'update_classification_prediction_schema'):
+            chain_metadata['json_schema'] = chain_metadata['module'].update_classification_prediction_schema(
+                chain_metadata['json_schema'],
+                label_schema
+            )
+        self.chain = ChainWrapper(self.opt.llm, self.opt.prompt, chain_metadata['json_schema'],
+                                  chain_metadata['parser_func'])
+
     def apply(self, dataset: DatasetBase, idx: int, leq: bool = True):
         """
         Apply the estimator on the batches up to idx (includes), it then updates the annotation field
@@ -45,6 +60,8 @@ class LLMEstimator:
         :param idx: The current batch index
         :param leq: If True, apply on all the batches up to idx (includes), otherwise apply only on idx
         """
+        if self.chain is None:
+            self.init_chain(dataset.label_schema)
         if leq:
             batch_records = dataset.get_leq(idx)
         else:

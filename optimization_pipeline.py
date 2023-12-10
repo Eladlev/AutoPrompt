@@ -35,8 +35,6 @@ class OptimizationPipeline:
                 project="AutoGPT",
                 config=config,
             )
-        if 'openai_api_key' in config:
-            os.environ["OPENAI_API_KEY"] = config.openai_api_key
         if output_path == '':
             self.output_path = None
         else:
@@ -68,7 +66,7 @@ class OptimizationPipeline:
         """
         logging.info('Initialize dataset')
         self.dataset = DatasetBase(self.config.dataset)
-        if not (self.config.dataset.initial_dataset is None):
+        if 'initial_dataset' in self.config.dataset.keys():
             logging.info(f'Load initial dataset from {self.config.dataset.initial_dataset}')
             self.dataset.load_dataset(self.config.dataset.initial_dataset)
 

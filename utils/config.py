@@ -3,8 +3,10 @@ from easydict import EasyDict as edict
 from langchain import PromptTemplate
 from langchain.chat_models import ChatOpenAI
 from pathlib import Path
-from utils.output_scehmes import classification_prediction_schema
-import json
+from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain.chat_models import AzureChatOpenAI
+
+LLM_ENV = yaml.safe_load(open('config/llm_env.yml', 'r'))
 
 
 class Color:
@@ -33,11 +35,34 @@ def get_llm(config: dict):
     :param config: dictionary with the configuration
     :return: The llm model
     """
+    if 'temperature' not in config:
+        temperature = 0
+    else:
+        temperature = config['temperature']
     if config['type'] == 'OpenAI':
-        return ChatOpenAI(temperature=0, model_name=config['name'])
-    elif config['type'] == 'HuggingFaceHub':
-        # TODO: add from here https://github.com/noamgat/lm-format-enforcer
-        return NotImplementedError("LLM not implemented")
+        if LLM_ENV['openai']['OPENAI_ORGANIZATION'] == '':
+            return ChatOpenAI(temperature=temperature, model_name=config['name'],
+                              openai_api_key=LLM_ENV['openai']['OPENAI_API_KEY'])
+        else:
+            return ChatOpenAI(temperature=temperature, model_name=config['name'],
+                              openai_api_key=LLM_ENV['openai']['OPENAI_API_KEY'],
+                              openai_organization=LLM_ENV['openai']['OPENAI_ORGANIZATION'])
+    elif config['type'] == 'Azure':
+        AzureChatOpenAI(temperature=temperature, model_name=config['name'],
+                        openai_api_key=LLM_ENV['azure']['AZURE_OPENAI_API_KEY'],
+                        azure_endpoint=LLM_ENV['azure']['AZURE_OPENAI_ENDPOINT'],
+                        openai_api_version=LLM_ENV['azure']['OPENAI_API_VERSION'])
+        AZURE_OPENAI_API_KEY: ''
+        AZURE_OPENAI_ENDPOINT: ''
+        OPENAI_API_VERSION: ''
+
+
+    elif config['type'] == 'HuggingFacePipeline':
+        return HuggingFacePipeline.from_model_id(
+            model_id=config['name'],
+            task="text-generation",
+            pipeline_kwargs={"max_new_tokens": config['max_new_tokens']},
+        )
     else:
         raise NotImplementedError("LLM not implemented")
 
@@ -52,16 +77,10 @@ def load_yaml(yaml_path: str) -> edict:
         yaml_data = yaml.safe_load(file)
         yaml_data['eval']['score_function'] = get_eval_function(yaml_data['eval']['function_name'])
         yaml_data['meta_prompts']['folder'] = Path(yaml_data['meta_prompts']['folder'])
-        classification_prediction_schema['$defs']['Result']['properties']['prediction']['enum'] = yaml_data['dataset'][
-            'label_schema']
-        classification_prediction_schema['$defs']['Result']['properties']['prediction'][
-            'description'] += 'The answer must be one of the following options: {} !!'.format(
-            yaml_data['dataset']['label_schema'])
-        yaml_data['predictor']['config']['json_schema'] = json.dumps(classification_prediction_schema)
     return edict(yaml_data)
 
 
-def load_prompt(prompt_path: str, appendix: str = None) -> PromptTemplate:
+def load_prompt(prompt_path: str) -> PromptTemplate:
     """
     Reads and returns the contents of a prompt file.
     :param prompt_path: The path to the prompt file
@@ -69,6 +88,4 @@ def load_prompt(prompt_path: str, appendix: str = None) -> PromptTemplate:
     """
     with open(prompt_path, 'r') as file:
         prompt = file.read().rstrip()
-    if appendix is not None:
-        prompt += appendix
     return PromptTemplate.from_template(prompt)

@@ -1,4 +1,3 @@
-openai_api_key: ''
 use_wandb: True
 dataset:
     name: 'dataset'
@@ -25,12 +24,12 @@ predictor:
                 retry_interval: 10
                 max_retries: 2
         num_workers: 2
-        prompt: 'meta_prompts/prediction.prompt'
+        prompt: 'prompts/predictor/prediction.prompt'
         mini_batch_size: 5
         mode: 'prediction'
 
 meta_prompts:
-    folder: 'meta_prompts'
+    folder: 'prompts/meta_prompts'
     num_err_prompt: 1  #number of error examples per sample in the prompt generation
     num_err_samples: 2 #number of error examples per sample in the sample generation
     history_length: 4
