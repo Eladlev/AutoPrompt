@@ -1,9 +1,11 @@
 from langchain.chains.openai_functions import (
     create_structured_output_runnable)
 from utils.config import get_llm, load_prompt
-import utils.output_scehmes as json_schemas
 from langchain.callbacks import get_openai_callback
 import asyncio
+from langchain.chains import LLMChain
+import importlib
+from pathlib import Path
 
 
 class DummyCallback:
@@ -29,18 +31,19 @@ class ChainWrapper:
     A wrapper for a LLM chain
     """
 
-    def __init__(self, llm_config, prompt_path: str, json_schema: dict):
+    def __init__(self, llm_config, prompt_path: str, json_schema: dict = None, parser_func=None):
         """
         Initialize a new instance of the ChainWrapper class.
         :param llm_config: The config for the LLM
         :param prompt_path: A path to the prompt file (text file)
         :param json_schema: A dict for the json schema, to get a structured output for the LLM
+        :param parser_func: A function to parse the output of the LLM
         """
         self.llm_config = llm_config
         self.llm = get_llm(llm_config)
         self.json_schema = json_schema
-        appendix = self.get_appendix()
-        self.prompt = load_prompt(prompt_path, appendix)
+        self.parser_func = parser_func
+        self.prompt = load_prompt(prompt_path)
         self.build_chain()
         self.accumulate_usage = 0
         if self.llm_config.type == 'OpenAI':
@@ -56,6 +59,8 @@ class ChainWrapper:
         """
         with self.callback() as cb:
             result = self.chain.invoke(chain_input)
+            if self.parser_func is not None:
+                result = self.parser_func(result)
             self.accumulate_usage += cb.total_cost
             return result
 
@@ -101,17 +106,9 @@ class ChainWrapper:
             tasks = [self.chain.ainvoke(chain_input) for chain_input in inputs]
             all_res = await self.retry_operation(tasks)
             self.accumulate_usage += cb.total_cost
+            if self.parser_func is not None:
+                return [self.parser_func(t.result()) for t in list(all_res)]
             return [t.result() for t in list(all_res)]
-
-    def get_appendix(self):
-        """
-        Get the appendix to generate the correct json_schema
-        :return: Either None or a string
-        """
-        if self.llm_config.type == 'HuggingFaceHub':
-            return f"answer in the following json schema: {self.json_schema} :"
-        else:
-            return None
 
     def build_chain(self):
         """
@@ -119,11 +116,40 @@ class ChainWrapper:
         """
         if self.llm_config.type == 'OpenAI':
             self.chain = create_structured_output_runnable(self.json_schema, self.llm, self.prompt)
-        elif self.llm.model.type == 'HuggingFaceHub':
-            # TODO: add from here https://github.com/noamgat/lm-format-enforcer/blob/fccfee7a9dd23ef2c0a6d9aa1cdd084a1b922383/samples/colab_llama2_enforcer.ipynb#L1010
-            raise NotImplementedError("HuggingFaceHub not implemented")
+        elif self.llm_config.type == 'HuggingFacePipeline':
+            self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
         else:
             raise NotImplementedError("LLM not implemented")
+
+
+def get_chain_metadata(prompt_fn: Path, retrieve_module: bool = False) -> dict:
+    """
+    Get the metadata of the chain
+    :param prompt_fn: The path to the prompt file
+    :param retrieve_module: If True, retreive the module
+    :return: A dict with the metadata
+    """
+    prompt_directory = str(prompt_fn.parent)
+    prompt_name = str(prompt_fn.stem)
+    try:
+        spec = importlib.util.spec_from_file_location('output_schemes', prompt_directory + '/output_schemes.py')
+        schema_parser = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(schema_parser)
+    except ImportError as e:
+        print(f"Error loading module {prompt_directory + '/output_schemes'}: {e}")
+
+    if hasattr(schema_parser, '{}_schema'.format(prompt_name)):
+        json_schema = getattr(schema_parser, '{}_schema'.format(prompt_name))
+    else:
+        json_schema = None
+    if hasattr(schema_parser, '{}_parser'.format(prompt_name)):
+        parser_func = getattr(schema_parser, '{}_parser'.format(prompt_name))
+    else:
+        parser_func = None
+    result = {'json_schema': json_schema, 'parser_func': parser_func}
+    if retrieve_module:
+        result['module'] = schema_parser
+    return result
 
 
 class MetaChain:
@@ -136,12 +162,19 @@ class MetaChain:
         Initialize a new instance of the MetaChain class. Loading all the meta-prompts
         :param config: An EasyDict configuration
         """
-        self.initial_chain = ChainWrapper(config.llm, config.meta_prompts.folder / 'initial.prompt',
-                                          json_schemas.sample_generation_schema)
-        self.step_prompt_chain = ChainWrapper(config.llm, config.meta_prompts.folder / 'step_prompt.prompt',
-                                              json_schemas.step_prompt_schema)
-        self.step_samples = ChainWrapper(config.llm, config.meta_prompts.folder / 'step_samples.prompt',
-                                         json_schemas.sample_generation_schema)
+        self.config = config
+        self.initial_chain = self.load_chain('initial')
+        self.step_prompt_chain = self.load_chain('step_prompt')
+        self.step_samples = self.load_chain('step_samples')
+
+    def load_chain(self, chain_name: str) -> ChainWrapper:
+        """
+        Load a chain according to the chain name
+        :param chain_name: The name of the chain
+        """
+        metadata = get_chain_metadata(self.config.meta_prompts.folder / '{}.prompt'.format(chain_name))
+        return ChainWrapper(self.config.llm, self.config.meta_prompts.folder / '{}.prompt'.format(chain_name),
+                            metadata['json_schema'], metadata['parser_func'])
 
     def calc_usage(self) -> float:
         """

@@ -1,0 +1,24 @@
+Assistant is a large language model designed to provide the best prompt for every task.
+Below a few examples, for the following task:
+{task_description}
+
+Each example consists of:
+ 1. A tested prompt
+ 2. A score of this prompt, evaluate on the user benchmark. The score ranges from 0 to 100
+ 3. Failure cases examples
+
+## Examples
+{history}
+######
+Your task is to generate:
+1. A prompt that is different from all the prompts above, and has a higher score than all the prompts above.
+2. The predicted score of this prompt
+The result prompt must indicate that the task is a classification class with the following labels {labels}!
+
+Answer in the following format:
+#### prompt:
+<prompt suggestion>
+#### score:
+<score>
+############
+Results:
