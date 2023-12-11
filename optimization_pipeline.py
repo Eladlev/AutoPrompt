@@ -172,10 +172,12 @@ class OptimizationPipeline:
                                step=self.batch_id)
 
         logging.info('Running estimator')
-        self.estimator.apply(self.dataset, self.batch_id)
+        records = self.estimator.apply(self.dataset, self.batch_id)
+        self.dataset.update(records)
         self.predictor.cur_instruct = self.cur_prompt
         logging.info('Running predictor')
-        self.predictor.apply(self.dataset, self.batch_id, leq=True)
+        records = self.predictor.apply(self.dataset, self.batch_id, leq=True)
+        self.dataset.update(records)
         self.eval.eval_score(self.dataset)
         logging.info('Calc score')
         self.eval.dataset = self.dataset.records

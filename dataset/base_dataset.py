@@ -32,13 +32,17 @@ class DatasetBase:
         """
         Return the batch idx.
         """
-        return self.records[self.records['batch_id'] == batch_idx]
+        extract_records = self.records[self.records['batch_id'] == batch_idx]
+        extract_records = extract_records.reset_index(drop=True)
+        return extract_records
 
     def get_leq(self, batch_idx):
         """
         Return all the records up to batch_idx (includes).
         """
-        return self.records[self.records['batch_id'] <= batch_idx]
+        extract_records = self.records[self.records['batch_id'] <= batch_idx]
+        extract_records = extract_records.reset_index(drop=True)
+        return extract_records
 
     def add(self, sample_list: dict = None, batch_id: int = None, records: pd.DataFrame = None):
         """

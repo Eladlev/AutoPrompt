@@ -92,4 +92,4 @@ class LLMEstimator:
                 all_results = results['results']
             for res in all_results:
                 batch_records.loc[res['id'], self.mode] = res['prediction']
-        dataset.update(batch_records)
+        return batch_records

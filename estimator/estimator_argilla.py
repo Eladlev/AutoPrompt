@@ -111,6 +111,5 @@ class ArgillaEstimator:
                 result = rg.load(name=dataset.name, query=query)
                 df = result.to_pandas()[['text', 'annotation', 'metadata']]
                 df['id'] = df.apply(lambda x: x['metadata']['id'], axis=1)
-                dataset.update(df)
-                break
+                return df
             time.sleep(self.time_interval)
