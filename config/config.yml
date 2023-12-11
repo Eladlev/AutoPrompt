@@ -23,6 +23,7 @@ predictor:
             async_params:
                 retry_interval: 10
                 max_retries: 2
+            model_kwargs: {"seed": 220}
         num_workers: 2
         prompt: 'prompts/predictor/prediction.prompt'
         mini_batch_size: 5
