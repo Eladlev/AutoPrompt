@@ -1,0 +1,61 @@
+use_wandb: True
+dataset:
+    name: 'dataset'
+    records_path: null
+    num_initialize_samples: 15
+    initial_dataset: 'dump/dataset.csv'
+    label_schema: ["Yes", "No"]
+
+estimator:
+    method : 'llm_batch'
+    config:
+        instructions: ['Is there is an address in the text?', 'Is there is a phone number in the text?',
+        'Is there is a password in the text?']
+        aggregation_mode: 'exist'  #'majority_vote',  'exist', or 'all'. exist/all is working only in case label_schema: ["Yes", "No"]!
+        estimator_config:
+            llm:
+                type: 'OpenAI'
+                name: 'gpt-3.5-turbo-0613'
+                async_params:
+                    retry_interval: 10
+                    max_retries: 2
+            num_workers: 2
+            prompt: 'prompts/predictor/prediction.prompt'
+            mini_batch_size: 5
+            mode: 'annotation'
+
+predictor:
+    method : 'llm'
+    config:
+        llm:
+            type: 'OpenAI'
+            name: 'gpt-3.5-turbo-0613'
+            async_params:
+                retry_interval: 10
+                max_retries: 2
+        num_workers: 2
+        prompt: 'prompts/predictor/prediction.prompt'
+        mini_batch_size: 5
+        mode: 'prediction'
+
+meta_prompts:
+    folder: 'prompts/meta_prompts'
+    num_err_prompt: 1  #number of error examples per sample in the prompt generation
+    num_err_samples: 2 #number of error examples per sample in the sample generation
+    history_length: 4
+    num_generated_samples: 10
+
+eval:
+    function_name: 'accuracy'
+    num_large_errors: 4
+    num_boundary_predictions : 0
+    th: 0.5
+
+llm:
+    type: 'OpenAI'
+    name: 'gpt-4-1106-preview'
+
+stop_criteria:
+    max_usage: 0.5
+    patience: 3
+    min_delta: 0.05
