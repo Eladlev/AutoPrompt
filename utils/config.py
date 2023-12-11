@@ -39,22 +39,25 @@ def get_llm(config: dict):
         temperature = 0
     else:
         temperature = config['temperature']
+    if 'model_kwargs' in config:
+        model_kwargs = config['model_kwargs']
+    else:
+        model_kwargs = {}
     if config['type'] == 'OpenAI':
         if LLM_ENV['openai']['OPENAI_ORGANIZATION'] == '':
             return ChatOpenAI(temperature=temperature, model_name=config['name'],
-                              openai_api_key=LLM_ENV['openai']['OPENAI_API_KEY'])
+                              openai_api_key=LLM_ENV['openai']['OPENAI_API_KEY'],
+                              model_kwargs=model_kwargs)
         else:
             return ChatOpenAI(temperature=temperature, model_name=config['name'],
                               openai_api_key=LLM_ENV['openai']['OPENAI_API_KEY'],
-                              openai_organization=LLM_ENV['openai']['OPENAI_ORGANIZATION'])
+                              openai_organization=LLM_ENV['openai']['OPENAI_ORGANIZATION'],
+                              model_kwargs=model_kwargs)
     elif config['type'] == 'Azure':
         AzureChatOpenAI(temperature=temperature, model_name=config['name'],
                         openai_api_key=LLM_ENV['azure']['AZURE_OPENAI_API_KEY'],
                         azure_endpoint=LLM_ENV['azure']['AZURE_OPENAI_ENDPOINT'],
                         openai_api_version=LLM_ENV['azure']['OPENAI_API_VERSION'])
-        AZURE_OPENAI_API_KEY: ''
-        AZURE_OPENAI_ENDPOINT: ''
-        OPENAI_API_VERSION: ''
 
 
     elif config['type'] == 'HuggingFacePipeline':
