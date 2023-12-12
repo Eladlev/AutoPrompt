@@ -52,8 +52,8 @@ class DatasetBase:
         :param records: dataframes, update using pandas
         """
         if records is None:
-            records = [{'id': len(self.records) + i, 'text': sample, 'batch_id': batch_id} for
-                       i, sample in enumerate(sample_list)]
+            records = pd.DataFrame([{'id': len(self.records) + i, 'text': sample, 'batch_id': batch_id} for
+                       i, sample in enumerate(sample_list)])
         self.records = pd.concat([self.records, records], ignore_index=True)
 
     def update(self, records: pd.DataFrame):
