@@ -1,6 +1,6 @@
 import yaml
 from easydict import EasyDict as edict
-from langchain import PromptTemplate
+from langchain.prompts import PromptTemplate
 from langchain.chat_models import ChatOpenAI
 from pathlib import Path
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
