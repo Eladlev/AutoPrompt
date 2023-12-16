@@ -4,14 +4,19 @@ channels:
   - conda-forge
 
 dependencies:
-  - python~=3.9.7
+  - python~=3.10
   - pip>=2.22.0
   - openai
   - langchain
+  - pandas
   - wandb
+  - transformers
+  - tqdm
+  - faiss-cpu
+  - sentence-transformers
   - pip:
-      - schedule
       - prodict
-      - tiktoken
-      - argilla==1.18.0
+      - argilla
+      - schedule
+      - pandas
       - easydict
