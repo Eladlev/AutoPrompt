@@ -5,6 +5,7 @@ dataset:
     num_initialize_samples: 15
     initial_dataset: 'dump/dataset.csv'
     label_schema: ["Yes", "No"]
+    max_samples: 65
 
 estimator:
     method : 'argilla'
