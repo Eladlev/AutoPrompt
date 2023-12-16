@@ -52,7 +52,13 @@ class Eval:
 
         for label in label_schema:
             cur_df = error_df[error_df['annotation'] == label][:num_large_errors_per_label]
-            error_res_df = pd.concat([error_res_df, cur_df[error_res_df.columns]], ignore_index=True)
+            # need to cast the boolean explicitly to avoid future warning:
+            # .../AutoPrompt/utils/eval.py:55: FutureWarning: In a future version,
+            # object-dtype columns with all-bool values will not be included in reductions with bool_only=True.
+            # Explicitly cast to bool dtype instead.
+            # df["var1"] = df["var1"].astype(bool)
+            if len(cur_df) > 0:
+                error_res_df = pd.concat([error_res_df, cur_df[error_res_df.columns]], ignore_index=True)
         txt_res = '##Failure Cases:\n'
         error_res_df = error_res_df.sample(frac=1.0, random_state=42)
         for i, row in error_res_df.iterrows():

@@ -1,0 +1,3 @@
+Rephrase the following request so that the requirement is to evaluate a model that ran this request.
+For example if the description is to write a poem, rephrase the description to check if some input is a poem.
+task description: {initial_prompt}

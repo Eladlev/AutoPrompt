@@ -2,6 +2,9 @@ import pandas as pd
 from utils.eval import Eval
 from dataset.base_dataset import DatasetBase
 from utils.llm_chain import MetaChain
+from utils.config import get_llm, load_prompt
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
 from estimator import give_estimator
 from pathlib import Path
 import pickle
@@ -20,7 +23,7 @@ class OptimizationPipeline:
     4. eval - The eval is responsible to calculate the score and the large errors
     """
 
-    def __init__(self, config, task_description: str, initial_prompt: str, output_path: str = ''):
+    def __init__(self, config, task_description: str, initial_prompt: str, output_path: str = '', ranker_run: bool = False, auto_estimator: any = None):
         """
         Initialize a new instance of the ClassName class.
         :param config: The configuration file (EasyDict)
@@ -47,9 +50,19 @@ class OptimizationPipeline:
         self.config = config
         self.meta_chain = MetaChain(config)
         self.initialize_dataset()
+
+        if ranker_run:
+            ranker_mod_prompt, ranker_mod_task_desc = \
+                self.modify_input_for_ranker(task_description, initial_prompt)
+            task_description = ranker_mod_task_desc
+            initial_prompt = ranker_mod_prompt
+
         self.task_description = task_description
         self.cur_prompt = initial_prompt
-        self.estimator = give_estimator(config.estimator)
+        if auto_estimator is not None:
+            self.estimator = auto_estimator
+        else:
+            self.estimator = give_estimator(config.estimator)
         self.predictor = give_estimator(config.predictor)
         self.eval = Eval(config.eval)
         self.batch_id = 0
@@ -196,3 +209,33 @@ class OptimizationPipeline:
             return self.cur_prompt
         self.run_step_prompt()
         self.save_state()
+
+    def run_pipeline(self, num_steps: int, return_predictor: bool = False):
+
+        # Run the optimization pipeline for num_steps
+        num_steps_remaining = num_steps - self.batch_id
+        for i in range(num_steps_remaining):
+            self.step()
+
+        if return_predictor:
+            return self.predictor
+        else:
+            return self.cur_prompt
+
+    def modify_input_for_ranker(self, task_description, initial_prompt):
+
+        task_desc_setup = load_prompt(self.config.ranker.task_desc_mod)
+        init_prompt_setup = load_prompt(self.config.ranker.prompt_mod)
+
+        llm = get_llm(self.config.llm)
+        task_llm_chain = LLMChain(llm=llm, prompt=task_desc_setup)
+        task_result = task_llm_chain({"initial_prompt": initial_prompt, "task_description": task_description})
+        mod_task_desc = task_result['text']
+        print(mod_task_desc)
+
+        prompt_llm_chain = LLMChain(llm=llm, prompt=init_prompt_setup)
+        prompt_result = prompt_llm_chain(initial_prompt)
+        mod_prompt = prompt_result['text']
+        print(mod_prompt)
+
+        return mod_prompt, mod_task_desc

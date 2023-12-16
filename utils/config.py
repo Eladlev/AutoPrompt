@@ -1,6 +1,6 @@
 import yaml
 from easydict import EasyDict as edict
-from langchain import PromptTemplate
+from langchain.prompts import PromptTemplate
 from langchain.chat_models import ChatOpenAI
 from pathlib import Path
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
@@ -87,7 +87,6 @@ def load_prompt(prompt_path: str) -> PromptTemplate:
     """
     Reads and returns the contents of a prompt file.
     :param prompt_path: The path to the prompt file
-    :param appendix: A string to append to the prompt
     """
     with open(prompt_path, 'r') as file:
         prompt = file.read().rstrip()

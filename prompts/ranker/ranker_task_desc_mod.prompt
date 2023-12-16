@@ -1,0 +1,7 @@
+You are an expert in writing the type of content that is required by the following prompt: {initial_prompt}.
+You are an expert at ranking or rating the quality of such content.
+Rephrase the following task description, to reflect the task of providing the quality of such content.
+For example if the description is to write a poem, rephrase the description to assure the quality of the poem.
+Provide the answer as a new task description, no need to indicate this is a rephrasing of a different input.
+### Task Instruction:
+{task_description}
