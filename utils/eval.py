@@ -28,8 +28,8 @@ class Eval:
         :return: The mean score
         """
         dataset.apply(self.score_func, column_name='score')
-        self.mean_score = round(dataset.records['score'].mean(), 2)
-        return self.mean_score
+        valid_data = dataset.records.dropna(subset=['annotation', 'prediction'])
+        self.mean_score = round(valid_data['score'].mean(), 2)
 
     def get_min_score(self):
         """

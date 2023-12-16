@@ -85,24 +85,27 @@ class OptimizationPipeline:
         history_prompt = '\n'.join([Eval.sample_to_text(sample,
                                                         num_errors_per_label=self.config.meta_prompts.num_err_prompt,
                                                         is_score=True) for sample in last_history])
-        history_samples = '\n'.join([Eval.sample_to_text(sample,
-                                                         num_errors_per_label=self.config.meta_prompts.num_err_samples,
-                                                         is_score=False) for sample in last_history])
+
         prompt_suggestion = self.meta_chain.step_prompt_chain.invoke({"history": history_prompt,
                                                                       "task_description": self.task_description,
                                                                       "labels": json.dumps(
                                                                           self.config.dataset.label_schema)})
 
+        history_samples = '\n'.join([Eval.sample_to_text(sample,
+                                                         num_errors_per_label=self.config.meta_prompts.num_err_samples,
+                                                         is_score=False) for sample in last_history])
+
         self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
-        new_samples = self.meta_chain.step_samples.invoke({"history": history_samples,
-                                                           "task_description": self.task_description,
-                                                           "prompt": prompt_suggestion['prompt'],
-                                                           'num_samples':
-                                                               self.config.meta_prompts.num_generated_samples})
-        logging.info('Get new samples')
         self.batch_id += 1
+        if len(self.dataset) < self.config.dataset.max_samples:
+            new_samples = self.meta_chain.step_samples.invoke({"history": history_samples,
+                                                               "task_description": self.task_description,
+                                                               "prompt": prompt_suggestion['prompt'],
+                                                               'num_samples':
+                                                                   self.config.meta_prompts.num_generated_samples})
+            self.dataset.add(new_samples['samples'], self.batch_id)
+            logging.info('Get new samples')
         self.cur_prompt = prompt_suggestion['prompt']
-        self.dataset.add(new_samples['samples'], self.batch_id)
 
     def stop_criteria(self):
         """

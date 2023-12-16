@@ -8,7 +8,9 @@ Given a list of {batch_size} samples classify them according to the following ta
 
 Answer in the following format:
 #### Sample <ID>: <label>
-############
+##
+Remember, follow carefully after the exact task instructions!
+##
 Results:
 
 
