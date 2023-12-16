@@ -16,19 +16,6 @@ class Color:
     BLUE = '\033[94m'
     END = '\033[0m'  # Reset to default color
 
-
-def get_eval_function(function_name: str):
-    """
-    Returns the eval function
-    :param function_name: The function name
-    :return: The function implementation on a record
-    """
-    if function_name == 'accuracy':
-        return lambda record: record['annotation'] == record['prediction']
-    else:
-        raise NotImplementedError("Eval function not implemented")
-
-
 def get_llm(config: dict):
     """
     Returns the LLM model
@@ -78,7 +65,6 @@ def load_yaml(yaml_path: str) -> edict:
     """
     with open(yaml_path, 'r') as file:
         yaml_data = yaml.safe_load(file)
-        yaml_data['eval']['score_function'] = get_eval_function(yaml_data['eval']['function_name'])
         yaml_data['meta_prompts']['folder'] = Path(yaml_data['meta_prompts']['folder'])
     return edict(yaml_data)
 

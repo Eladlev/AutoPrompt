@@ -47,6 +47,7 @@ class OptimizationPipeline:
             logging.basicConfig(filename=self.output_path / 'info.log', level=logging.DEBUG,
                                 format='%(asctime)s - %(levelname)s - %(message)s', force=True)
 
+        self.dataset = None
         self.config = config
         self.meta_chain = MetaChain(config)
         self.initialize_dataset()
