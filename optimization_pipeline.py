@@ -23,13 +23,14 @@ class OptimizationPipeline:
     4. eval - The eval is responsible to calculate the score and the large errors
     """
 
-    def __init__(self, config, task_description: str, initial_prompt: str, output_path: str = '', ranker_run: bool = False, auto_estimator: any = None):
+    def __init__(self, config, task_description: str, initial_prompt: str, output_path: str = '', optimization_type: str = "classification"):
         """
         Initialize a new instance of the ClassName class.
         :param config: The configuration file (EasyDict)
         :param task_description: Describe the task that needed to be solved
         :param initial_prompt: Provide an initial prompt to solve the task
         :param output_path: The output dir to save dump, by default the dumps are not saved
+        :param optimization_type: Type of task to be optimized. can be "classification" (default), "ranking", "generation"
         """
 
         if config.use_wandb:  # In case of using W&B
@@ -52,7 +53,7 @@ class OptimizationPipeline:
         self.meta_chain = MetaChain(config)
         self.initialize_dataset()
 
-        if ranker_run:
+        if optimization_type == "ranking":
             ranker_mod_prompt, ranker_mod_task_desc = \
                 self.modify_input_for_ranker(task_description, initial_prompt)
             task_description = ranker_mod_task_desc
@@ -60,14 +61,17 @@ class OptimizationPipeline:
 
         self.task_description = task_description
         self.cur_prompt = initial_prompt
-        if auto_estimator is not None:
-            self.estimator = auto_estimator
+        self.optimization_type = optimization_type
+
+        self.predictor = give_estimator(config.predictor)
+        if optimization_type == "generation":
+            self.estimator = None
         else:
             self.estimator = give_estimator(config.estimator)
-        self.predictor = give_estimator(config.predictor)
         self.eval = Eval(config.eval)
         self.batch_id = 0
         self.patient = 0
+        self.ranker = None
 
     @staticmethod
     def log_and_print(message):
@@ -185,13 +189,20 @@ class OptimizationPipeline:
             self.wandb_run.log({"Prompt":  wandb.Html(f"<p>{self.cur_prompt}</p>"), "Samples": wandb.Table(dataframe=random_subset)},
                                step=self.batch_id)
 
-        logging.info('Running estimator')
-        records = self.estimator.apply(self.dataset, self.batch_id)
-        self.dataset.update(records)
+        if self.optimization_type == "generation":
+            logging.info('Skipping estimator')
+            if self.ranker is None:
+                raise Exception(f"Ranker not defined for generation run")
+        else:
+            logging.info('Running estimator')
+            records = self.estimator.apply(self.dataset, self.batch_id)
+            self.dataset.update(records)
+
         self.predictor.cur_instruct = self.cur_prompt
         logging.info('Running predictor')
         records = self.predictor.apply(self.dataset, self.batch_id, leq=True)
         self.dataset.update(records)
+
         self.eval.eval_score(self.dataset)
         logging.info('Calc score')
         self.eval.dataset = self.dataset.records
@@ -211,17 +222,14 @@ class OptimizationPipeline:
         self.run_step_prompt()
         self.save_state()
 
-    def run_pipeline(self, num_steps: int, return_predictor: bool = False):
+    def run_pipeline(self, num_steps: int):
 
         # Run the optimization pipeline for num_steps
         num_steps_remaining = num_steps - self.batch_id
         for i in range(num_steps_remaining):
             self.step()
 
-        if return_predictor:
-            return self.predictor
-        else:
-            return self.cur_prompt
+        return self.cur_prompt
 
     def modify_input_for_ranker(self, task_description, initial_prompt):
 
@@ -240,3 +248,7 @@ class OptimizationPipeline:
         print(mod_prompt)
 
         return mod_prompt, mod_task_desc
+
+    def set_ranker(self, ranker):
+        self.ranker = ranker
+        self.eval.score_func = ranker

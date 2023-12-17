@@ -5,7 +5,7 @@ import argparse
 # General Training Parameters
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--config_path', default='config/config_generation.yml', type=str, help='Configuration file path')
+parser.add_argument('--config_path', default='config/config_generation_matan1.yml', type=str, help='Configuration file path')
 parser.add_argument('--task_description',
                     default='Assistant is a large language model which with the task to write movie reviews.',
                     required=False, type=str, help='Describing the task')
@@ -30,12 +30,14 @@ if opt.prompt == '':
 else:
     initial_prompt = opt.prompt
 
-ranker_pipeline = OptimizationPipeline(config_params, task_description, initial_prompt, output_path=opt.output_dump, ranker_run=True)
+ranker_pipeline = OptimizationPipeline(config_params, task_description, initial_prompt, output_path=opt.output_dump, optimization_type="ranking")
 if opt.load_ranker_path != '':
     ranker_pipeline.load_state(opt.load_ranker_path)
-ranker = ranker_pipeline.run_pipeline(opt.num_steps, return_predictor=True)
+last_ranker_prompt = ranker_pipeline.run_pipeline(opt.num_steps)
+ranker = ranker_pipeline.predictor
 
-generation_pipeline = OptimizationPipeline(config_params, task_description, initial_prompt, output_path=opt.output_dump, auto_estimator=ranker)
+generation_pipeline = OptimizationPipeline(config_params, task_description, initial_prompt, output_path=opt.output_dump, optimization_type="generation")
 if opt.load_generator_path != '':
     generation_pipeline.load_state(opt.load_generator_path)
+generation_pipeline.set_ranker(ranker)
 generation_pipeline.run_pipeline(opt.num_steps)
