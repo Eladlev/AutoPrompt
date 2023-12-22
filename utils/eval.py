@@ -63,14 +63,15 @@ class Eval:
         label_schema = error_df['annotation'].unique()
 
         error_res_df_list = []
+        txt_res = '##Failure Cases:\n'
         for label in label_schema:
             cur_df = error_df[error_df['annotation'] == label][:num_large_errors_per_label]
             error_res_df_list.append(cur_df[required_columns])
-        error_res_df = pd.concat(error_res_df_list, ignore_index=True)
-        error_res_df = error_res_df.sample(frac=1.0, random_state=42)
-        txt_res = '##Failure Cases:\n'
-        for i, row in error_res_df.iterrows():
-            txt_res += f"Sample: {row.text}\nPrediction: {row.prediction}, GT: {row.annotation}\n#\n"
+        if len(error_res_df_list) > 0:
+            error_res_df = pd.concat(error_res_df_list, ignore_index=True)
+            error_res_df = error_res_df.sample(frac=1.0, random_state=42)
+            for i, row in error_res_df.iterrows():
+                txt_res += f"Sample: {row.text}\nPrediction: {row.prediction}, GT: {row.annotation}\n#\n"
         return txt_res
 
     @staticmethod

@@ -92,7 +92,13 @@ class OptimizationPipeline:
         """
         Calculate the usage of the optimization process (either $ in case of openAI or #tokens the other cases)
         """
-        return self.meta_chain.calc_usage() + self.estimator.calc_usage() + self.predictor.calc_usage()
+        total_usage = 0
+        total_usage += self.meta_chain.calc_usage()
+        if self.estimator is not None:
+            total_usage += self.estimator.calc_usage()
+        total_usage += self.predictor.calc_usage()
+
+        return total_usage
 
     def run_step_prompt(self):
         """
@@ -249,6 +255,21 @@ class OptimizationPipeline:
 
         return mod_prompt, mod_task_desc
 
+    def get_predictor(self):
+        return self.predictor
+
+    @staticmethod
+    def ranker_score_func(record, ranker):
+        task_instruction = ranker.cur_instruct
+        mini_batch_size = ranker.mini_batch_size
+        chain_input = record["prediction"]
+        invoke_input = {'batch_size': mini_batch_size, 'task_instruction': task_instruction, 'samples': chain_input}
+        results = ranker.chain.invoke(invoke_input)
+        prediction = int(results["results"][0]["prediction"])
+        return prediction
+
     def set_ranker(self, ranker):
         self.ranker = ranker
-        self.eval.score_func = ranker
+        ranker_score_func = lambda record: self.ranker_score_func(record, ranker)
+        self.eval.score_func = ranker_score_func
+
