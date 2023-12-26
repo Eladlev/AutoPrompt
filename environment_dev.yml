@@ -4,7 +4,7 @@ channels:
   - conda-forge
 
 dependencies:
-  - python~=3.10
+  - python=3.10.13
   - pip>=2.22.0
   - openai
   - langchain
@@ -16,7 +16,7 @@ dependencies:
   - sentence-transformers
   - pip:
       - prodict
-      - argilla
+      - argilla==1.20.0
       - schedule
       - pandas
       - easydict

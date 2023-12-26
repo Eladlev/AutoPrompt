@@ -1,15 +1,20 @@
 import random
 from sentence_transformers import SentenceTransformer
 import faiss
+import pandas as pd
+
 
 class Dedup:
 
-    def __init__(self, config):
+    def __init__(self, config=None):
         self.index = None
         self.xb = None
         self.clusters = None
-        self.th = config.get("dedup_threshold", 0.5)
+        self.th = 0.5 if config is None else config.get("dedup_threshold", 0.5)
         self.model_name = 'all-MiniLM-L6-v2'
+
+    def copy(self):
+        return Dedup({"dedup_threshold": self.th})
 
     def generate_embeddings(self, texts):
         """
@@ -67,26 +72,19 @@ class Dedup:
             clusters.append(new_cluster)
         return clusters
 
-    def dedup(self, records):
+    def sample(self, records: pd.DataFrame, operation_function=random.choice):
         """
-        Deduplicate the given dataset.
+        Sample the given dataset.
         input: records - a pandas dataframe with a 'text' column
-        output: deduplicated - a pandas dataframe with the deduplicated dataset
+               operation_function - a function that receives a cluster and returns an index
+        output: a pandas dataframe with the sampled records
         """
+
+        if not callable(operation_function):
+            raise ValueError("The 'operation_function' must be a callable function.")
+
         if self.clusters is None:
             self.clusters = self.cluster_data(records)
 
-        ids = [min(cluster) for cluster in self.clusters]
-        return records.iloc[sorted(ids)]
-
-    def sample(self, records):
-        """
-        Sample from a given dataset.
-        input: records - a pandas dataframe with a 'text' column
-        output: sampled - a pandas dataframe with the sampled dataset
-        """
-        if self.clusters is None:
-            self.clusters = self.cluster_data(records)
-
-        samples = [random.choice(list(cluster)) for cluster in self.clusters]
+        samples = [operation_function(list(cluster)) for cluster in self.clusters]
         return records.iloc[sorted(samples)]
