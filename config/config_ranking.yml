@@ -2,8 +2,9 @@ use_wandb: False
 dataset:
     name: 'dataset'
     records_path: null
-    num_initialize_samples: 8
+    num_initialize_samples: 4
     initial_dataset: 'dump/gen_dataset1.csv'
+    label_schema: ["1","2","3","4","5"]
 
 estimator:
     method : 'argilla'
@@ -38,7 +39,7 @@ meta_prompts:
     num_err_prompt: 1  #number of error examples per sample in the prompt generation
     num_err_samples: 2 #number of error examples per sample in the sample generation
     history_length: 4
-    num_generated_samples: 10
+    num_generated_samples: 4
 
 eval:
     function_name: 'accuracy'
