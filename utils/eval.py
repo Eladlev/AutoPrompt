@@ -41,7 +41,7 @@ class Eval:
         """
         dataset.apply(self.score_func, column_name='score')
         valid_data = dataset.records.dropna(subset=['annotation', 'prediction'])
-        self.mean_score = valid_data['score'].mean()
+        self.mean_score = round(valid_data['score'].mean(), 2)
 
     def get_min_score(self):
         """
