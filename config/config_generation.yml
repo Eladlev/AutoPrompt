@@ -5,14 +5,6 @@ dataset:
     num_initialize_samples: 8
     initial_dataset: 'dump/gen_dataset1.csv'
 
-estimator:
-    method : 'argilla'
-    config:
-        api_url: ''
-        api_key: 'admin.apikey'
-        workspace: 'admin'
-        time_interval: 5
-
 predictor:
     method : 'llm'
     config:
