@@ -10,11 +10,14 @@ class Dedup:
         self.index = None
         self.xb = None
         self.clusters = None
-        self.th = 0.5 if config is None else config.get("dedup_threshold", 0.5)
-        self.model_name = 'all-MiniLM-L6-v2'
+        self.th = (config or {}).get("dedup_threshold", 0.5)
+        self.model_name = (config or {}).get("embeddings_model", 'all-MiniLM-L6-v2')
 
     def copy(self):
-        return Dedup({"dedup_threshold": self.th})
+        return Dedup(
+            {"dedup_threshold": self.th,
+             "embeddings_model": self.model_name}
+        )
 
     def generate_embeddings(self, texts):
         """
