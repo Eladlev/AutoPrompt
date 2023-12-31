@@ -5,9 +5,10 @@ from langchain.chat_models import ChatOpenAI
 from pathlib import Path
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.chat_models import AzureChatOpenAI
+from langchain.chains import LLMChain
+import logging
 
 LLM_ENV = yaml.safe_load(open('config/llm_env.yml', 'r'))
-
 
 class Color:
     RED = '\033[91m'
@@ -15,6 +16,7 @@ class Color:
     YELLOW = '\033[93m'
     BLUE = '\033[94m'
     END = '\033[0m'  # Reset to default color
+
 
 def get_llm(config: dict):
     """
@@ -77,3 +79,25 @@ def load_prompt(prompt_path: str) -> PromptTemplate:
     with open(prompt_path, 'r') as file:
         prompt = file.read().rstrip()
     return PromptTemplate.from_template(prompt)
+
+
+def modify_input_for_ranker(config, task_description, initial_prompt):
+
+    modifiers_config = yaml.safe_load(open('prompts/modifiers/modifiers.yml', 'r'))
+    task_desc_setup = load_prompt(modifiers_config.ranker.task_desc_mod)
+    init_prompt_setup = load_prompt(modifiers_config.ranker.prompt_mod)
+
+    llm = get_llm(config.llm)
+    task_llm_chain = LLMChain(llm=llm, prompt=task_desc_setup)
+    task_result = task_llm_chain(
+        {"initial_prompt": initial_prompt,
+         "task_description": task_description})
+    mod_task_desc = task_result['text']
+    logging.info(f"Task description modified for ranking to: \n{mod_task_desc}")
+
+    prompt_llm_chain = LLMChain(llm=llm, prompt=init_prompt_setup)
+    prompt_result = prompt_llm_chain(initial_prompt)
+    mod_prompt = prompt_result['text']
+    logging.info(f"Initial prompt modified for ranking to: \n{mod_prompt}")
+
+    return mod_prompt, mod_task_desc

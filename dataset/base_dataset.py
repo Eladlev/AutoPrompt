@@ -5,7 +5,6 @@ from pathlib import Path
 from datetime import datetime
 
 
-
 class DatasetBase:
     """
     This class store and manage all the dataset records (including the annotations and prediction)
@@ -60,6 +59,10 @@ class DatasetBase:
         """
         Update records in dataset.
         """
+        # Ignore if records is empty
+        if len(records) == 0:
+            return
+
         # Set 'id' as the index for both DataFrames
         records.set_index('id', inplace=True)
         self.records.set_index('id', inplace=True)

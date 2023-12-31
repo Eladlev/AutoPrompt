@@ -2,9 +2,6 @@ import pandas as pd
 from utils.eval import Eval
 from dataset.base_dataset import DatasetBase
 from utils.llm_chain import MetaChain
-from utils.config import get_llm, load_prompt
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
 from estimator import give_estimator
 from pathlib import Path
 import pickle
@@ -23,14 +20,13 @@ class OptimizationPipeline:
     4. eval - The eval is responsible to calculate the score and the large errors
     """
 
-    def __init__(self, config, task_description: str, initial_prompt: str, output_path: str = '', optimization_type: str = "classification"):
+    def __init__(self, config, task_description: str, initial_prompt: str, output_path: str = ''):
         """
         Initialize a new instance of the ClassName class.
         :param config: The configuration file (EasyDict)
         :param task_description: Describe the task that needed to be solved
         :param initial_prompt: Provide an initial prompt to solve the task
         :param output_path: The output dir to save dump, by default the dumps are not saved
-        :param optimization_type: Type of task to be optimized. can be "classification" (default), "ranking", "generation"
         """
 
         if config.use_wandb:  # In case of using W&B
@@ -53,25 +49,14 @@ class OptimizationPipeline:
         self.meta_chain = MetaChain(config)
         self.initialize_dataset()
 
-        if optimization_type == "ranking":
-            ranker_mod_prompt, ranker_mod_task_desc = \
-                self.modify_input_for_ranker(task_description, initial_prompt)
-            task_description = ranker_mod_task_desc
-            initial_prompt = ranker_mod_prompt
-
         self.task_description = task_description
         self.cur_prompt = initial_prompt
-        self.optimization_type = optimization_type
 
         self.predictor = give_estimator(config.predictor)
-        if optimization_type == "generation":
-            self.estimator = None
-        else:
-            self.estimator = give_estimator(config.estimator)
+        self.estimator = give_estimator(config.estimator)
         self.eval = Eval(config.eval)
         self.batch_id = 0
         self.patient = 0
-        self.ranker = None
 
     @staticmethod
     def log_and_print(message):
@@ -94,10 +79,8 @@ class OptimizationPipeline:
         """
         total_usage = 0
         total_usage += self.meta_chain.calc_usage()
-        if self.estimator is not None:
-            total_usage += self.estimator.calc_usage()
+        total_usage += self.estimator.calc_usage()
         total_usage += self.predictor.calc_usage()
-
         return total_usage
 
     def run_step_prompt(self):
@@ -109,24 +92,27 @@ class OptimizationPipeline:
         history_prompt = '\n'.join([Eval.sample_to_text(sample,
                                                         num_errors_per_label=self.config.meta_prompts.num_err_prompt,
                                                         is_score=True) for sample in last_history])
-        history_samples = '\n'.join([Eval.sample_to_text(sample,
-                                                         num_errors_per_label=self.config.meta_prompts.num_err_samples,
-                                                         is_score=False) for sample in last_history])
+
         prompt_suggestion = self.meta_chain.step_prompt_chain.invoke({"history": history_prompt,
                                                                       "task_description": self.task_description,
                                                                       "labels": json.dumps(
                                                                           self.config.dataset.label_schema)})
 
+        history_samples = '\n'.join([Eval.sample_to_text(sample,
+                                                         num_errors_per_label=self.config.meta_prompts.num_err_samples,
+                                                         is_score=False) for sample in last_history])
+
         self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
-        new_samples = self.meta_chain.step_samples.invoke({"history": history_samples,
-                                                           "task_description": self.task_description,
-                                                           "prompt": prompt_suggestion['prompt'],
-                                                           'num_samples':
-                                                               self.config.meta_prompts.num_generated_samples})
-        logging.info('Get new samples')
         self.batch_id += 1
+        if len(self.dataset) < self.config.dataset.max_samples:
+            new_samples = self.meta_chain.step_samples.invoke({"history": history_samples,
+                                                               "task_description": self.task_description,
+                                                               "prompt": prompt_suggestion['prompt'],
+                                                               'num_samples':
+                                                                   self.config.meta_prompts.num_generated_samples})
+            self.dataset.add(new_samples['samples'], self.batch_id)
+            logging.info('Get new samples')
         self.cur_prompt = prompt_suggestion['prompt']
-        self.dataset.add(new_samples['samples'], self.batch_id)
 
     def stop_criteria(self):
         """
@@ -195,22 +181,17 @@ class OptimizationPipeline:
             self.wandb_run.log({"Prompt":  wandb.Html(f"<p>{self.cur_prompt}</p>"), "Samples": wandb.Table(dataframe=random_subset)},
                                step=self.batch_id)
 
-        if self.optimization_type == "generation":
-            logging.info('Skipping estimator')
-            if self.ranker is None:
-                raise Exception(f"Ranker not defined for generation run")
-        else:
-            logging.info('Running estimator')
-            records = self.estimator.apply(self.dataset, self.batch_id)
-            self.dataset.update(records)
+        logging.info('Running Estimator')
+        records = self.estimator.apply(self.dataset, self.batch_id)
+        self.dataset.update(records)
 
         self.predictor.cur_instruct = self.cur_prompt
-        logging.info('Running predictor')
+        logging.info('Running Predictor')
         records = self.predictor.apply(self.dataset, self.batch_id, leq=True)
         self.dataset.update(records)
 
         self.eval.eval_score(self.dataset)
-        logging.info('Calc score')
+        logging.info('Calculating Score')
         self.eval.dataset = self.dataset.records
         large_errors = self.eval.extract_errors()
         self.eval.add_history(self.cur_prompt)
@@ -229,47 +210,18 @@ class OptimizationPipeline:
         self.save_state()
 
     def run_pipeline(self, num_steps: int):
-
         # Run the optimization pipeline for num_steps
         num_steps_remaining = num_steps - self.batch_id
         for i in range(num_steps_remaining):
             self.step()
-
+        # TODO: Need to change the cur_prompt to best_prompt
         return self.cur_prompt
 
-    def modify_input_for_ranker(self, task_description, initial_prompt):
-
-        task_desc_setup = load_prompt(self.config.ranker.task_desc_mod)
-        init_prompt_setup = load_prompt(self.config.ranker.prompt_mod)
-
-        llm = get_llm(self.config.llm)
-        task_llm_chain = LLMChain(llm=llm, prompt=task_desc_setup)
-        task_result = task_llm_chain({"initial_prompt": initial_prompt, "task_description": task_description})
-        mod_task_desc = task_result['text']
-        print(mod_task_desc)
-
-        prompt_llm_chain = LLMChain(llm=llm, prompt=init_prompt_setup)
-        prompt_result = prompt_llm_chain(initial_prompt)
-        mod_prompt = prompt_result['text']
-        print(mod_prompt)
-
-        return mod_prompt, mod_task_desc
-
     def get_predictor(self):
+        # TODO: Need to change the cur_prompt to best_prompt
         return self.predictor
 
-    @staticmethod
-    def ranker_score_func(record, ranker):
-        task_instruction = ranker.cur_instruct
-        mini_batch_size = ranker.mini_batch_size
-        chain_input = record["prediction"]
-        invoke_input = {'batch_size': mini_batch_size, 'task_instruction': task_instruction, 'samples': chain_input}
-        results = ranker.chain.invoke(invoke_input)
-        prediction = int(results["results"][0]["prediction"])
-        return prediction
-
-    def set_ranker(self, ranker):
-        self.ranker = ranker
-        ranker_score_func = lambda record: self.ranker_score_func(record, ranker)
-        self.eval.score_func = ranker_score_func
+    def set_predictor(self, predictor):
+        predictor_score_func = lambda record: Eval.ranker_score_func(record, predictor)
+        self.eval.score_func = predictor_score_func
 

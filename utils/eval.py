@@ -120,3 +120,13 @@ class Eval:
         :return: records that contains boundary samples
         """
         pass
+
+    @staticmethod
+    def ranker_score_func(record, ranker):
+        task_instruction = ranker.cur_instruct
+        mini_batch_size = ranker.mini_batch_size
+        chain_input = record["prediction"]
+        invoke_input = {'batch_size': mini_batch_size, 'task_instruction': task_instruction, 'samples': chain_input}
+        results = ranker.chain.invoke(invoke_input)
+        prediction = int(results["results"][0]["prediction"])
+        return prediction

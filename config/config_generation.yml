@@ -5,6 +5,9 @@ dataset:
     num_initialize_samples: 8
     initial_dataset: 'dump/gen_dataset1.csv'
 
+estimator:
+    method : ''
+
 predictor:
     method : 'llm'
     config:
@@ -19,11 +22,6 @@ predictor:
         prompt: 'prompts/predictor/prediction.prompt'
         mini_batch_size: 5
         mode: 'prediction'
-
-ranker:
-    prompt_mod: 'prompts/ranker/ranker_prompt_mod.prompt'
-    task_desc_mod: 'prompts/ranker/ranker_task_desc_mod.prompt'
-
 
 meta_prompts:
     folder: 'prompts/meta_prompts'
