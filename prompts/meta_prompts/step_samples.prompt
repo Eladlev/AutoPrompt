@@ -5,6 +5,11 @@ Below a few prompts and their failure case, for the following task:
 ## Examples
 {history}
 ######
+
+Here are few unique samples derived from realistic scenarios for the task outlined above.
+## Realistic Samples
+{extra_samples}
+######
 Your task is to generate {num_samples} challenging and diverse samples that will confuse the model with the following prompt:
 ## Prompt
 {prompt}

@@ -9,3 +9,5 @@ tiktoken
 easydict
 wandb
 transformers
+faiss-cpu
+sentence-transformers

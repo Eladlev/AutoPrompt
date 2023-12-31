@@ -4,6 +4,7 @@ import pandas as pd
 from pathlib import Path
 from datetime import datetime
 
+from utils.dedup import Dedup
 
 
 class DatasetBase:
@@ -21,6 +22,10 @@ class DatasetBase:
 
         self.name = config.name + '__' + dt_string
         self.label_schema = config.label_schema
+        self.dedup = Dedup(config)
+        self.sample_size = config.get("sample_size", 5)
+        if not config.get('dedup_new_samples', False):
+            self.remove_duplicates = self._null_remove
 
     def __len__(self):
         """
@@ -92,3 +97,46 @@ class DatasetBase:
             self.records = pd.read_csv(path)
         else:
             logging.warning('Dataset dump not found, initializing from zero')
+
+    def remove_duplicates(self, samples: list) -> list:
+        """
+        Remove (soft) duplicates from the given samples
+        :param samples: The samples
+        :return: The samples without duplicates
+        """
+        dd = self.dedup.copy()
+        df = pd.DataFrame(samples, columns=['text'])
+        df_dedup = dd.sample(df, operation_function=min)
+        return df_dedup['text'].tolist()
+
+    def _null_remove(self, samples: list) -> list:
+        # Identity function that returns the input unmodified
+        return samples
+
+    def sample_records(self, n: int = None) -> pd.DataFrame:
+        """
+        Return a sample of the records after semantic clustering
+        :param n: The number of samples to return
+        :return: A sample of the records
+        """
+        n = n or self.sample_size
+        dd = self.dedup.copy()
+        df_samples = dd.sample(self.records).head(n)
+
+        if len(df_samples) < n:
+            df_samples = self.records.head(n)
+        return df_samples
+
+    @staticmethod
+    def samples_to_text(records: pd.DataFrame) -> str:
+        """
+        Return a string that organize the samples for a meta-prompt
+        :param records: The samples for the step
+        :return: A string that contains the organized samples
+        """
+        txt_res = '##\n'
+        for i, row in records.iterrows():
+            txt_res += f"Sample:\n {row.text}\n#\n"
+        return txt_res
+
+
