@@ -4,6 +4,8 @@ dataset:
     records_path: null
     num_initialize_samples: 8
     initial_dataset: 'dump/gen_dataset1.csv'
+    label_schema: ["1","2","3","4","5"]
+    max_samples: 65
 
 estimator:
     method : ''

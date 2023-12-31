@@ -84,8 +84,8 @@ def load_prompt(prompt_path: str) -> PromptTemplate:
 def modify_input_for_ranker(config, task_description, initial_prompt):
 
     modifiers_config = yaml.safe_load(open('prompts/modifiers/modifiers.yml', 'r'))
-    task_desc_setup = load_prompt(modifiers_config.ranker.task_desc_mod)
-    init_prompt_setup = load_prompt(modifiers_config.ranker.prompt_mod)
+    task_desc_setup = load_prompt(modifiers_config['ranker']['task_desc_mod'])
+    init_prompt_setup = load_prompt(modifiers_config['ranker']['prompt_mod'])
 
     llm = get_llm(config.llm)
     task_llm_chain = LLMChain(llm=llm, prompt=task_desc_setup)
