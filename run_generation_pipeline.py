@@ -38,11 +38,11 @@ ranker_mod_prompt, ranker_mod_task_desc = modify_input_for_ranker(base_config_pa
 ranker_pipeline = OptimizationPipeline(base_config_params, ranker_mod_task_desc, ranker_mod_prompt, output_path=opt.output_dump)
 if opt.load_ranker_path != '':
     ranker_pipeline.load_state(opt.load_ranker_path)
-last_ranker_prompt = ranker_pipeline.run_pipeline(opt.num_steps)
+best_prompt = ranker_pipeline.run_pipeline(opt.num_steps)
 predictor = ranker_pipeline.get_predictor()
 
 generation_pipeline = OptimizationPipeline(generation_config_params, task_description, initial_prompt, output_path=opt.output_dump)
 if opt.load_generator_path != '':
     generation_pipeline.load_state(opt.load_generator_path)
 generation_pipeline.set_predictor(predictor)
-generation_pipeline.run_pipeline(opt.num_steps)
+best_generation_prompt = generation_pipeline.run_pipeline(opt.num_steps)

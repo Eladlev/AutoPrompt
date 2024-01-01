@@ -85,6 +85,12 @@ class OptimizationPipeline:
         total_usage += self.predictor.calc_usage()
         return total_usage
 
+    def extract_best_prompt(self):
+        sorted_history = sorted(self.eval.history[self.config.meta_prompts.warmup - 1:], key=lambda x: x['score'],
+                                reverse=False)
+        return {'prompt': sorted_history[-1]['prompt'], 'score': sorted_history[-1]['score'] }
+
+
     def run_step_prompt(self):
         """
         Run the meta-prompts and get new prompt suggestion, estimated prompt score and a set of challenging samples
@@ -238,12 +244,15 @@ class OptimizationPipeline:
         # Run the optimization pipeline for num_steps
         num_steps_remaining = num_steps - self.batch_id
         for i in range(num_steps_remaining):
-            self.step()
-        # TODO: Need to change the cur_prompt to best_prompt
-        return self.cur_prompt
+            stop_criteria = self.step()
+            if stop_criteria:
+                break
+        final_result = self.extract_best_prompt()
+        return final_result
 
     def get_predictor(self):
-        # TODO: Need to change the cur_prompt to best_prompt
+        best_result = self.extract_best_prompt()
+        self.predictor.cur_instruct = best_result['prompt']
         return self.predictor
 
     def set_predictor(self, predictor):
