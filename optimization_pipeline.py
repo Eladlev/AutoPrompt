@@ -102,6 +102,9 @@ class OptimizationPipeline:
                                                          num_errors_per_label=self.config.meta_prompts.num_err_samples,
                                                          is_score=False) for sample in last_history])
 
+        extra_samples = self.dataset.sample_records()
+        extra_samples_text = DatasetBase.samples_to_text(extra_samples)
+
         self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
         self.batch_id += 1
         if len(self.dataset) < self.config.dataset.max_samples:
@@ -109,7 +112,10 @@ class OptimizationPipeline:
                                                                "task_description": self.task_description,
                                                                "prompt": prompt_suggestion['prompt'],
                                                                'num_samples':
-                                                                   self.config.meta_prompts.num_generated_samples})
+                                                                   self.config.meta_prompts.num_generated_samples,
+                                                               'extra_samples': extra_samples_text})
+
+            new_samples['samples'] = self.dataset.remove_duplicates(new_samples['samples'])
             self.dataset.add(new_samples['samples'], self.batch_id)
             logging.info('Get new samples')
         self.cur_prompt = prompt_suggestion['prompt']
