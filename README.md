@@ -44,6 +44,13 @@ For a quick start (using Argilla estimator + OpenAI as the LLM model):
 You will then be guided to provide the initial prompt and task description, and the optimization process will start.
 You can track the optimization process using W&B dashboard.
 
+### Classification
+ * Use the `run_pipeline.py` to run classification jobs.
+
+### Generation
+ * Use the `run_generation_pipeline.py` to run generation jobs.
+ * You need to use two separate config yaml files, one is the same as the classification config, and the other needs to have an empty estimator class. 
+
 ## Tips
 ## License
 

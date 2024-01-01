@@ -46,13 +46,16 @@ class OptimizationPipeline:
             logging.basicConfig(filename=self.output_path / 'info.log', level=logging.DEBUG,
                                 format='%(asctime)s - %(levelname)s - %(message)s', force=True)
 
+        self.dataset = None
         self.config = config
         self.meta_chain = MetaChain(config)
         self.initialize_dataset()
+
         self.task_description = task_description
         self.cur_prompt = initial_prompt
-        self.estimator = give_estimator(config.estimator)
+
         self.predictor = give_estimator(config.predictor)
+        self.estimator = give_estimator(config.estimator)
         self.eval = Eval(config.eval)
         self.batch_id = 0
         self.patient = 0
@@ -76,7 +79,11 @@ class OptimizationPipeline:
         """
         Calculate the usage of the optimization process (either $ in case of openAI or #tokens the other cases)
         """
-        return self.meta_chain.calc_usage() + self.estimator.calc_usage() + self.predictor.calc_usage()
+        total_usage = 0
+        total_usage += self.meta_chain.calc_usage()
+        total_usage += self.estimator.calc_usage()
+        total_usage += self.predictor.calc_usage()
+        return total_usage
 
     def run_step_prompt(self):
         """
@@ -182,15 +189,17 @@ class OptimizationPipeline:
             self.wandb_run.log({"Prompt":  wandb.Html(f"<p>{self.cur_prompt}</p>"), "Samples": wandb.Table(dataframe=random_subset)},
                                step=self.batch_id)
 
-        logging.info('Running estimator')
+        logging.info('Running Estimator')
         records = self.estimator.apply(self.dataset, self.batch_id)
         self.dataset.update(records)
+
         self.predictor.cur_instruct = self.cur_prompt
-        logging.info('Running predictor')
+        logging.info('Running Predictor')
         records = self.predictor.apply(self.dataset, self.batch_id, leq=True)
         self.dataset.update(records)
+
         self.eval.eval_score(self.dataset)
-        logging.info('Calc score')
+        logging.info('Calculating Score')
         self.eval.dataset = self.dataset.records
         large_errors = self.eval.extract_errors()
         self.eval.add_history(self.cur_prompt)
@@ -207,3 +216,20 @@ class OptimizationPipeline:
             return self.cur_prompt
         self.run_step_prompt()
         self.save_state()
+
+    def run_pipeline(self, num_steps: int):
+        # Run the optimization pipeline for num_steps
+        num_steps_remaining = num_steps - self.batch_id
+        for i in range(num_steps_remaining):
+            self.step()
+        # TODO: Need to change the cur_prompt to best_prompt
+        return self.cur_prompt
+
+    def get_predictor(self):
+        # TODO: Need to change the cur_prompt to best_prompt
+        return self.predictor
+
+    def set_predictor(self, predictor):
+        predictor_score_func = lambda record: Eval.ranker_score_func(record, predictor)
+        self.eval.score_func = predictor_score_func
+

@@ -1,0 +1,4 @@
+
+ranker:
+    prompt_mod: 'prompts/modifiers/ranker_prompt_mod.prompt'
+    task_desc_mod: 'prompts/modifiers/ranker_task_desc_mod.prompt'
