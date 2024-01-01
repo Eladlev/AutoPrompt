@@ -4,7 +4,7 @@ channels:
   - conda-forge
 
 dependencies:
-  - python~=3.10.13
+  - python=3.10.13
   - pip>=2.22.0
   - openai
   - langchain
