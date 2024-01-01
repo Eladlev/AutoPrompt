@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from dataset.base_dataset import DatasetBase
+from sklearn.metrics import confusion_matrix
 
 
 class Eval:
@@ -8,18 +8,23 @@ class Eval:
     The Eval class is responsible to calculate the score and the large errors
     """
 
-    def __init__(self, config):
+    def __init__(self, config, analyzer=None, label_schema=None):
         """
         Initialize a new instance of the Eval class.
         :param config: The configuration file (EasyDict)
+        :analyzer (optional): A chain that analyze the errors
+        :label_schema (optional): The label schema
         """
+        self.score_function_name = config.function_name
         self.score_func = self.get_eval_function(config.function_name)
-        self.num_boundary_predictions = config.num_boundary_predictions
+        self.num_errors = config.num_large_errors
         self.th = config.th
         self.dataset = None
         self.mean_score = None
+        self.label_schema = label_schema
         self.errors = None
         self.history = []
+        self.analyzer = analyzer
 
     @staticmethod
     def get_eval_function(function_name: str):
@@ -33,15 +38,14 @@ class Eval:
         else:
             raise NotImplementedError("Eval function not implemented")
 
-    def eval_score(self, dataset: DatasetBase) -> float:
+    def eval_score(self) -> float:
         """
         Calculate the score on each row and return the mean score.
-        :param dataset: DatasetBase, the pipeline dataset
         :return: The mean score
         """
-        dataset.apply(self.score_func, column_name='score')
-        valid_data = dataset.records.dropna(subset=['annotation', 'prediction'])
-        self.mean_score = valid_data['score'].mean()
+        self.dataset['score'] = self.dataset.apply(self.score_func, axis=1)
+        self.mean_score = self.dataset['score'].mean()
+        return self.mean_score
 
     def get_min_score(self):
         """
@@ -65,7 +69,8 @@ class Eval:
         error_res_df_list = []
         txt_res = '##Failure Cases:\n'
         for label in label_schema:
-            cur_df = error_df[error_df['annotation'] == label][:num_large_errors_per_label]
+            cur_df = error_df[error_df['annotation'] == label]
+            cur_df = cur_df.sample(frac=1.0, random_state=42)[:num_large_errors_per_label]
             error_res_df_list.append(cur_df[required_columns])
         if len(error_res_df_list) > 0:
             error_res_df = pd.concat(error_res_df_list, ignore_index=True)
@@ -84,16 +89,31 @@ class Eval:
         :return: A string that contains the information of the step run
         """
         if is_score:
-            return f"####\n##Prompt:\n{sample['prompt']}\n##Score: {sample['score']:.2f}\n{Eval.large_error_to_str(sample['errors'], num_errors_per_label)}####\n"
+            return f"####\n##Prompt Score: {sample['score']:.2f}\n##Prompt:\n{sample['prompt']}\n#################\n"
         else:
             return f"####\n##Prompt:\n{sample['prompt']}\n{Eval.large_error_to_str(sample['errors'], num_errors_per_label)}####\n "
 
-    def add_history(self, prompt: str):
+    def add_history(self, prompt: str, task_description: str):
         """
         Add the current step information to the history
         :param prompt: The current prompt
+        :param task_description: The task description
         """
-        self.history.append({'prompt': prompt, 'score': self.mean_score, 'errors': self.errors})
+        conf_matrix = None
+        if self.score_function_name == 'accuracy':
+            conf_matrix = confusion_matrix(self.dataset['annotation'],
+                                           self.dataset['prediction'], labels=self.label_schema)
+            conf_text = f"Confusion matrix columns:{self.label_schema} the matrix data:"
+            for i, row in enumerate(conf_matrix):
+                conf_text += f"\n{self.label_schema[i]}: {row}"
+        else:
+            conf_text = 'Irrelevant'
+        large_error_to_str = Eval.large_error_to_str(self.errors, self.num_errors)
+        analysis = self.analyzer.invoke({'task_description': task_description, 'accuracy': self.mean_score,
+                                         'confusion_matrix': conf_text, 'prompt': prompt, 'failure_cases': large_error_to_str})
+
+        self.history.append({'prompt': prompt, 'score': self.mean_score,
+                             'errors': self.errors, 'confusion_matrix': conf_matrix, 'analysis': analysis['text']})
 
     def extract_errors(self) -> pd.DataFrame:
         """

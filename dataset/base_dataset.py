@@ -89,7 +89,7 @@ class DatasetBase:
         self.records[column_name] = self.records.apply(function, axis=1)
 
     def save_dataset(self, path: Path):
-        self.records.to_csv(path)
+        self.records.to_csv(path, index=False)
 
     def load_dataset(self, path: Path):
         """

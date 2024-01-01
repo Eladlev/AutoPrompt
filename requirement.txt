@@ -1,4 +1,4 @@
-argilla
+argilla==1.19.0
 schedule
 pandas
 tqdm
@@ -9,5 +9,6 @@ tiktoken
 easydict
 wandb
 transformers
-faiss-cpu
+scikit-learn
+faiss
 sentence-transformers

@@ -37,4 +37,9 @@ if opt.load_path != '':
 # Run the optimization pipeline for num_steps
 num_steps = opt.num_steps - pipeline.batch_id
 for i in range(num_steps):
-    pipeline.step()
+    stop_criteria = pipeline.step()
+    if stop_criteria:
+        break
+
+
+

@@ -114,12 +114,10 @@ class ChainWrapper:
         """
         Build the chain according to the LLM type
         """
-        if self.llm_config.type == 'OpenAI':
+        if self.llm_config.type == 'OpenAI' and self.json_schema is not None:
             self.chain = create_structured_output_runnable(self.json_schema, self.llm, self.prompt)
-        elif self.llm_config.type == 'HuggingFacePipeline':
-            self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
         else:
-            raise NotImplementedError("LLM not implemented")
+            self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
 
 
 def get_chain_metadata(prompt_fn: Path, retrieve_module: bool = False) -> dict:
@@ -166,6 +164,7 @@ class MetaChain:
         self.initial_chain = self.load_chain('initial')
         self.step_prompt_chain = self.load_chain('step_prompt')
         self.step_samples = self.load_chain('step_samples')
+        self.error_analysis = self.load_chain('error_analysis')
 
     def load_chain(self, chain_name: str) -> ChainWrapper:
         """

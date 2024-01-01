@@ -4,7 +4,7 @@ initial_schema = step_samples_schema = {
   "description": "A List of all results",
   "properties": {
     "samples": {
-      "description": "Each sample is a string containing the sample text",
+      "description": "Each sample is a string containing only the sample content, without any additional information like the Prediction or GT",
       "items": {
         "type": "string"
       },
