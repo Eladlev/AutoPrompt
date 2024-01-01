@@ -114,7 +114,6 @@ class OptimizationPipeline:
                                                                'num_samples':
                                                                    self.config.meta_prompts.num_generated_samples,
                                                               'extra_samples': extra_samples_text})
-
             new_samples['samples'] = self.dataset.remove_duplicates(new_samples['samples'])
             self.dataset.add(new_samples['samples'], self.batch_id)
             logging.info('Get new samples')
