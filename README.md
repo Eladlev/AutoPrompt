@@ -45,11 +45,11 @@ You will then be guided to provide the initial prompt and task description, and 
 You can track the optimization process using W&B dashboard.
 
 ### Classification
-1. Use the `run_pipeline.py` to run classification jobs. 
-2. 
+ * Use the `run_pipeline.py` to run classification jobs.
+
 ### Generation
-1. Use the `run_generation_pipeline.py` to run generation jobs.
-2. 
+ * Use the `run_generation_pipeline.py` to run generation jobs.
+ * You need to use two separate config yaml files, one is the same as the classification config, and the other needs to have an empty estimator class. 
 
 ## Tips
 ## License

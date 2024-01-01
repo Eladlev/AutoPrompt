@@ -81,6 +81,14 @@ def load_prompt(prompt_path: str) -> PromptTemplate:
     return PromptTemplate.from_template(prompt)
 
 
+def validate_generation_config(base_config, generation_config):
+    if "estimator" not in generation_config:
+        raise Exception("Generation config must contain an empty estimator.")
+    if "label_schema" not in generation_config.dataset or \
+            base_config.dataset.label_schema != generation_config.dataset.label_schema:
+        raise Exception("Generation label schema must match the basic config.")
+
+
 def modify_input_for_ranker(config, task_description, initial_prompt):
 
     modifiers_config = yaml.safe_load(open('prompts/modifiers/modifiers.yml', 'r'))

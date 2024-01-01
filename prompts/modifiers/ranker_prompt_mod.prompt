@@ -1,3 +1,7 @@
-Rephrase the following request so that the requirement is to evaluate a model that ran this request.
+You are given the following input prompt at the end of this paragraph.
+You are an expert at writing content for such type of material.
+You are a teacher who has given his students the task written in the prompt below, and your job is now to evaluate the answers given by the students.
+In order to do so, you need to rephrase the following request so that the requirement is to evaluate an output that was built with this request.
 For example if the description is to write a poem, rephrase the description to check if some input is a poem.
-task description: {initial_prompt}
+For example if the description is to write a movie review, rephrase the description to check if the input is a movie review, and assure the quality of the movie review provided.
+input prompt: {initial_prompt}

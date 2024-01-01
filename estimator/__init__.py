@@ -14,12 +14,16 @@ class DummyEstimator:
 
     @staticmethod
     def calc_usage():
-        # Dummy function to calculate the usage of the dummy estimator
+        """
+        Dummy function to calculate the usage of the dummy estimator
+        """
         return 0
 
     @staticmethod
     def apply(dataset: DatasetBase, batch_id: int):
-        # Dummy function to mimic the apply method, returns an empty dataframe
+        """
+        Dummy function to mimic the apply method, returns an empty dataframe
+        """
         return pd.DataFrame()
 
 def give_estimator(opt):

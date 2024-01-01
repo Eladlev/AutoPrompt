@@ -1,6 +1,5 @@
 from optimization_pipeline import OptimizationPipeline
-from utils.config import modify_input_for_ranker
-from utils.config import load_yaml
+from utils.config import load_yaml, modify_input_for_ranker, validate_generation_config
 import argparse
 
 # General Training Parameters
@@ -23,6 +22,8 @@ opt = parser.parse_args()
 
 generation_config_params = load_yaml(opt.generation_config_path)
 base_config_params = load_yaml(opt.basic_config_path)
+validate_generation_config(base_config_params, generation_config_params)
+
 if opt.task_description == '':
     task_description = input("Describe the task: ")
 else:
