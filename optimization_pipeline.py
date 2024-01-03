@@ -22,7 +22,7 @@ class OptimizationPipeline:
     4. eval - The eval is responsible to calculate the score and the large errors
     """
 
-    def __init__(self, config, task_description: str, initial_prompt: str, output_path: str = ''):
+    def __init__(self, config, task_description: str = None, initial_prompt: str = None, output_path: str = ''):
         """
         Initialize a new instance of the ClassName class.
         :param config: The configuration file (EasyDict)
@@ -86,7 +86,7 @@ class OptimizationPipeline:
         return total_usage
 
     def extract_best_prompt(self):
-        sorted_history = sorted(self.eval.history[self.config.meta_prompts.warmup - 1:], key=lambda x: x['score'],
+        sorted_history = sorted(self.eval.history[min(self.config.meta_prompts.warmup - 1, len(self.eval.history)-1):], key=lambda x: x['score'],
                                 reverse=False)
         return {'prompt': sorted_history[-1]['prompt'], 'score': sorted_history[-1]['score'] }
 
@@ -203,7 +203,7 @@ class OptimizationPipeline:
         """
         self.log_and_print(f'Starting step {self.batch_id}')
         if len(self.dataset.records) == 0:
-            logging.info('Dataset is empty generating initial samples')
+            self.log_and_print('Dataset is empty generating initial samples')
             self.generate_initial_samples()
         if self.config.use_wandb:
             cur_batch = self.dataset[self.batch_id]
