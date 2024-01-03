@@ -98,13 +98,12 @@ def modify_input_for_ranker(config, task_description, initial_prompt):
     llm = get_llm(config.llm)
     task_llm_chain = LLMChain(llm=llm, prompt=task_desc_setup)
     task_result = task_llm_chain(
-        {"initial_prompt": initial_prompt,
-         "task_description": task_description})
+        {"task_description": task_description})
     mod_task_desc = task_result['text']
     logging.info(f"Task description modified for ranking to: \n{mod_task_desc}")
 
     prompt_llm_chain = LLMChain(llm=llm, prompt=init_prompt_setup)
-    prompt_result = prompt_llm_chain(initial_prompt)
+    prompt_result = prompt_llm_chain( {"prompt": initial_prompt, 'label_schema': config.dataset.label_schema})
     mod_prompt = prompt_result['text']
     logging.info(f"Initial prompt modified for ranking to: \n{mod_prompt}")
 
