@@ -6,6 +6,8 @@ import asyncio
 from langchain.chains import LLMChain
 import importlib
 from pathlib import Path
+from tqdm import trange, tqdm
+import concurrent.futures
 
 
 class DummyCallback:
@@ -109,6 +111,35 @@ class ChainWrapper:
             if self.parser_func is not None:
                 return [self.parser_func(t.result()) for t in list(all_res)]
             return [t.result() for t in list(all_res)]
+
+    def batch_invoke(self, inputs: list[dict], num_workers: int):
+        """
+        Invoke the chain on a batch of inputs either async or not
+        :param inputs: The list of all inputs
+        :param num_workers: The number of workers
+        :return: A list of results
+        """
+        def sample_generator():
+            for sample in inputs:
+                yield sample
+
+        def process_sample_with_progress(sample):
+            result = self.invoke(sample)
+            pbar.update(1)  # Update the progress bar
+            return result
+
+        if not('async_params' in self.llm_config.keys()): #non async mode, use regular workers
+            with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+                with tqdm(total=len(inputs), desc="Processing samples") as pbar:
+                    all_results = list(executor.map(process_sample_with_progress, sample_generator()))
+                union_results = [element for sublist in all_results for element in sublist['results']]
+        else:
+            union_results = []
+            for i in trange(0, len(inputs), num_workers, desc='Predicting'):
+                results = asyncio.run(self.async_batch_invoke(inputs[i:i + num_workers]))
+                for res in results:
+                    union_results += res['results']
+        return union_results
 
     def build_chain(self):
         """
