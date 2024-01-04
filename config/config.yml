@@ -2,7 +2,6 @@ use_wandb: True
 dataset:
     name: 'dataset'
     records_path: null
-    num_initialize_samples: 15
     initial_dataset: 'dump/dataset.csv'
     label_schema: ["Yes", "No"]
     max_samples: 65
@@ -36,6 +35,9 @@ meta_prompts:
     num_err_samples: 2 #number of error examples per sample in the sample generation
     history_length: 4
     num_generated_samples: 10
+    num_initialize_samples: 10
+    samples_generation_batch: 5
+    num_workers: 5
     warmup: 4
 
 eval:
@@ -47,6 +49,7 @@ eval:
 llm:
     type: 'OpenAI'
     name: 'gpt-4-1106-preview'
+    temprature: 0.8
 
 stop_criteria:
     max_usage: 0.5

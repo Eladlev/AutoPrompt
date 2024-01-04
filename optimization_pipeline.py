@@ -162,12 +162,21 @@ class OptimizationPipeline:
         """
         In case the initial dataset is empty generate the initial samples
         """
-        samples_list = self.meta_chain.initial_chain.invoke(
-            {"sample_number": self.config.dataset.num_initialize_samples,
-             "task_description": self.task_description,
-             "instruction": self.cur_prompt})
-        samples_list['samples'] = self.dataset.remove_duplicates(samples_list['samples'])
-        self.dataset.add(samples_list['samples'], 0)
+        batch_num = self.config.meta_prompts.num_initialize_samples//self.config.meta_prompts.samples_generation_batch
+
+        batch_inputs = [{"sample_number": self.config.meta_prompts.samples_generation_batch,
+                         "task_description": self.task_description,
+                         "instruction": self.cur_prompt} for _ in range(batch_num)]
+        reminder = self.config.meta_prompts.num_initialize_samples - batch_num*self.config.meta_prompts.samples_generation_batch
+        if reminder > 0:
+            batch_inputs.append({"sample_number": reminder,
+                             "task_description": self.task_description,
+                             "instruction": self.cur_prompt})
+
+        samples_batches = self.meta_chain.initial_chain.batch_invoke(batch_inputs, self.config.meta_prompts.num_workers)
+        samples_list = [element for sublist in samples_batches for element in sublist['samples']]
+        samples_list = self.dataset.remove_duplicates(samples_list)
+        self.dataset.add(samples_list, 0)
 
     def save_state(self):
         """

@@ -132,14 +132,12 @@ class ChainWrapper:
             with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
                 with tqdm(total=len(inputs), desc="Processing samples") as pbar:
                     all_results = list(executor.map(process_sample_with_progress, sample_generator()))
-                union_results = [element for sublist in all_results for element in sublist['results']]
         else:
-            union_results = []
+            all_results = []
             for i in trange(0, len(inputs), num_workers, desc='Predicting'):
                 results = asyncio.run(self.async_batch_invoke(inputs[i:i + num_workers]))
-                for res in results:
-                    union_results += res['results']
-        return union_results
+                all_results += results
+        return all_results
 
     def build_chain(self):
         """

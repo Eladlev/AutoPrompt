@@ -79,6 +79,7 @@ class LLMEstimator:
                                       'samples': chain_input})
 
         all_results = self.chain.batch_invoke(mini_batch_inputs, self.num_workers)
-        for res in all_results:
+        union_results = [element for sublist in all_results for element in sublist['results']]
+        for res in union_results:
             batch_records.loc[res['id'], self.mode] = res['prediction']
         return batch_records
