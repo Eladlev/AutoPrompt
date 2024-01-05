@@ -15,7 +15,11 @@ def set_ranking_function(params):
     evaluator.cur_instruct = params.instruction
     evaluator.mode = 'score'
     def wrapper(dataset):
-        dataset = evaluator.apply_dataframe(dataset)
-        dataset.score = dataset.score.astype(int)
+        generation_dataset = dataset.copy()
+        generation_dataset['text'] = '###User input:\n' + generation_dataset['text'] + '\n####model prediction:\n' + generation_dataset['prediction']
+
+        generation_dataset = evaluator.apply_dataframe(generation_dataset)
+        generation_dataset.score = generation_dataset.score.astype(int)
+        dataset.score = generation_dataset.score
         return dataset
     return wrapper

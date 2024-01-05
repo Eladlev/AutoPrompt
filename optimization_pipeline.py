@@ -122,7 +122,7 @@ class OptimizationPipeline:
                                                        self.config.meta_prompts.samples_generation_batch)
 
             if sum([len(t['errors']) for t in last_history]) > 0:
-                history_samples = '\n'.join([Eval.sample_to_text(sample,
+                history_samples = '\n'.join([self.eval.sample_to_text(sample,
                                                                  num_errors_per_label=self.config.meta_prompts.num_err_samples,
                                                                  is_score=False) for sample in last_history])
                 for batch in batch_inputs:

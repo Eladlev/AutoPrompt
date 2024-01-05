@@ -40,7 +40,7 @@ eval:
     function_name: 'ranking'
     num_large_errors: 4
     num_boundary_predictions : 0
-    error_threshold: 4
+    error_threshold: 5
     num_steps: 2
 
 llm:

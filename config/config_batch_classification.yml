@@ -45,6 +45,9 @@ meta_prompts:
     num_err_samples: 2 #number of error examples per sample in the sample generation
     history_length: 4
     num_generated_samples: 10
+    num_initialize_samples: 10
+    samples_generation_batch: 5
+    num_workers: 5
     warmup: 4
 
 eval:

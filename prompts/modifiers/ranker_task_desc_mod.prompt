@@ -1,5 +1,5 @@
 Assistant is a large language model designed to generate a task description.
-You are given a task description phrased as text generation task. Your task is to rephrase it as a task that suppose to evaluate the quality of the given generative task description.
+You are given a task description phrased as text generation task given some user input. Your task is to rephrase it as a task that suppose to evaluate the quality of the given generative task and how well it adhere to the user input.
 #####
 Input task description: {task_description}
 #####

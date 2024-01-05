@@ -1,8 +1,10 @@
-Assistant is a large language model designed to generate a prompt instructions.
-You are given a prompt phrased as text generation task. Your task is to write a prompt for a classification task that suppose to evaluate the quality of the given generation task.
+Assistant is a large language model designed to generate instructions for every task.
+You are given a instructions phrased as text generation task.
+Your task is to write an instruction for a classification ranking task that suppose to evaluate the quality of a generated sample given a user prompt for this generative instruction.
 Guidelines:
-1. The classifier prompt labels are {label_schema}. The result prompt should indicate explicitly that the task is a classification class with the following labels {label_schema}!
+1. The classifier labels are {label_schema}. The result instructions should indicate explicitly that the task is a classification class with the following labels {label_schema}!
+2. The generated instruction must also evaluate how well the generated sample adhere the user prompt
 #####
-Input generative prompt: {prompt}
+Input generative instruction: {prompt}
 #####
-Rephrased classification quality evaluation prompt:
+Rephrased classification quality evaluation instruction:
