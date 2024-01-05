@@ -3,7 +3,7 @@ dataset:
     name: 'dataset'
     records_path: null
     initial_dataset: 'dump/dataset.csv'
-    label_schema: ["Yes", "No"]
+    label_schema: ["1","2","3","4","5"]
     max_samples: 65
 
 estimator:
@@ -44,7 +44,7 @@ eval:
     function_name: 'accuracy'
     num_large_errors: 4
     num_boundary_predictions : 0
-    th: 0.5
+    error_threshold: 0.5
 
 llm:
     type: 'OpenAI'

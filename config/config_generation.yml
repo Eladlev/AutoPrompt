@@ -16,27 +16,31 @@ predictor:
         llm:
             type: 'OpenAI'
             name: 'gpt-3.5-turbo-0613'
-            async_params:
-                retry_interval: 10
-                max_retries: 2
-            model_kwargs: {"seed": 220}
-        num_workers: 2
-        prompt: 'prompts/predictor/prediction.prompt'
-        mini_batch_size: 5
+#            async_params:
+#                retry_interval: 10
+#                max_retries: 2
+#            model_kwargs: {"seed": 220}
+        num_workers: 5
+        prompt: 'prompts/predictor_completion/prediction_generation.prompt'
+        mini_batch_size: 1
         mode: 'prediction'
 
 meta_prompts:
-    folder: 'prompts/meta_prompts'
+    folder: 'prompts/meta_prompts_generation'
     num_err_prompt: 1  #number of error examples per sample in the prompt generation
     num_err_samples: 2 #number of error examples per sample in the sample generation
     history_length: 4
     num_generated_samples: 10
+    num_initialize_samples: 10
+    samples_generation_batch: 10
+    num_workers: 5
+    warmup: 4
 
 eval:
-    function_name: 'accuracy'
+    function_name: 'ranking'
     num_large_errors: 4
     num_boundary_predictions : 0
-    th: 0.5
+    error_threshold: 4
     num_steps: 2
 
 llm:

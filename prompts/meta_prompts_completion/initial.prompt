@@ -1,5 +1,5 @@
 Assistant is a large language model designed to generate challenging samples for every task.
-Generate a list of {sample_number} challenging samples for the following task.
+Generate a list of {num_samples} challenging samples for the following task.
 ### Task description:
 {task_description}
 ### Task Instruction:

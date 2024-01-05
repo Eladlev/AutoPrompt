@@ -51,7 +51,7 @@ eval:
     function_name: 'accuracy'
     num_large_errors: 4
     num_boundary_predictions : 0
-    th: 0.5
+    error_threshold: 0.5
 
 llm:
     type: 'OpenAI'

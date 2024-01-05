@@ -90,7 +90,6 @@ def validate_generation_config(base_config, generation_config):
 
 
 def modify_input_for_ranker(config, task_description, initial_prompt):
-
     modifiers_config = yaml.safe_load(open('prompts/modifiers/modifiers.yml', 'r'))
     task_desc_setup = load_prompt(modifiers_config['ranker']['task_desc_mod'])
     init_prompt_setup = load_prompt(modifiers_config['ranker']['prompt_mod'])
@@ -103,7 +102,7 @@ def modify_input_for_ranker(config, task_description, initial_prompt):
     logging.info(f"Task description modified for ranking to: \n{mod_task_desc}")
 
     prompt_llm_chain = LLMChain(llm=llm, prompt=init_prompt_setup)
-    prompt_result = prompt_llm_chain( {"prompt": initial_prompt, 'label_schema': config.dataset.label_schema})
+    prompt_result = prompt_llm_chain({"prompt": initial_prompt, 'label_schema': config.dataset.label_schema})
     mod_prompt = prompt_result['text']
     logging.info(f"Initial prompt modified for ranking to: \n{mod_prompt}")
 

@@ -9,6 +9,7 @@ The accuracy for this prompt is: {accuracy}
 The confusion matrix for this prompt is: {confusion_matrix}
 ##
 Here is a list of failure cases for the given prompt:
+##Failure Cases:
 {failure_cases}
 
 ###

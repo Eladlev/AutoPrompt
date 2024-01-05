@@ -1,7 +1,7 @@
 from utils.llm_chain import ChainWrapper, get_chain_metadata
 from pathlib import Path
 from dataset.base_dataset import DatasetBase
-
+import pandas as pd
 
 class LLMEstimator:
     """
@@ -50,6 +50,31 @@ class LLMEstimator:
         self.chain = ChainWrapper(self.opt.llm, self.opt.prompt, chain_metadata['json_schema'],
                                   chain_metadata['parser_func'])
 
+    def apply_dataframe(self, record: pd.DataFrame):
+        """
+        Apply the estimator on a dataframe
+        :param record: The record
+        """
+        chain_input = ''
+        mini_batch_inputs = []
+
+        # prepare all the inputs for the chains
+        for i, row in record.iterrows():
+            chain_input += self.generate_sample_text(i, row['text'])
+            if ((i + 1) % self.mini_batch_size) == 0:
+                mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
+                                          'samples': chain_input})
+                chain_input = ''
+        if not (chain_input == ''):
+            mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
+                                      'samples': chain_input})
+
+        all_results = self.chain.batch_invoke(mini_batch_inputs, self.num_workers)
+        union_results = [element for sublist in all_results for element in sublist['results']]
+        for res in union_results:
+            record.loc[res['id'], self.mode] = res['prediction']
+        return record
+
     def apply(self, dataset: DatasetBase, idx: int, leq: bool = True):
         """
         Apply the estimator on the batches up to idx (includes), it then updates the annotation field
@@ -64,22 +89,4 @@ class LLMEstimator:
             batch_records = dataset.get_leq(idx)
         else:
             batch_records = dataset[idx]
-        chain_input = ''
-        mini_batch_inputs = []
-
-        # prepare all the inputs for the chains
-        for i, row in batch_records.iterrows():
-            chain_input += self.generate_sample_text(i, row['text'])
-            if ((i + 1) % self.mini_batch_size) == 0:
-                mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
-                                          'samples': chain_input})
-                chain_input = ''
-        if not (chain_input == ''):
-            mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
-                                      'samples': chain_input})
-
-        all_results = self.chain.batch_invoke(mini_batch_inputs, self.num_workers)
-        union_results = [element for sublist in all_results for element in sublist['results']]
-        for res in union_results:
-            batch_records.loc[res['id'], self.mode] = res['prediction']
-        return batch_records
+        return self.apply_dataframe(batch_records)

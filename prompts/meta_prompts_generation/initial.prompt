@@ -1,0 +1,20 @@
+As an advanced language model you should create {num_samples} challenging and unique prompts for the task outlined below.
+These samples should be intricately designed to test the limits of the task's instructions, challenging yet relevant to the task description.
+
+The task description and instruction is phrased as a generative task. The results prompts samples should be input to the the model.
+The model will be able then to generate an example given the instructions and the prompt input.
+
+### Task Description:
+{task_description}
+
+### Task Instructions:
+{instruction}
+
+### Requirements for Challenging Samples:
+1. Each prompt must present a unique and intricate challenge.
+2. The prompts should cover a diverse range of scenarios within the scope of the task, avoiding repetition and predictability.
+3. Each prompt should contain only the prompt part, without generating also the results
+4. Each prompt should contain only the prompt part, without any mention of the task description or instructions!!
+
+Generate the prompt samples keeping these requirements in mind.
+###

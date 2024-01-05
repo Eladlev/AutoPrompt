@@ -3,7 +3,7 @@ Below a few prompts that were build to answer the given task description and the
 Task description:
 {task_description}
 
-## Examples of common failure, each sample is followed by the the model prediction and the GT (ground truth)
+## Examples, each sample is followed by the the moder prediction and the GT (ground truth)
 {history}
 ######
 Here are few unique samples derived from realistic scenarios for the task outlined above.

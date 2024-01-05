@@ -2,7 +2,7 @@ Assistant is a large language model designed to generate challenging samples for
 Below a few prompts and their failure case, for the following task:
 {task_description}
 
-## Examples
+## Examples of common failure
 {history}
 ######
 Your task is to generate {num_samples} challenging and diverse samples that will confuse the model with the following prompt:
