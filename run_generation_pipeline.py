@@ -39,11 +39,12 @@ ranker_pipeline = OptimizationPipeline(base_config_params, output_path=os.path.j
 if opt.load_dump != '':
     ranker_pipeline.load_state(os.path.join(opt.load_dump, 'ranker'))
     ranker_pipeline.predictor.init_chain(base_config_params.dataset.label_schema)
-    if (ranker_pipeline.cur_prompt is None) or (ranker_pipeline.task_description is None):
-        ranker_mod_prompt, ranker_mod_task_desc = modify_input_for_ranker(base_config_params, task_description,
-                                                                          initial_prompt)
-        ranker_pipeline.cur_prompt = ranker_mod_prompt
-        ranker_pipeline.task_description = ranker_mod_task_desc
+
+if (ranker_pipeline.cur_prompt is None) or (ranker_pipeline.task_description is None):
+    ranker_mod_prompt, ranker_mod_task_desc = modify_input_for_ranker(base_config_params, task_description,
+                                                                      initial_prompt)
+    ranker_pipeline.cur_prompt = ranker_mod_prompt
+    ranker_pipeline.task_description = ranker_mod_task_desc
 
 best_prompt = ranker_pipeline.run_pipeline(opt.num_ranker_steps)
 generation_config_params.eval.function_params = base_config_params.predictor.config
