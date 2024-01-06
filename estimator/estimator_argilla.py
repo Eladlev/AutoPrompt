@@ -100,7 +100,7 @@ class ArgillaEstimator:
         print(f"{Color.GREEN}Waiting for annotations from batch {batch_id}:\n{url_link}{Color.END}")
         webbrowser.open(url_link)
         while True:
-            query = "status:Validated AND metadata.batch_id:{}".format(batch_id)
+            query = "(status:Validated OR status:Discarded) AND metadata.batch_id:{}".format(batch_id)
             search_results = current_api.search.search_records(
                 name=dataset.name,
                 task=rg_dataset.task,
@@ -109,7 +109,8 @@ class ArgillaEstimator:
             )
             if search_results.total == len(batch_records):
                 result = rg.load(name=dataset.name, query=query)
-                df = result.to_pandas()[['text', 'annotation', 'metadata']]
+                df = result.to_pandas()[['text', 'annotation', 'metadata', 'status']]
+                df["annotation"] = df.apply(lambda x: 'Discarded' if x['status']=='Discarded' else x['annotation'], axis=1)
                 df['id'] = df.apply(lambda x: x['metadata']['id'], axis=1)
                 return df
             time.sleep(self.time_interval)

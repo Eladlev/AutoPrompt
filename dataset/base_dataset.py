@@ -74,6 +74,14 @@ class DatasetBase:
 
         # Update using 'id' as the key
         self.records.update(records)
+
+        # Remove null annotations
+        if len(self.records.loc[self.records["annotation"]=="Discarded"]) > 0:
+            discarded_annotation_records = self.records.loc[self.records["annotation"]=="Discarded"]
+            #TODO: direct `discarded_annotation_records` to another dataset to be used later for corner-cases
+            self.records = self.records.loc[self.records["annotation"]!="Discarded"]
+
+        # Reset index
         self.records.reset_index(inplace=True)
 
     def modify(self, index: int, record: dict):
