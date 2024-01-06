@@ -12,7 +12,6 @@ def set_function_from_iterrow(func):
 def set_ranking_function(params):
     evaluator = LLMEstimator(params)
     evaluator.init_chain(params.label_schema)
-    evaluator.cur_instruct = params.instruction
     evaluator.mode = 'score'
     def wrapper(dataset):
         generation_dataset = dataset.copy()

@@ -18,7 +18,10 @@ class LLMEstimator:
         self.mini_batch_size = opt.mini_batch_size
         self.mode = opt.mode
         self.num_workers = opt.num_workers
-        self.cur_instruct = None
+        if 'instruction' in opt.keys():
+            self.cur_instruct = opt.instruction
+        else:
+            self.cur_instruct = None
 
     @staticmethod
     def generate_sample_text(sample_id: int, text: str) -> str:

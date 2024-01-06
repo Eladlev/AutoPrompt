@@ -1,5 +1,5 @@
 from optimization_pipeline import OptimizationPipeline
-from utils.config import load_yaml, modify_input_for_ranker, validate_generation_config
+from utils.config import load_yaml, modify_input_for_ranker, validate_generation_config, override_config
 import argparse
 import os
 from estimator.estimator_llm import LLMEstimator
@@ -21,7 +21,7 @@ parser.add_argument('--num_generation_steps', default=5, type=int, help='Number 
 
 opt = parser.parse_args()
 
-generation_config_params = load_yaml(opt.generation_config_path)
+generation_config_params = override_config(opt.generation_config_path)
 base_config_params = load_yaml(opt.basic_config_path) #TODO: change it to diff yaml
 validate_generation_config(base_config_params, generation_config_params)
 
@@ -47,7 +47,7 @@ if opt.load_dump != '':
 
 best_prompt = ranker_pipeline.run_pipeline(opt.num_ranker_steps)
 generation_config_params.eval.function_params = base_config_params.predictor.config
-generation_config_params.eval.function_params.instruction = best_prompt
+generation_config_params.eval.function_params.instruction = best_prompt['prompt']
 generation_config_params.eval.function_params.label_schema = base_config_params.dataset.label_schema
 
 

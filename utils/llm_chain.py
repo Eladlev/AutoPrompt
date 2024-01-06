@@ -8,6 +8,7 @@ import importlib
 from pathlib import Path
 from tqdm import trange, tqdm
 import concurrent.futures
+import logging
 
 
 class DummyCallback:
@@ -60,9 +61,13 @@ class ChainWrapper:
         :return: A dict with the defined json schema
         """
         with self.callback() as cb:
-            result = self.chain.invoke(chain_input)
-            if self.parser_func is not None:
-                result = self.parser_func(result)
+            try:
+                result = self.chain.invoke(chain_input)
+                if self.parser_func is not None:
+                    result = self.parser_func(result)
+            except:
+                logging.error('Error in chain invoke')
+                result = None
             self.accumulate_usage += cb.total_cost
             return result
 
@@ -119,6 +124,7 @@ class ChainWrapper:
         :param num_workers: The number of workers
         :return: A list of results
         """
+
         def sample_generator():
             for sample in inputs:
                 yield sample
@@ -128,7 +134,7 @@ class ChainWrapper:
             pbar.update(1)  # Update the progress bar
             return result
 
-        if not('async_params' in self.llm_config.keys()): #non async mode, use regular workers
+        if not ('async_params' in self.llm_config.keys()):  # non async mode, use regular workers
             with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
                 with tqdm(total=len(inputs), desc="Processing samples") as pbar:
                     all_results = list(executor.map(process_sample_with_progress, sample_generator()))
@@ -137,6 +143,7 @@ class ChainWrapper:
             for i in trange(0, len(inputs), num_workers, desc='Predicting'):
                 results = asyncio.run(self.async_batch_invoke(inputs[i:i + num_workers]))
                 all_results += results
+        all_results = [res for res in all_results if res is not None]
         return all_results
 
     def build_chain(self):
@@ -210,4 +217,4 @@ class MetaChain:
         :return: The total usage value
         """
         return self.initial_chain.accumulate_usage + self.step_prompt_chain.accumulate_usage \
-                                                   + self.step_samples.accumulate_usage
+               + self.step_samples.accumulate_usage
