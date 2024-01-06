@@ -31,10 +31,8 @@ else:
 
 # Initializing the pipeline
 pipeline = OptimizationPipeline(config_params, task_description, initial_prompt, output_path=opt.output_dump)
-if opt.load_path != '':
+if (opt.load_path != ''):
     pipeline.load_state(opt.load_path)
+best_prompt = pipeline.run_pipeline(opt.num_steps)
 
-# Run the optimization pipeline for num_steps
-num_steps = opt.num_steps - pipeline.batch_id
-for i in range(num_steps):
-    pipeline.step()
+

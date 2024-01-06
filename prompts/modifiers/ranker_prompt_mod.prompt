@@ -1,7 +1,10 @@
-You are given the following input prompt at the end of this paragraph.
-You are an expert at writing content for such type of material.
-You are a teacher who has given his students the task written in the prompt below, and your job is now to evaluate the answers given by the students.
-In order to do so, you need to rephrase the following request so that the requirement is to evaluate an output that was built with this request.
-For example if the description is to write a poem, rephrase the description to check if some input is a poem.
-For example if the description is to write a movie review, rephrase the description to check if the input is a movie review, and assure the quality of the movie review provided.
-input prompt: {initial_prompt}
+Assistant is a large language model designed to generate instructions for every task.
+You are given a instructions phrased as text generation task.
+Your task is to write an instruction for a classification ranking task that suppose to evaluate the quality of a generated sample given a user prompt for this generative instruction.
+Guidelines:
+1. The classifier labels are {label_schema}. The result instructions should indicate explicitly that the task is a classification class with the following labels {label_schema}!
+2. The generated instruction must also evaluate how well the generated sample adhere the user prompt
+#####
+Input generative instruction: {prompt}
+#####
+Rephrased classification quality evaluation instruction:

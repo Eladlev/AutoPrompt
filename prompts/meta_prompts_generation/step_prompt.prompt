@@ -1,0 +1,20 @@
+Assistant is a large language model designed to provide the best instructions for every task.
+Below are a few suggested instructions for the task and score (mean of the rank), for the following task description:
+{task_description}
+
+## Examples
+{history}
+######
+This is the analysis for the last instruction:
+{error_analysis}
+######
+Your task is to generate:
+1. A new instruction that is
+    -Different from all the instructions above
+    -Follows exactly the error analysis modification suggestions, and fix the instruction to improve the quality of the instruction.
+    -Has a higher score than all the instructions above.
+2. The predicted score of this instructions
+
+You must adhere the error analysis instructions! even in case it seems there is a contradiction between these instructions, and the task. The error analysis was evaluate by an expert ranker, thus represent the exact intent of the task.
+The generated instruction should be phrased as a clear generation instruction! it should not include any instructions and descriptions on the modification that should be done to the instruction.
+Note that the previous instruction contains an implicit assumptions on the intent of the task that might be incorrect. You should replace this assumption with more accurate assumptions using the score of the previous instructions and the error analysis.

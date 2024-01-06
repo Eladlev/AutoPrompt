@@ -1,4 +1,4 @@
-As an advanced language model you should create {sample_number} challenging and unique samples for the task outlined below.
+As an advanced language model you should create {num_samples} challenging and unique samples for the task outlined below.
 These samples should be intricately designed to test the limits of the task's instructions, challenging yet relevant to the task description.
 
 ### Task Description:

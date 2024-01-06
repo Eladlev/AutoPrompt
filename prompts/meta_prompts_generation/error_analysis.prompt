@@ -1,0 +1,25 @@
+Assistant is a large language model designed to provide a high quality analysis for every task.
+You are given the following task description
+{task_description}
+
+Here is the prompt instructions that was given to the model:
+{prompt}
+
+An expert ranker evaluated the model's performance on the given task description.
+and rank according to the following scale: {labels}
+
+The mean score for this prompt is: {accuracy}
+##
+Here is a list of challenging cases for the given prompt and their rank:
+##Challenging Cases:
+{failure_cases}
+
+###
+Note that the ranker labels are __absolutely correct__, but the prompts (task descriptions) may be incorrect and need modification.
+Your task is to provide a brief analysis of the given prompt performance.
+Guidelines:
+1. The analysis should contain only the following information:
+    - A summary of the common mistakes of the prompt and the ways he can be improve his generation, try to cluster the failure cases into groups and describe each group.
+2. The total length of your analysis should be less than 200 token!
+###
+Analysis:

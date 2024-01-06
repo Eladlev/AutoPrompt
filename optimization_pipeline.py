@@ -1,7 +1,6 @@
 import pandas as pd
 
-from utils.dedup import Dedup
-from utils.eval import Eval
+from eval.evaluator import Eval
 from dataset.base_dataset import DatasetBase
 from utils.llm_chain import MetaChain
 from estimator import give_estimator
@@ -22,7 +21,7 @@ class OptimizationPipeline:
     4. eval - The eval is responsible to calculate the score and the large errors
     """
 
-    def __init__(self, config, task_description: str, initial_prompt: str, output_path: str = ''):
+    def __init__(self, config, task_description: str = None, initial_prompt: str = None, output_path: str = ''):
         """
         Initialize a new instance of the ClassName class.
         :param config: The configuration file (EasyDict)
@@ -56,7 +55,7 @@ class OptimizationPipeline:
 
         self.predictor = give_estimator(config.predictor)
         self.estimator = give_estimator(config.estimator)
-        self.eval = Eval(config.eval)
+        self.eval = Eval(config.eval, self.meta_chain.error_analysis, self.dataset.label_schema)
         self.batch_id = 0
         self.patient = 0
 
@@ -85,39 +84,64 @@ class OptimizationPipeline:
         total_usage += self.predictor.calc_usage()
         return total_usage
 
+    def extract_best_prompt(self):
+        sorted_history = sorted(
+            self.eval.history[min(self.config.meta_prompts.warmup - 1, len(self.eval.history) - 1):],
+            key=lambda x: x['score'],
+            reverse=False)
+        return {'prompt': sorted_history[-1]['prompt'], 'score': sorted_history[-1]['score']}
+
     def run_step_prompt(self):
         """
         Run the meta-prompts and get new prompt suggestion, estimated prompt score and a set of challenging samples
         for the new prompts
         """
-        last_history = self.eval.history[-self.config.meta_prompts.history_length:]
-        history_prompt = '\n'.join([Eval.sample_to_text(sample,
+        step_num = len(self.eval.history)
+        if (step_num < self.config.meta_prompts.warmup) or (step_num % 3) > 0:
+            last_history = self.eval.history[-self.config.meta_prompts.history_length:]
+        else:
+            sorted_history = sorted(self.eval.history[self.config.meta_prompts.warmup - 1:], key=lambda x: x['score'],
+                                    reverse=False)
+            last_history = sorted_history[-self.config.meta_prompts.history_length:]
+        history_prompt = '\n'.join([self.eval.sample_to_text(sample,
                                                         num_errors_per_label=self.config.meta_prompts.num_err_prompt,
                                                         is_score=True) for sample in last_history])
-
-        prompt_suggestion = self.meta_chain.step_prompt_chain.invoke({"history": history_prompt,
-                                                                      "task_description": self.task_description,
-                                                                      "labels": json.dumps(
-                                                                          self.config.dataset.label_schema)})
-
-        history_samples = '\n'.join([Eval.sample_to_text(sample,
-                                                         num_errors_per_label=self.config.meta_prompts.num_err_samples,
-                                                         is_score=False) for sample in last_history])
-
-        extra_samples = self.dataset.sample_records()
-        extra_samples_text = DatasetBase.samples_to_text(extra_samples)
+        prompt_input = {"history": history_prompt, "task_description": self.task_description,
+                        'error_analysis': last_history[-1]['analysis']}
+        if 'label_schema' in self.config.dataset.keys():
+            prompt_input["labels"] = json.dumps(self.config.dataset.label_schema)
+        prompt_suggestion = self.meta_chain.step_prompt_chain.invoke(prompt_input)
 
         self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
         self.batch_id += 1
         if len(self.dataset) < self.config.dataset.max_samples:
-            new_samples = self.meta_chain.step_samples.invoke({"history": history_samples,
-                                                               "task_description": self.task_description,
-                                                               "prompt": prompt_suggestion['prompt'],
-                                                               'num_samples':
-                                                                   self.config.meta_prompts.num_generated_samples,
-                                                              'extra_samples': extra_samples_text})
-            new_samples['samples'] = self.dataset.remove_duplicates(new_samples['samples'])
-            self.dataset.add(new_samples['samples'], self.batch_id)
+            batch_input = {"num_samples": self.config.meta_prompts.samples_generation_batch,
+                           "task_description": self.task_description,
+                           "prompt": prompt_suggestion['prompt']}
+            batch_inputs = self.generate_samples_batch(batch_input, self.config.meta_prompts.num_generated_samples,
+                                                       self.config.meta_prompts.samples_generation_batch)
+
+            if sum([len(t['errors']) for t in last_history]) > 0:
+                history_samples = '\n'.join([self.eval.sample_to_text(sample,
+                                                                 num_errors_per_label=self.config.meta_prompts.num_err_samples,
+                                                                 is_score=False) for sample in last_history])
+                for batch in batch_inputs:
+                    extra_samples = self.dataset.sample_records()
+                    extra_samples_text = DatasetBase.samples_to_text(extra_samples)
+                    batch['history'] = history_samples
+                    batch['extra_samples'] = extra_samples_text
+            else:
+                for batch in batch_inputs:
+                    extra_samples = self.dataset.sample_records()
+                    extra_samples_text = DatasetBase.samples_to_text(extra_samples)
+                    batch['history'] = 'No previous errors information'
+                    batch['extra_samples'] = extra_samples_text
+
+            samples_batches = self.meta_chain.step_samples.batch_invoke(batch_inputs,
+                                                                         self.config.meta_prompts.num_workers)
+            new_samples = [element for sublist in samples_batches for element in sublist['samples']]
+            new_samples = self.dataset.remove_duplicates(new_samples)
+            self.dataset.add(new_samples, self.batch_id)
             logging.info('Get new samples')
         self.cur_prompt = prompt_suggestion['prompt']
 
@@ -138,16 +162,33 @@ class OptimizationPipeline:
             return True
         return False
 
+    @staticmethod
+    def generate_samples_batch(batch_input, num_samples, batch_size):
+        """
+        Generate samples in batch
+        """
+        batch_num = num_samples // batch_size
+        all_batches = [batch_input.copy() for _ in range(batch_num)]
+        reminder = num_samples - batch_num * batch_size
+        if reminder > 0:
+            all_batches.append(batch_input.copy())
+            all_batches[-1]['num_samples'] = reminder
+        return all_batches
+
     def generate_initial_samples(self):
         """
         In case the initial dataset is empty generate the initial samples
         """
-        samples_list = self.meta_chain.initial_chain.invoke(
-            {"sample_number": self.config.dataset.num_initialize_samples,
-             "task_description": self.task_description,
-             "instruction": self.cur_prompt})
-        samples_list['samples'] = self.dataset.remove_duplicates(samples_list['samples'])
-        self.dataset.add(samples_list['samples'], 0)
+        batch_input = {"num_samples": self.config.meta_prompts.samples_generation_batch,
+                       "task_description": self.task_description,
+                       "instruction": self.cur_prompt}
+        batch_inputs = self.generate_samples_batch(batch_input, self.config.meta_prompts.num_initialize_samples,
+                                                   self.config.meta_prompts.samples_generation_batch)
+
+        samples_batches = self.meta_chain.initial_chain.batch_invoke(batch_inputs, self.config.meta_prompts.num_workers)
+        samples_list = [element for sublist in samples_batches for element in sublist['samples']]
+        samples_list = self.dataset.remove_duplicates(samples_list)
+        self.dataset.add(samples_list, 0)
 
     def save_state(self):
         """
@@ -167,13 +208,15 @@ class OptimizationPipeline:
         Load pretrain state
         """
         path = Path(path)
-        self.dataset.load_dataset(path / 'dataset.csv')
-        state = pickle.load(open(path / 'history.pkl', 'rb'))
-        self.eval.history = state['history']
-        self.batch_id = state['batch_id']
-        self.cur_prompt = state['prompt']
-        self.task_description = state['task_description']
-        self.patient = state['patient']
+        if (path / 'dataset.csv').is_file():
+            self.dataset.load_dataset(path / 'dataset.csv')
+        if (path / 'history.pkl').is_file():
+            state = pickle.load(open(path / 'history.pkl', 'rb'))
+            self.eval.history = state['history']
+            self.batch_id = state['batch_id']
+            self.cur_prompt = state['prompt']
+            self.task_description = state['task_description']
+            self.patient = state['patient']
 
     def step(self):
         """
@@ -181,13 +224,14 @@ class OptimizationPipeline:
         """
         self.log_and_print(f'Starting step {self.batch_id}')
         if len(self.dataset.records) == 0:
-            logging.info('Dataset is empty generating initial samples')
+            self.log_and_print('Dataset is empty generating initial samples')
             self.generate_initial_samples()
         if self.config.use_wandb:
             cur_batch = self.dataset[self.batch_id]
             random_subset = cur_batch.sample(n=min(10, len(cur_batch)))[['text']]
-            self.wandb_run.log({"Prompt":  wandb.Html(f"<p>{self.cur_prompt}</p>"), "Samples": wandb.Table(dataframe=random_subset)},
-                               step=self.batch_id)
+            self.wandb_run.log(
+                {"Prompt": wandb.Html(f"<p>{self.cur_prompt}</p>"), "Samples": wandb.Table(dataframe=random_subset)},
+                step=self.batch_id)
 
         logging.info('Running Estimator')
         records = self.estimator.apply(self.dataset, self.batch_id)
@@ -198,11 +242,11 @@ class OptimizationPipeline:
         records = self.predictor.apply(self.dataset, self.batch_id, leq=True)
         self.dataset.update(records)
 
-        self.eval.eval_score(self.dataset)
+        self.eval.dataset = self.dataset.get_leq(self.batch_id)
+        self.eval.eval_score()
         logging.info('Calculating Score')
-        self.eval.dataset = self.dataset.records
         large_errors = self.eval.extract_errors()
-        self.eval.add_history(self.cur_prompt)
+        self.eval.add_history(self.cur_prompt, self.task_description)
         if self.config.use_wandb:
             large_errors = large_errors.sample(n=min(6, len(large_errors)))
             correct_samples = self.eval.extract_correct()
@@ -213,23 +257,17 @@ class OptimizationPipeline:
                                 'Total usage': self.calc_usage()}, step=self.batch_id)
         if self.stop_criteria():
             self.log_and_print('Stop criteria reached')
-            return self.cur_prompt
+            return True
         self.run_step_prompt()
         self.save_state()
+        return False
 
     def run_pipeline(self, num_steps: int):
         # Run the optimization pipeline for num_steps
         num_steps_remaining = num_steps - self.batch_id
         for i in range(num_steps_remaining):
-            self.step()
-        # TODO: Need to change the cur_prompt to best_prompt
-        return self.cur_prompt
-
-    def get_predictor(self):
-        # TODO: Need to change the cur_prompt to best_prompt
-        return self.predictor
-
-    def set_predictor(self, predictor):
-        predictor_score_func = lambda record: Eval.ranker_score_func(record, predictor)
-        self.eval.score_func = predictor_score_func
-
+            stop_criteria = self.step()
+            if stop_criteria:
+                break
+        final_result = self.extract_best_prompt()
+        return final_result

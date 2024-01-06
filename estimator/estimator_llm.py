@@ -1,9 +1,7 @@
 from utils.llm_chain import ChainWrapper, get_chain_metadata
 from pathlib import Path
-import asyncio
-from tqdm import trange
 from dataset.base_dataset import DatasetBase
-
+import pandas as pd
 
 class LLMEstimator:
     """
@@ -20,7 +18,10 @@ class LLMEstimator:
         self.mini_batch_size = opt.mini_batch_size
         self.mode = opt.mode
         self.num_workers = opt.num_workers
-        self.cur_instruct = None
+        if 'instruction' in opt.keys():
+            self.cur_instruct = opt.instruction
+        else:
+            self.cur_instruct = None
 
     @staticmethod
     def generate_sample_text(sample_id: int, text: str) -> str:
@@ -52,6 +53,31 @@ class LLMEstimator:
         self.chain = ChainWrapper(self.opt.llm, self.opt.prompt, chain_metadata['json_schema'],
                                   chain_metadata['parser_func'])
 
+    def apply_dataframe(self, record: pd.DataFrame):
+        """
+        Apply the estimator on a dataframe
+        :param record: The record
+        """
+        chain_input = ''
+        mini_batch_inputs = []
+
+        # prepare all the inputs for the chains
+        for i, row in record.iterrows():
+            chain_input += self.generate_sample_text(i, row['text'])
+            if ((i + 1) % self.mini_batch_size) == 0:
+                mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
+                                          'samples': chain_input})
+                chain_input = ''
+        if not (chain_input == ''):
+            mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
+                                      'samples': chain_input})
+
+        all_results = self.chain.batch_invoke(mini_batch_inputs, self.num_workers)
+        union_results = [element for sublist in all_results for element in sublist['results']]
+        for res in union_results:
+            record.loc[res['id'], self.mode] = res['prediction']
+        return record
+
     def apply(self, dataset: DatasetBase, idx: int, leq: bool = True):
         """
         Apply the estimator on the batches up to idx (includes), it then updates the annotation field
@@ -66,30 +92,4 @@ class LLMEstimator:
             batch_records = dataset.get_leq(idx)
         else:
             batch_records = dataset[idx]
-        chain_input = ''
-        mini_batch_inputs = []
-
-        # prepare all the inputs for the chains
-        for i, row in batch_records.iterrows():
-            chain_input += self.generate_sample_text(i, row['text'])
-            if ((i + 1) % self.mini_batch_size) == 0:
-                mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
-                                          'samples': chain_input})
-                chain_input = ''
-        if not (chain_input == ''):
-            mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
-                                      'samples': chain_input})
-
-        # run the chains (either in parallel or serially)
-        for i in trange(0, len(mini_batch_inputs), self.num_workers, desc='Predicting'):
-            if self.num_workers > 1:
-                results = asyncio.run(self.chain.async_batch_invoke(mini_batch_inputs[i:i + self.num_workers]))
-                all_results = []
-                for res in results:
-                    all_results += res['results']
-            else:
-                results = self.chain.invoke(mini_batch_inputs[i])
-                all_results = results['results']
-            for res in all_results:
-                batch_records.loc[res['id'], self.mode] = res['prediction']
-        return batch_records
+        return self.apply_dataframe(batch_records)

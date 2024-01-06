@@ -6,6 +6,9 @@ import asyncio
 from langchain.chains import LLMChain
 import importlib
 from pathlib import Path
+from tqdm import trange, tqdm
+import concurrent.futures
+import logging
 
 
 class DummyCallback:
@@ -58,9 +61,13 @@ class ChainWrapper:
         :return: A dict with the defined json schema
         """
         with self.callback() as cb:
-            result = self.chain.invoke(chain_input)
-            if self.parser_func is not None:
-                result = self.parser_func(result)
+            try:
+                result = self.chain.invoke(chain_input)
+                if self.parser_func is not None:
+                    result = self.parser_func(result)
+            except:
+                logging.error('Error in chain invoke')
+                result = None
             self.accumulate_usage += cb.total_cost
             return result
 
@@ -110,16 +117,43 @@ class ChainWrapper:
                 return [self.parser_func(t.result()) for t in list(all_res)]
             return [t.result() for t in list(all_res)]
 
+    def batch_invoke(self, inputs: list[dict], num_workers: int):
+        """
+        Invoke the chain on a batch of inputs either async or not
+        :param inputs: The list of all inputs
+        :param num_workers: The number of workers
+        :return: A list of results
+        """
+
+        def sample_generator():
+            for sample in inputs:
+                yield sample
+
+        def process_sample_with_progress(sample):
+            result = self.invoke(sample)
+            pbar.update(1)  # Update the progress bar
+            return result
+
+        if not ('async_params' in self.llm_config.keys()):  # non async mode, use regular workers
+            with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+                with tqdm(total=len(inputs), desc="Processing samples") as pbar:
+                    all_results = list(executor.map(process_sample_with_progress, sample_generator()))
+        else:
+            all_results = []
+            for i in trange(0, len(inputs), num_workers, desc='Predicting'):
+                results = asyncio.run(self.async_batch_invoke(inputs[i:i + num_workers]))
+                all_results += results
+        all_results = [res for res in all_results if res is not None]
+        return all_results
+
     def build_chain(self):
         """
         Build the chain according to the LLM type
         """
-        if self.llm_config.type == 'OpenAI':
+        if self.llm_config.type == 'OpenAI' and self.json_schema is not None:
             self.chain = create_structured_output_runnable(self.json_schema, self.llm, self.prompt)
-        elif self.llm_config.type == 'HuggingFacePipeline':
-            self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
         else:
-            raise NotImplementedError("LLM not implemented")
+            self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
 
 
 def get_chain_metadata(prompt_fn: Path, retrieve_module: bool = False) -> dict:
@@ -166,6 +200,7 @@ class MetaChain:
         self.initial_chain = self.load_chain('initial')
         self.step_prompt_chain = self.load_chain('step_prompt')
         self.step_samples = self.load_chain('step_samples')
+        self.error_analysis = self.load_chain('error_analysis')
 
     def load_chain(self, chain_name: str) -> ChainWrapper:
         """
@@ -182,4 +217,4 @@ class MetaChain:
         :return: The total usage value
         """
         return self.initial_chain.accumulate_usage + self.step_prompt_chain.accumulate_usage \
-                                                   + self.step_samples.accumulate_usage
+               + self.step_samples.accumulate_usage

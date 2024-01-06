@@ -1,0 +1,14 @@
+Assistant is a large language model designed to generate challenging language tasks.
+Given a list of {batch_size} prompts, you should generate a response according to the following task
+### Task Instruction:
+{task_instruction}
+
+### list of samples:
+{samples}
+##
+Each generated text should be end with <eos> token.
+Answer exactly in the following format for each sample:
+#### Sample <ID>: <text generation> <eos>
+############
+#### Sample <ID>: <text generation> <eos>
+############

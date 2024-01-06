@@ -1,8 +1,15 @@
 Assistant is a large language model designed to generate challenging samples for every task.
-Generate a list of {sample_number} challenging samples for the following task.
+Generate a list of {num_samples} challenging samples for the following task.
 ### Task description:
 {task_description}
 ### Task Instruction:
 {instruction}
 ###
 The generated samples should be challenging and diverse such that using the task instruction as a prompt will result in the wrong result.
+If the task depends both on a context, or a user input and a generated content then the sample content must include all the relevant parts.
+    -In this case the sample content structure should be as follows:
+        1. First write the require context or user input.
+        2. Then write the generated content of the model on this context or user input.
+     The style of the separation and the indication of the different parts, should be different in each sample.
+
+Use this format only in case the task depends both on a context or a user input and a generated content! Otherwise simply write the generated content.

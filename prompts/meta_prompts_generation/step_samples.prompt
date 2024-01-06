@@ -3,7 +3,7 @@ Below a few prompts that were build to answer the given task description and the
 Task description:
 {task_description}
 
-## Examples of common failure, each sample is followed by the the model prediction and the GT (ground truth)
+## Examples, each sample is followed by the the moder prediction and the GT (ground truth)
 {history}
 ######
 Here are few unique samples derived from realistic scenarios for the task outlined above.
@@ -22,11 +22,3 @@ Your task is to generate {num_samples} by following this guidelines:
     2. targeting weakness that are different from the existing examples in the failure cases
 4. The number of generated samples from each class should be almost balanced (i.e. the same number of samples for each class)
 5. The generated samples should include only the sample content without additional information! (like the model prediction and the ground truth)
-
-If the task depends both on a context, or a user input and a generated content then the sample content must include all the relevant parts.
-    -In this case the sample content structure should be as follows:
-        1. First write the require context or user input.
-        2. Then write the generated content of the model on this context or user input.
-     The style of the separation and the indication of the different parts, should be different in each sample.
-
-Use this format only in case the task depends both on a context or a user input and a generated content! Otherwise simply write the generated content.

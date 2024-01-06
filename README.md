@@ -24,13 +24,15 @@ This work is an extension of
 
 To install the required libraries, directly check `requirements.txt`.
 
-To install using pip:
+To install using Conda:
 ```bash
-> pip install #TODO
+> conda env create -f environment_dev.yaml
+> conda activate AutoPrompt
 ```
 #### Argilla setup
 The human-in-the-loop annotation pipeline is based on [Argilla]('https://docs.argilla.io/en/latest/index.html').
 For setting an Argilla server and UI follow the following [instructions](https://docs.argilla.io/en/latest/getting_started/quickstart_installation.html).
+For quick installation we recommend to deploy Argilla on Hugging Face [space](https://huggingface.co/new-space?template=argilla/argilla-template-space).
 
 ## Usage
 For a quick start (using Argilla estimator + OpenAI as the LLM model):

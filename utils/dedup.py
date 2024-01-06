@@ -53,7 +53,7 @@ class Dedup:
         if self.index is None:
             self.index, self.xb = self.build_index(records)
 
-        distances, indices = self.index.search(self.xb, len(self.xb))
+        distances, indices = self.index.search(self.xb, 30) #TODO: dereive it from the batch size
 
         clusters = []
         visited = set()
