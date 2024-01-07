@@ -5,7 +5,7 @@ import argparse
 # General Training Parameters
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--config_path', default='config/config.yml', type=str, help='Configuration file path')
+parser.add_argument('--config_path', default='config/config_default.yml', type=str, help='Configuration file path')
 parser.add_argument('--prompt',
                     default='',
                     required=False, type=str, help='Prompt to use as initial.')
