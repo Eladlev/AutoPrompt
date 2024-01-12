@@ -69,7 +69,6 @@ def load_yaml(yaml_path: str, as_edict: bool = True) -> edict:
     """
     with open(yaml_path, 'r') as file:
         yaml_data = yaml.safe_load(file)
-        yaml_data['meta_prompts']['folder'] = Path(yaml_data['meta_prompts']['folder'])
     if as_edict:
         yaml_data = edict(yaml_data)
     return yaml_data
@@ -123,7 +122,10 @@ def override_config(override_config_file, config_file='config/config_default.yml
     def override_dict(config_dict, override_config_dict):
         for key, value in override_config_dict.items():
             if isinstance(value, dict):
-                override_dict(config_dict[key], value)
+                if key not in config_dict:
+                    config_dict[key] = value
+                else:
+                    override_dict(config_dict[key], value)
             else:
                 config_dict[key] = value
         return config_dict

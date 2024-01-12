@@ -197,6 +197,7 @@ class MetaChain:
         :param config: An EasyDict configuration
         """
         self.config = config
+        self.config['meta_prompts']['folder'] = Path(self.config['meta_prompts']['folder'])
         self.initial_chain = self.load_chain('initial')
         self.step_prompt_chain = self.load_chain('step_prompt')
         self.step_samples = self.load_chain('step_samples')
