@@ -19,6 +19,10 @@ This work is an extension of
 
 * [Documentation](./docs/README.md)
 
+## System Overview
+
+![System Overview](./docs/AutoPrompt_Diagram.png)
+
 
 ## Installation
 
