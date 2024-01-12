@@ -5,8 +5,11 @@ Generate a list of {num_samples} challenging samples for the following task.
 ### Task Instruction:
 {instruction}
 ###
-The generated samples should be challenging and diverse such that using the task instruction as a prompt will result in the wrong result.i
-The number of generated samples from each class in instruction should be almost balanced (i.e. the same number of samples for each class)
+
+### Requirements for Challenging Samples:
+1. The generated samples must be challenging and diverse such that using the task instruction as a prompt will result in the wrong result.
+2. The number of generated samples from each class in the task instruction should be almost balanced (i.e. the same number of samples for each class)
+3. The generated samples should be distinct, realistic, and vary significantly to ensure diversity.
 If the task depends both on a context, or a user input and a generated content then the sample content must include all the relevant parts.
     -In this case the sample content structure should be as follows:
         1. First write the require context or user input.

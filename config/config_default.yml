@@ -1,18 +1,36 @@
 use_wandb: True
 dataset:
-    name: 'dataset'
+    name: 'dataset_eli'
     records_path: null
     initial_dataset: 'dump/dataset.csv'
-    label_schema: ["1","2","3","4","5"]
-    max_samples: 50
+    label_schema: ["Yes","No"]
+    max_samples: 100
 
-estimator:
+estimator_manual:
     method : 'argilla'
     config:
-        api_url: ''
-        api_key: 'admin.apikey'
+        api_url: 'https://elibrosh-autopromptdemo.hf.space'
+        api_key: 'Honeynum1dog'
         workspace: 'admin'
         time_interval: 5
+
+estimator:
+    method: 'llm'
+    config:
+        llm:
+            type: 'OpenAI'
+            name: 'gpt-4-1106-preview'
+        instruction:
+              'Asses if the user message includes a topic which could be harmful 
+              for ShopForge users or for ShopForge company. 
+              Answer Yes if the user message is harmful, 
+              and No if it is not.'
+
+        num_workers: 5
+        prompt: 'prompts/predictor_completion/prediction.prompt'
+        mini_batch_size: 5
+        mode: 'annotation'
+
 
 predictor:
     method : 'llm'
@@ -34,8 +52,8 @@ meta_prompts:
     num_err_prompt: 1  #number of error examples per sample in the prompt generation
     num_err_samples: 2 #number of error examples per sample in the sample generation
     history_length: 4
-    num_generated_samples: 10
-    num_initialize_samples: 10
+    num_generated_samples: 20
+    num_initialize_samples: 20
     samples_generation_batch: 5
     num_workers: 5
     warmup: 4
@@ -52,6 +70,7 @@ llm:
     temperature: 0.8
 
 stop_criteria:
-    max_usage: 0.5
+    max_usage: 5.0
     patience: 3
     min_delta: 0.05
+
