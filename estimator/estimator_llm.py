@@ -78,7 +78,7 @@ class LLMEstimator:
             record.loc[res['id'], self.mode] = res['prediction']
         return record
 
-    def apply(self, dataset: DatasetBase, idx: int, leq: bool = True):
+    def apply(self, dataset: DatasetBase, idx: int, leq: bool = False):
         """
         Apply the estimator on the batches up to idx (includes), it then updates the annotation field
         if self.mode is 'annotation', otherwise it update the prediction field.
