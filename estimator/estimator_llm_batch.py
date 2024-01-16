@@ -53,6 +53,8 @@ class LLMBatchEstimator:
         """
         update_datasets = [estimator.apply(dataset, idx, leq) for estimator in self.llm_estimators]
         res_dataset = update_datasets[0]
+        if res_dataset.empty:
+            return res_dataset
         for i, df in enumerate(update_datasets[1:]):
             # Merge the dataframes on the 'id' column
             merged_df = pd.merge(res_dataset, df[['id', self.mode]], on='id', how='left', suffixes=('_left', '_right'))
