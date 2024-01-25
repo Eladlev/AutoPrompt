@@ -12,6 +12,8 @@ The proces is done via a calibration process in which:
 
 Each one of these components is independent and can be used separately. 
 
+![pipeline_recording](./docs/autoprompt_recording.gif)
+
 This work is an extension of 
 [LARGE LANGUAGE MODELS AS OPTIMIZERS](https://arxiv.org/pdf/2309.03409.pdf) by Chengrun Yang et al. (2023).
 
