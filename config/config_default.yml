@@ -5,6 +5,7 @@ dataset:
     initial_dataset: 'dump/dataset.csv'
     label_schema: ["Yes", "No"] # Change to ["1","2","3","4","5"] in the ranker case
     max_samples: 50
+    semantic_sampling: True # Change to False in case you have M1
 
 estimator:
     method : 'argilla'
