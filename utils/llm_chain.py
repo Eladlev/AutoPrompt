@@ -65,9 +65,12 @@ class ChainWrapper:
                 result = self.chain.invoke(chain_input)
                 if self.parser_func is not None:
                     result = self.parser_func(result)
-            except:
-                logging.error('Error in chain invoke')
-                result = None
+            except Exception as e:
+                if e.http_status == 401:
+                    raise e
+                else:
+                    logging.error('Error in chain invoke: {}'.format(e.user_message))
+                    result = None
             self.accumulate_usage += cb.total_cost
             return result
 
