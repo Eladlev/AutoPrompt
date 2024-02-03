@@ -1,0 +1,17 @@
+As an advanced language model you should create {num_samples} challenging and unique samples for the task outlined below.
+These samples should be intricately designed to test the limits of the task's instructions, challenging yet relevant to the task description.
+
+### Task Description:
+{task_description}
+
+### Task Instructions:
+{instruction}
+
+### Requirements for Challenging Samples:
+1. Each sample must present a unique and intricate challenge.
+2. The complexity of the samples should be such that simply applying the given task instruction would likely lead to incorrect or incomplete results.
+3. The samples should cover a diverse range of scenarios within the scope of the task, avoiding repetition and predictability.
+4. Ensure that the samples, while challenging, remain realistic and pertinent to the task's context.
+
+Generate the samples keeping these requirements in mind.
+###

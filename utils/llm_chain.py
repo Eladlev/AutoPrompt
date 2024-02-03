@@ -160,7 +160,7 @@ def get_chain_metadata(prompt_fn: Path, retrieve_module: bool = False) -> dict:
     """
     Get the metadata of the chain
     :param prompt_fn: The path to the prompt file
-    :param retrieve_module: If True, retreive the module
+    :param retrieve_module: If True, retrieve the module
     :return: A dict with the metadata
     """
     prompt_directory = str(prompt_fn.parent)

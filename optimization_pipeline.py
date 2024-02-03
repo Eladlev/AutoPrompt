@@ -153,8 +153,8 @@ class OptimizationPipeline:
         """
         if 0 < self.config.stop_criteria.max_usage < self.calc_usage():
             return True
-        min_batch_id, min_score = self.eval.get_min_score()
-        if self.eval.history[-1]['score'] - min_score > self.config.stop_criteria.min_delta:
+        min_batch_id, max_score = self.eval.get_max_score()
+        if max_score - self.eval.history[-1]['score'] > self.config.stop_criteria.min_delta:
             self.patient += 1
         else:
             self.patient = 0
