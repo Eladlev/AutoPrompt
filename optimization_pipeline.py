@@ -111,7 +111,7 @@ class OptimizationPipeline:
         if 'label_schema' in self.config.dataset.keys():
             prompt_input["labels"] = json.dumps(self.config.dataset.label_schema)
         prompt_suggestion = self.meta_chain.step_prompt_chain.invoke(prompt_input)
-
+        self.log_and_print(f'Previous prompt score:\n{self.eval.mean_score}\n#########\n')
         self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
         self.batch_id += 1
         if len(self.dataset) < self.config.dataset.max_samples:

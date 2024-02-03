@@ -1,16 +1,22 @@
 estimator:
     method : ''
-
+dataset:
+    max_samples: 20
 predictor:
     method : 'llm'
     config:
         prompt: 'prompts/predictor_completion/prediction_generation.prompt'
         mini_batch_size: 1
+        llm:
+            type: 'OpenAI'
+            name: 'gpt-4-1106-preview' #'gpt-3.5-turbo-0613'
+        num_workers: 7
 
 meta_prompts:
     folder: 'prompts/meta_prompts_generation'
+    warmup: 0
 
 eval:
     function_name: 'ranking'
-    error_threshold: 5
-    num_initialize_samples: 50
+    error_threshold: 4
+
