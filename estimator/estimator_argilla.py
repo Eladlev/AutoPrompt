@@ -90,6 +90,8 @@ class ArgillaEstimator:
             self.initialize_dataset(dataset.name, dataset.label_schema)
             rg_dataset = current_api.datasets.find_by_name(dataset.name)
         batch_records = dataset[batch_id]
+        if batch_records.empty:
+            return []
         self.upload_missing_records(dataset.name, batch_id, batch_records)
         data = {'metadata': {'batch_id': [str(batch_id)]}}
         json_data = json.dumps(data)
@@ -111,6 +113,7 @@ class ArgillaEstimator:
                 result = rg.load(name=dataset.name, query=query)
                 df = result.to_pandas()[['text', 'annotation', 'metadata', 'status']]
                 df["annotation"] = df.apply(lambda x: 'Discarded' if x['status']=='Discarded' else x['annotation'], axis=1)
+                df = df.drop(columns=['status'])
                 df['id'] = df.apply(lambda x: x['metadata']['id'], axis=1)
                 return df
             time.sleep(self.time_interval)

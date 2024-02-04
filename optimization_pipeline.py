@@ -111,7 +111,7 @@ class OptimizationPipeline:
         if 'label_schema' in self.config.dataset.keys():
             prompt_input["labels"] = json.dumps(self.config.dataset.label_schema)
         prompt_suggestion = self.meta_chain.step_prompt_chain.invoke(prompt_input)
-
+        self.log_and_print(f'Previous prompt score:\n{self.eval.mean_score}\n#########\n')
         self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
         self.batch_id += 1
         if len(self.dataset) < self.config.dataset.max_samples:
@@ -153,8 +153,8 @@ class OptimizationPipeline:
         """
         if 0 < self.config.stop_criteria.max_usage < self.calc_usage():
             return True
-        min_batch_id, min_score = self.eval.get_min_score()
-        if self.eval.history[-1]['score'] - min_score > self.config.stop_criteria.min_delta:
+        min_batch_id, max_score = self.eval.get_max_score()
+        if max_score - self.eval.history[-1]['score'] > self.config.stop_criteria.min_delta:
             self.patient += 1
         else:
             self.patient = 0
@@ -227,7 +227,7 @@ class OptimizationPipeline:
             self.log_and_print('Dataset is empty generating initial samples')
             self.generate_initial_samples()
         if self.config.use_wandb:
-            cur_batch = self.dataset[self.batch_id]
+            cur_batch = self.dataset.get_leq(self.batch_id)
             random_subset = cur_batch.sample(n=min(10, len(cur_batch)))[['text']]
             self.wandb_run.log(
                 {"Prompt": wandb.Html(f"<p>{self.cur_prompt}</p>"), "Samples": wandb.Table(dataframe=random_subset)},

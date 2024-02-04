@@ -65,9 +65,12 @@ class ChainWrapper:
                 result = self.chain.invoke(chain_input)
                 if self.parser_func is not None:
                     result = self.parser_func(result)
-            except:
-                logging.error('Error in chain invoke')
-                result = None
+            except Exception as e:
+                if e.http_status == 401:
+                    raise e
+                else:
+                    logging.error('Error in chain invoke: {}'.format(e.user_message))
+                    result = None
             self.accumulate_usage += cb.total_cost
             return result
 
@@ -160,7 +163,7 @@ def get_chain_metadata(prompt_fn: Path, retrieve_module: bool = False) -> dict:
     """
     Get the metadata of the chain
     :param prompt_fn: The path to the prompt file
-    :param retrieve_module: If True, retreive the module
+    :param retrieve_module: If True, retrieve the module
     :return: A dict with the metadata
     """
     prompt_directory = str(prompt_fn.parent)
@@ -197,7 +200,6 @@ class MetaChain:
         :param config: An EasyDict configuration
         """
         self.config = config
-        self.config['meta_prompts']['folder'] = Path(self.config['meta_prompts']['folder'])
         self.initial_chain = self.load_chain('initial')
         self.step_prompt_chain = self.load_chain('step_prompt')
         self.step_samples = self.load_chain('step_samples')

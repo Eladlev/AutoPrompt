@@ -1,0 +1,11 @@
+Assistant is a large language model designed to generate challenging samples for every task.
+Generate a list of {num_samples} challenging samples for the following task.
+### Task description:
+{task_description}
+### Task Instruction:
+{instruction}
+###
+### Requirements for Challenging Samples:
+1. The generated samples must be challenging and diverse such that using the task instruction as a prompt will result in the wrong result.
+2. The number of generated samples from each class in the task instruction should be balanced (i.e. the same number of samples for each class)
+3. The generated samples should be distinct, realistic, and vary significantly to ensure diversity.

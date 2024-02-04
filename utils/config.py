@@ -69,6 +69,7 @@ def load_yaml(yaml_path: str, as_edict: bool = True) -> edict:
     """
     with open(yaml_path, 'r') as file:
         yaml_data = yaml.safe_load(file)
+        yaml_data['meta_prompts']['folder'] = Path(yaml_data['meta_prompts']['folder'])
     if as_edict:
         yaml_data = edict(yaml_data)
     return yaml_data

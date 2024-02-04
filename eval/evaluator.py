@@ -49,13 +49,13 @@ class Eval:
         self.mean_score = self.dataset['score'].mean()
         return self.mean_score
 
-    def get_min_score(self):
+    def get_max_score(self):
         """
-        Return the minimum 'mean score' (with respect to all history epochs) and the epoch index of the minimum score
-        :return: The epoch index of the minimum score, and the minimum score
+        Return the maximum 'mean score' (with respect to all history epochs) and the epoch index of the maximum score
+        :return: The epoch index of the maximum score, and the maximum score
         """
-        min_idx = np.argmax([epoch['score'] for epoch in self.history])
-        return min_idx, self.history[min_idx]['score']
+        max_idx = np.argmax([epoch['score'] for epoch in self.history])
+        return max_idx, self.history[max_idx]['score']
 
 
     def large_error_to_str(self, error_df: pd.DataFrame, num_large_errors_per_label: int) -> str:

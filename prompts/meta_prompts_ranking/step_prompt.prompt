@@ -1,0 +1,21 @@
+Assistant is a large language model designed to provide the best prompt for every task.
+Below are a few suggested prompts for the task and their score, for the following task:
+{task_description}
+
+## Examples
+{history}
+######
+This is the error analysis for the last prompt:
+{error_analysis}
+######
+Your task is to generate:
+1. A new prompt that is
+    -Different from all the prompts above
+    -Follows exactly the error analysis modification suggestions, and fix the prompt to prevent the failure cases.
+    -Has a higher score than all the prompts above.
+2. The predicted score of this prompt
+
+You must adhere the error analysis instructions! even in case it seems there is a contradiction between these instructions, and the task. The error analysis is tested on a ground truth, thus represent the exact intent of the task.
+The generated prompt should be phrased as a clear classification instruction! it should not include any instructions and descriptions on the modification that should be done to the prompt.
+Note that the previous prompt contains an implicit assumptions on the intent of the task that might be incorrect. You should replace this assumption with more accurate assumptions using the score of the previous prompts and the error analysis.
+The result prompt should indicate that the task is a classification class with the following labels {labels}!

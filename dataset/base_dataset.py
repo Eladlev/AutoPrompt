@@ -22,7 +22,8 @@ class DatasetBase:
         self.name = config.name + '__' + dt_string
         self.label_schema = config.label_schema
         self.dedup = Dedup(config)
-        self.sample_size = config.get("sample_size", 5)
+        self.sample_size = config.get("sample_size", 3)
+        self.semantic_sampling = config.get("semantic_sampling", False)
         if not config.get('dedup_new_samples', False):
             self.remove_duplicates = self._null_remove
 
@@ -131,11 +132,14 @@ class DatasetBase:
         :return: A sample of the records
         """
         n = n or self.sample_size
-        dd = self.dedup.copy()
-        df_samples = dd.sample(self.records).head(n)
+        if self.semantic_sampling:
+            dd = self.dedup.copy()
+            df_samples = dd.sample(self.records).head(n)
 
-        if len(df_samples) < n:
-            df_samples = self.records.head(n)
+            if len(df_samples) < n:
+                df_samples = self.records.head(n)
+        else:
+            df_samples = self.records.sample(n)
         return df_samples
 
     @staticmethod

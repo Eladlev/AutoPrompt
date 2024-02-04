@@ -7,17 +7,17 @@ from estimator.estimator_llm import LLMEstimator
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--generation_config_path', default='config/config_generation.yml', type=str, help='Configuration file path')
-parser.add_argument('--basic_config_path', default='config/config.yml', type=str, help='Configuration file path')
+parser.add_argument('--basic_config_path', default='config/config_default.yml', type=str, help='Configuration file path')
 parser.add_argument('--task_description',
-                    default='Assistant is a large language model which with the task to write movie reviews.',
+                    default='',
                     required=False, type=str, help='Describing the task')
 parser.add_argument('--prompt',
-                    default='Generate a good movie review.',
+                    default='',
                     required=False, type=str, help='Prompt to use as initial.')
 parser.add_argument('--load_dump', default='dump', required=False, type=str, help='In case of loading from checkpoint')
 parser.add_argument('--output_dump', default='dump', required=False, type=str, help='Output to save checkpoints')
-parser.add_argument('--num_ranker_steps', default=3, type=int, help='Number of iterations')
-parser.add_argument('--num_generation_steps', default=5, type=int, help='Number of iterations')
+parser.add_argument('--num_ranker_steps', default=20, type=int, help='Number of iterations')
+parser.add_argument('--num_generation_steps', default=20, type=int, help='Number of iterations')
 
 opt = parser.parse_args()
 
@@ -57,3 +57,5 @@ generation_pipeline = OptimizationPipeline(generation_config_params, task_descri
 if opt.load_dump != '':
     generation_pipeline.load_state(os.path.join(opt.load_dump, 'generator'))
 best_generation_prompt = generation_pipeline.run_pipeline(opt.num_generation_steps)
+print('\033[92m' + 'Calibrated prompt score:', str(best_generation_prompt['score']) + '\033[0m')
+print('\033[92m' + 'Calibrated prompt:', best_generation_prompt['prompt'] + '\033[0m')
