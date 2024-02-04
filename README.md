@@ -134,6 +134,12 @@ Adjust the `config/config_default.yml` file to include a ranking label schema.
 dataset:
     label_schema: ["1", "2", "3", "4", "5"]
 ```
+and the meta prompt folder should be changed to:
+```
+meta_prompts:
+    folder: 'prompts/meta_prompts_ranking' 
+```
+
 
 To run the generation pipeline, use the following example command:
 ```bash
@@ -153,7 +159,7 @@ stored in the default `dump` path.
 
 ## Tips
 
-- Prompt accuracy may fluctuate during the optimization. To identify the best prompts, we recommend continuous refinement following the initial generation of the benchmark.  Set the number of optimization iterations with `--num_steps` and control sample generation by specifying `max_samples` in the `dataset` section. For instance, setting `max_samples: 50` and `--num_steps 30` limits benchmark to 50 samples, allowing for 25 additional refinement iterations, assuming 10 samples per iteration.
+- Prompt accuracy may fluctuate during the optimization. To identify the best prompts, we recommend continuous refinement following the initial generation of the benchmark.  Set the number of optimization iterations with `--num_steps` and control sample generation by specifying `max_samples` in the `dataset` section. For instance, setting `max_samples: 50` and `--num_steps 30` limits the benchmark to 50 samples, allowing for 25 additional refinement iterations, assuming 10 samples per iteration.
 
 - The framework supports checkpoints for easy resumption of optimization from the last saved state. It automatically saves the most recent optimization state in a `dump` path. Use `--output_dump` to set this path and `--load_path` to resume from a checkpoint.
 <!-- 
