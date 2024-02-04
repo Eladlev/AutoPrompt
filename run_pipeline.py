@@ -16,7 +16,7 @@ parser.add_argument('--task_description',
                     required=False, type=str, help='Describing the task')
 parser.add_argument('--load_path', default='', required=False, type=str, help='In case of loading from checkpoint')
 parser.add_argument('--output_dump', default='dump', required=False, type=str, help='Output to save checkpoints')
-parser.add_argument('--num_steps', default=10, type=int, help='Number of iterations')
+parser.add_argument('--num_steps', default=40, type=int, help='Number of iterations')
 
 opt = parser.parse_args()
 
@@ -42,5 +42,6 @@ pipeline = OptimizationPipeline(config_params, task_description, initial_prompt,
 if (opt.load_path != ''):
     pipeline.load_state(opt.load_path)
 best_prompt = pipeline.run_pipeline(opt.num_steps)
-
+print('\033[92m' + 'Calibrated prompt score:', str(best_generation_prompt['score']) + '\033[0m')
+print('\033[92m' + 'Calibrated prompt:', best_generation_prompt['prompt'] + '\033[0m')
 

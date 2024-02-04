@@ -227,7 +227,7 @@ class OptimizationPipeline:
             self.log_and_print('Dataset is empty generating initial samples')
             self.generate_initial_samples()
         if self.config.use_wandb:
-            cur_batch = self.dataset[self.batch_id]
+            cur_batch = self.dataset.get_leq(self.batch_id)
             random_subset = cur_batch.sample(n=min(10, len(cur_batch)))[['text']]
             self.wandb_run.log(
                 {"Prompt": wandb.Html(f"<p>{self.cur_prompt}</p>"), "Samples": wandb.Table(dataframe=random_subset)},
