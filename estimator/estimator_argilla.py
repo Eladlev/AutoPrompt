@@ -114,5 +114,6 @@ class ArgillaEstimator:
                 df = result.to_pandas()[['text', 'annotation', 'metadata', 'status']]
                 df["annotation"] = df.apply(lambda x: 'Discarded' if x['status']=='Discarded' else x['annotation'], axis=1)
                 df = df.drop(columns=['status'])
+                df['id'] = df.apply(lambda x: x['metadata']['id'], axis=1)
                 return df
             time.sleep(self.time_interval)
