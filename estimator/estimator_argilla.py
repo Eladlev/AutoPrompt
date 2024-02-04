@@ -111,7 +111,8 @@ class ArgillaEstimator:
             )
             if search_results.total == len(batch_records):
                 result = rg.load(name=dataset.name, query=query)
-                df = result.to_pandas()[['text', 'annotation', 'metadata']]
-                df['id'] = df.apply(lambda x: x['metadata']['id'], axis=1)
+                df = result.to_pandas()[['text', 'annotation', 'metadata', 'status']]
+                df["annotation"] = df.apply(lambda x: 'Discarded' if x['status']=='Discarded' else x['annotation'], axis=1)
+                df = df.drop(columns=['status'])
                 return df
             time.sleep(self.time_interval)
