@@ -2,7 +2,7 @@ use_wandb: True
 dataset:
     name: 'dataset'
     records_path: null
-    initial_dataset: 'dump/dataset.csv'
+    initial_dataset: ''
     label_schema: ["Yes", "No"]
     max_samples: 50
     semantic_sampling: False # Change to True in case you don't have M1. Currently there is an issue with faiss and M1
@@ -54,5 +54,5 @@ llm:
 
 stop_criteria:
     max_usage: 2 #In $ in case of OpenAI models, otherwise number of tokens
-    patience: 3 # Number of patience steps
-    min_delta: 0.25 # Delta for the improvement definition
+    patience: 10 # Number of patience steps
+    min_delta: 0.01 # Delta for the improvement definition

@@ -17,7 +17,7 @@ predictor:
 
 meta_prompts:
     folder: 'prompts/meta_prompts_generation'
-    warmup: 0
+    warmup: 1
 
 eval:
     function_name: 'ranking'
