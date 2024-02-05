@@ -129,18 +129,6 @@ You can track the optimization progress using the [W&B](https://wandb.ai/site) d
 
 
 #### Generation pipeline
-Adjust the `config/config_default.yml` file to include a ranking label schema.
-```
-dataset:
-    label_schema: ["1", "2", "3", "4", "5"]
-```
-and the meta prompt folder should be changed to:
-```
-meta_prompts:
-    folder: 'prompts/meta_prompts_ranking' 
-```
-
-
 To run the generation pipeline, use the following example command:
 ```bash
 > python run_generation_pipeline.py \
