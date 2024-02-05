@@ -6,8 +6,8 @@ from estimator.estimator_llm import LLMEstimator
 # General Training Parameters
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--generation_config_path', default='config/config_generation.yml', type=str, help='Configuration file path')
-parser.add_argument('--basic_config_path', default='config/config_default.yml', type=str, help='Configuration file path')
+parser.add_argument('--generation_config_path', default='config/config_diff/config_generation.yml', type=str, help='Configuration file path')
+parser.add_argument('--basic_config_path', default='config/config_diff/config_ranker.yml', type=str, help='Configuration file path')
 parser.add_argument('--task_description',
                     default='',
                     required=False, type=str, help='Describing the task')
