@@ -1,7 +1,10 @@
 estimator:
     method : ''
+
 dataset:
     max_samples: 20
+    label_schema:  ["1","2","3","4","5"]
+
 predictor:
     method : 'llm'
     config:
