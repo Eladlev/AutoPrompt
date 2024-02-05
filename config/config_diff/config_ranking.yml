@@ -1,0 +1,5 @@
+dataset:
+    label_schema:  ["1","2","3","4","5"]
+
+meta_prompts:
+    folder: 'prompts/meta_prompts_ranking'

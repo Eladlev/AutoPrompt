@@ -42,6 +42,6 @@ pipeline = OptimizationPipeline(config_params, task_description, initial_prompt,
 if (opt.load_path != ''):
     pipeline.load_state(opt.load_path)
 best_prompt = pipeline.run_pipeline(opt.num_steps)
-print('\033[92m' + 'Calibrated prompt score:', str(best_generation_prompt['score']) + '\033[0m')
-print('\033[92m' + 'Calibrated prompt:', best_generation_prompt['prompt'] + '\033[0m')
+print('\033[92m' + 'Calibrated prompt score:', str(best_prompt['score']) + '\033[0m')
+print('\033[92m' + 'Calibrated prompt:', best_prompt['prompt'] + '\033[0m')
 

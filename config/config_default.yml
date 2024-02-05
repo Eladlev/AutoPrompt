@@ -3,7 +3,7 @@ dataset:
     name: 'dataset'
     records_path: null
     initial_dataset: 'dump/dataset.csv'
-    label_schema: ["Yes", "No"] # Change to ["1","2","3","4","5"] in the ranker case
+    label_schema: ["Yes", "No"]
     max_samples: 50
     semantic_sampling: False # Change to True in case you don't have M1. Currently there is an issue with faiss and M1
 
@@ -31,7 +31,7 @@ predictor:
         mode: 'prediction'
 
 meta_prompts:
-    folder: 'prompts/meta_prompts_classification' # In case of ranker change to prompts/meta_prompts_ranking
+    folder: 'prompts/meta_prompts_classification'
     num_err_prompt: 1  # Number of error examples per sample in the prompt generation
     num_err_samples: 2 # Number of error examples per sample in the sample generation
     history_length: 4 # Number of sample in the meta-prompt history
