@@ -143,7 +143,7 @@ This time, we'll need to use the `run_generation_pipeline.py` to initiate a gene
 
 The generation pipeline starts by taking the initial prompt and modifying it for a scoring task, similar to the scoring example above. Once it establishes a robust estimtor for high-quality content, in this instance movie reviews, it runs the generation pipeline without the need for human annotation. 
 
-To facilitate this, two distinct input config files are employed: `config/diff/config_ranking.yml`, and `config/diff/config_generation.yml`.
+To facilitate this, two distinct input config files are employed: `config/config_diff/config_ranking.yml`, and `config/config_diff/config_generation.yml`.
 
 Note that the `estimator` section in the generation config yaml file remains empty: 
 ```
@@ -197,7 +197,7 @@ The initial prompt could be structured as follows:
 #### Run Example
 In a multi-topic moderation setting, we use various moderation rules to annotate a sample. Each rule is evaluated independently, and the outcomes are combined to generate the final labels. We employ an LLM annotator to avoid time-intensive manual annotation.
 
-This task utilizes two distinct input configuration files: `config/config_default.yml`, used previously, and `config/diff/config_batch_classification.yml`, which specifies the individual moderation rules, the policy for aggregating results, and LLM configuration. The available aggregation policies are 'exist', 'majority', and 'all'. The 'exist' and 'all' policies are suited for scenarios with 'Yes' or 'No' labels, while the 'majority' policy assigns the final label based on the most frequently occurring outcome across the rules.
+This task utilizes two distinct input configuration files: `config/config_default.yml`, used previously, and `config/config_diff/config_batch_classification.yml`, which specifies the individual moderation rules, the policy for aggregating results, and LLM configuration. The available aggregation policies are 'exist', 'majority', and 'all'. The 'exist' and 'all' policies are suited for scenarios with 'Yes' or 'No' labels, while the 'majority' policy assigns the final label based on the most frequently occurring outcome across the rules.
 
 In our case, it can look like this:
 ```
@@ -236,7 +236,7 @@ dataset:
 As before, we'll use the `run_pipeline.py` to initiate a multi-topic moderation run.
 ```bash
 > python run_pipeline.py \
-    --batch_config_path "config/diff/config_batch_classification.yml" \
+    --batch_config_path "config/config_diff/config_batch_classification.yml" \
     --prompt "Assess whether the message contains any of the following problematic topics:  disclosing personal information, deceptive practices, spam, illegal activities, conflict of interest, off-topic content. Answer 'Yes' if it does or 'No' otherwise." \
     --task_description "As a moderation expert at FabricFantasia, an online store selling clothes, you meticulously review customer inquiries and support tickets."
 ```
