@@ -15,7 +15,7 @@ parser.add_argument('--task_description',
 parser.add_argument('--prompt',
                     default='',
                     required=False, type=str, help='Prompt to use as initial.')
-parser.add_argument('--load_dump', default='dump', required=False, type=str, help='In case of loading from checkpoint')
+parser.add_argument('--load_dump', default='', required=False, type=str, help='In case of loading from checkpoint')
 parser.add_argument('--output_dump', default='dump', required=False, type=str, help='Output to save checkpoints')
 parser.add_argument('--num_ranker_steps', default=20, type=int, help='Number of iterations')
 parser.add_argument('--num_generation_steps', default=20, type=int, help='Number of iterations')

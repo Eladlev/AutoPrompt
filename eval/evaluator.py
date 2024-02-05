@@ -49,12 +49,13 @@ class Eval:
         self.mean_score = self.dataset['score'].mean()
         return self.mean_score
 
-    def get_max_score(self):
+    def get_max_score(self, warmup=0):
         """
-        Return the maximum 'mean score' (with respect to all history epochs) and the epoch index of the maximum score
+        Return the maximum 'mean score' (with respect to all history epochs, starting form warmup, up to last) and the epoch index of the maximum score
         :return: The epoch index of the maximum score, and the maximum score
         """
-        max_idx = np.argmax([epoch['score'] for epoch in self.history])
+        max_idx = np.argmax([epoch['score'] for epoch in self.history[warmup:-1]])
+        max_idx += warmup
         return max_idx, self.history[max_idx]['score']
 
 
