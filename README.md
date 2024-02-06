@@ -29,13 +29,13 @@ The framework automatically generates high-quality, detailed prompts tailored to
 
 ![System Overview](./docs/AutoPrompt_Diagram.png)
 
-The system is designed for real-world scenarios, such as moderation tasks, which are often  challenged by imbalanced data distributions. The system implement the [Intent-based Prompt Calibration]() method. The process begins with a user-provided initial prompt and task description, optionally including user examples. The refinement process iteratively generates diverse samples, annotates them via user/LLM, and evaluates prompt performance, after which an LLM suggests an improved prompt.  
+The system is designed for real-world scenarios, such as moderation tasks, which are often  challenged by imbalanced data distributions. The system implements the [Intent-based Prompt Calibration](https://arxiv.org/abs/2402.03099) method. The process begins with a user-provided initial prompt and task description, optionally including user examples. The refinement process iteratively generates diverse samples, annotates them via user/LLM, and evaluates prompt performance, after which an LLM suggests an improved prompt.  
 
 The optimization process can be extended to content generation tasks by first devising a ranker prompt and then performing the prompt optimization with this learned ranker. The optimization concludes upon reaching the budget or iteration limit.  
 
 
-This joint synthetic data generation and prompt optimization approach outperforms traditional methods while requiring minimal data and iterations. Learn more in our paper
-[Intent-based Prompt Calibration: Prompt tuning with synthetic boundary cases]() by E. Levi et al. (2024).
+This joint synthetic data generation and prompt optimization approach outperform traditional methods while requiring minimal data and iterations. Learn more in our paper
+[Intent-based Prompt Calibration: Enhancing prompt optimization with synthetic boundary cases](https://arxiv.org/abs/2402.03099) by E. Levi et al. (2024).
 
 
 **Using GPT-4 Turbo, this optimization typically completes in just a few minutes at a cost of under $1.** To manage costs associated with GPT-4 LLM's token usage, the framework enables users to set a budget limit for optimization, in USD or token count, configured as illustrated [here](docs/examples.md#steps-to-run-example).
@@ -189,14 +189,14 @@ To manage costs associated with GPT-4 LLM's token usage, the framework enables u
 
 ## Citation
 
-If you have used our code in your research, please cite our [paper](https://arxiv.org/):
+If you have used our code in your research, please cite our [paper](https://arxiv.org/abs/2402.03099):
 
 ```
-@article{E,
-  title={IPC},
-  author={bla},
-  journal={arXiv preprint arXiv:},
-  year={2024}
+@misc{2402.03099,
+Author = {Elad Levi and Eli Brosh and Matan Friedmann},
+Title = {Intent-based Prompt Calibration: Enhancing prompt optimization with synthetic boundary cases},
+Year = {2024},
+Eprint = {arXiv:2402.03099},
 }
 ```
 
