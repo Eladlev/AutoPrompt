@@ -75,7 +75,7 @@ cd AutoPrompt
 
 Use either Conda or pip, depending on your preference. Using Conda:
 ```bash
-conda env create -f environment_dev.yaml
+conda env create -f environment_dev.yml
 conda activate AutoPrompt
 ```
 
