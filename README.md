@@ -1,6 +1,6 @@
 <p align="center">
     <!-- community badges -->
-    <a href="https://discord.gg/BpPphKPG"><img src="https://img.shields.io/badge/Join-Discord-blue.svg"/></a>
+    <a href="https://discord.gg/G2rSbAf8uP"><img src="https://img.shields.io/badge/Join-Discord-blue.svg"/></a>
     <!-- license badge -->
     <a href="https://github.com/Eladlev/AutoPrompt/blob/main/LICENSE">
         <img alt="License" src="https://img.shields.io/badge/License-Apache_2.0-blue.svg"></a>
@@ -163,7 +163,7 @@ Review the content provided and indicate whether it includes any significant plo
 ```
 This prompt scores 81 on your [benchmark](docs/examples.md#filtering-movie-reviews-with-spoilers-classification-task)  using GPT-4 LLM. Then, you make a minor modification:
 ```
-Review the text and determine if it provides essential revelations or critical details about the story that would constitute a spoiler. Respond with "Yes" for presence of spoilers, and "No" for their absence.
+Review the text and determine if it provides essential revelations or critical details about the story that would constitute a spoiler. Respond with "Yes" for the presence of spoilers, and "No" for their absence.
 ```
 Surprisingly, the second prompt scores 72, representing an 11% drop in accuracy. This illustrates the need for a careful prompt engineering process.
 
@@ -172,7 +172,7 @@ Surprisingly, the second prompt scores 72, representing an 11% drop in accuracy.
 Your contributions are greatly appreciated! If you're eager to contribute, kindly refer to our [Contributing Guidelines](docs/contributing.md)) for detailed information.
 
 <!-- For an insight into our future plans, visit our Project Roadmap. -->
-If you wish to be a part of our journey, we invite you to connect with us through our [Discord Community](https://discord.gg/BpPphKPG). We're excited to have you onboard! 
+If you wish to be a part of our journey, we invite you to connect with us through our [Discord Community](https://discord.gg/G2rSbAf8uP). We're excited to have you onboard! 
 
 ## 🛡 Disclaimer
 
@@ -207,7 +207,7 @@ Eprint = {arXiv:2402.03099},
 This framework is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
 ## ✉️ Support / Contact us
-- [Community Discord](https://discord.gg/BpPphKPG)
+- [Community Discord](https://discord.gg/G2rSbAf8uP)
 - Our email: [‫autopromptai@gmail.com‬](mailto:autopromptai@gmail.com)
 
 
