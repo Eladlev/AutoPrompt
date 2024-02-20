@@ -145,9 +145,9 @@ The generation pipeline starts by taking the initial prompt and modifying it for
 
 To facilitate this, two distinct input config files are employed: `config/config_diff/config_ranking.yml`, and `config/config_diff/config_generation.yml`.
 
-Note that the `estimator` section in the generation config yaml file remains empty: 
+Note that the `annotator` section in the generation config yaml file remains empty: 
 ```
-estimator:
+annotator:
     method : ''
 ```
 
@@ -204,7 +204,7 @@ In our case, it can look like this:
 dataset:
     label_schema: ["Yes", "No"]
 
-estimator:
+annotator:
     method : 'llm_batch'
     config:
         instructions: 

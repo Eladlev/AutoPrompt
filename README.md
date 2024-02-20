@@ -96,7 +96,7 @@ Set your OpenAI API key  by updating the configuration file `config/llm_env.yml`
 <br />
 
 > **Step 4** - Configure your Annotator
-- Select an annotation approach for your project. We recommend beginning with a human-in-the-loop method, utilizing [Argilla](https://docs.argilla.io/en/latest/index.html). Follow the [Argilla setup instructions](docs/installation.md#configure-human-in-the-loop-annotator-) to configure your server. Alternatively, you can set up an LLM as your annotator (estimator) by following these [configuration steps](docs/installation.md#configure-llm-annotator-).
+- Select an annotation approach for your project. We recommend beginning with a human-in-the-loop method, utilizing [Argilla](https://docs.argilla.io/en/latest/index.html). Follow the [Argilla setup instructions](docs/installation.md#configure-human-in-the-loop-annotator-) to configure your server. Alternatively, you can set up an LLM as your annotator by following these [configuration steps](docs/installation.md#configure-llm-annotator-).
 
 - The default predictor LLM, GPT-3.5, for estimating prompt performance, is configured in the `predictor` section of `config/config_default.yml`.
 
