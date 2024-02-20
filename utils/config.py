@@ -87,8 +87,8 @@ def load_prompt(prompt_path: str) -> PromptTemplate:
 
 
 def validate_generation_config(base_config, generation_config):
-    if "estimator" not in generation_config:
-        raise Exception("Generation config must contain an empty estimator.")
+    if "annotator" not in generation_config:
+        raise Exception("Generation config must contain an empty annotator.")
     if "label_schema" not in generation_config.dataset or \
             base_config.dataset.label_schema != generation_config.dataset.label_schema:
         raise Exception("Generation label schema must match the basic config.")
