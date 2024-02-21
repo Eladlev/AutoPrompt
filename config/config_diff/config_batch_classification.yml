@@ -2,7 +2,7 @@ use_wandb: True
 dataset:
     label_schema: ["Yes", "No"]
 
-estimator:
+annotator:
     method : 'llm_batch'
     config:
         instructions: ['Is there is an address in the text?', 'Is there is a phone number in the text?',

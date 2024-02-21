@@ -35,10 +35,10 @@ Our pipeline incorporates a human-in-the-loop annotation process using [Argilla]
 
 ### Configure LLM Annotator 
 
-To specify an LLM as the annotation tool in your pipeline, update the `estimator` section in the `config/config_default.yml` file as follows:
+To specify an LLM as the annotation tool in your pipeline, update the `annotator` section in the `config/config_default.yml` file as follows:
 
 ``` 
-estimator:
+annotator:
     method: 'llm'
     config:
         llm:

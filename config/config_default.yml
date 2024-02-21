@@ -14,6 +14,7 @@ dataset:
 #    max_samples: 50
 #    semantic_sampling: False # Change to True in case you don't have M1. Currently there is an issue with faiss and M1
 
+
 estimator:
     method : ''
     config:

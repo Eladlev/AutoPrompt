@@ -43,14 +43,12 @@ The generation pipeline shares a common structure with the classification flow b
 3. **Annotation (Classification):**
    - Challenging examples are annotated for boolean classification or ranking based on the modified prompts. This step is analogous to the classification flow.
 
-4. **Estimator Construction (LLM):**
-   - Utilizing the annotated examples, an estimator (formerly predictor) LLM is constructed to serve as the intermediary for calibrating the original generation prompts.
+4. **Ranker Calibration (LLM):**
+   - Utilizing the annotated examples, a ranking prompt (implemented as an LLM estimator) is fitted.
 
 5. **Calibration (Generation):**
-   - The original generation prompts are recalibrated using the refined estimator LLM, resulting in enhanced prompt formulations for generation tasks.
-
-6. **Iteration:**
-   - The calibration process iterates as needed, refining both the generation prompts and the associated estimator LLM for improved performance.
+   - The original generation prompt is calibrated using the ranking LLM estimator (now used for evaluation), resulting in enhanced prompt formulations for generation tasks.
+   
 
 
 The modular architecture of the pipeline demonstrates the flexibility of the core calibration process and effectiveness for both classification and generation tasks. The additional step in the generation flow seamlessly integrates with the overall iterative prompt calibration approach.

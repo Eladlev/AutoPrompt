@@ -16,7 +16,7 @@ class OptimizationPipeline:
     """
     The main pipeline for optimization. The pipeline is composed of 4 main components:
     1. dataset - The dataset handle the data including the annotation and the prediction
-    2. estimator - The estimator is responsible generate the GT
+    2. annotator - The annotator is responsible generate the GT
     3. predictor - The predictor is responsible to generate the prediction
     4. eval - The eval is responsible to calculate the score and the large errors
     """
@@ -54,7 +54,7 @@ class OptimizationPipeline:
         self.cur_prompt = initial_prompt
 
         self.predictor = give_estimator(config.predictor)
-        self.estimator = give_estimator(config.estimator)
+        self.annotator = give_estimator(config.annotator)
         self.eval = Eval(config.eval, self.meta_chain.error_analysis, self.dataset.label_schema)
         self.batch_id = 0
         self.patient = 0
@@ -80,7 +80,7 @@ class OptimizationPipeline:
         """
         total_usage = 0
         total_usage += self.meta_chain.calc_usage()
-        total_usage += self.estimator.calc_usage()
+        total_usage += self.annotator.calc_usage()
         total_usage += self.predictor.calc_usage()
         return total_usage
 
@@ -236,8 +236,8 @@ class OptimizationPipeline:
                 {"Prompt": wandb.Html(f"<p>{self.cur_prompt}</p>"), "Samples": wandb.Table(dataframe=random_subset)},
                 step=self.batch_id)
 
-        logging.info('Running Estimator')
-        records = self.estimator.apply(self.dataset, self.batch_id)
+        logging.info('Running annotator')
+        records = self.annotator.apply(self.dataset, self.batch_id)
         self.dataset.update(records)
 
         self.predictor.cur_instruct = self.cur_prompt
