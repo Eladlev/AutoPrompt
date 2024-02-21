@@ -1,0 +1,193 @@
+python run_pipeline.py \
+    --prompt "Classify Wix knowledge base articles as 'Relevant' if they directly and specifically answer the user's current query regarding Wix features or issues, providing clear, actionable solutions. Mark articles as 'Partially-relevant' if they contribute to the user's general understanding of the Wix platform or offer insights that could potentially lead to a resolution, but do not directly solve the presented problem. Assign 'Irrelevant' to articles that are unrelated to the current user's question, offering no direct solutions or applicable insights about the Wix platform that could help resolve the specific issue at hand. Ensure accuracy in classification by not overestimating the relevance of general information and by recognizing the directness of solutions when present." \
+    --task_description "Assistant is an article ranker that will rank a Wix knowledge base articles based on relevancy to the topic of conversation with a Wix user" \
+    --num_steps 30
+
+### Mutli-label prompt task
+python run_pipeline.py \
+--prompt "Based on the following input, formatted as {message}#{article}, where '{message}'\
+is a user's query and '{article}' a retrieved article from the Wix Knowledge Base,\
+rank Wix knowledge base articles for relevancy in chatbot conversations, \
+an article should be rated 'Relevant' if it directly resolves the user's question through a specific, in-depth section providing actionable guidance \
+or procedures that pertain exclusively to the issue at hand. An article should be rated 'Irrelevant' if it only generally discusses the topic \
+or includes the user's issue within a wider context without a focused section that offers a clear, standalone solution. \
+This ensures a 'Relevant' rating is only given to articles that are fully dedicated to addressing the user's unique problem \
+with complete and unambiguous instructions. " \
+--task_description "As a Wix expert agent, your task is to review input in the format '{message}#{article}',\
+where '{message}' is a user query and '{article}' is retrieved article from the Wix Knowledge Base. Classify the combination into one of two\
+categories based on relevance: 1. **Relevant** if it directly resolves the user's question through a specific, in-depth section providing actionable guidance \
+or procedures that pertain exclusively to the issue at hand. An article should be rated. **Irrelevant** if it only generally discusses the topic \
+or includes the user's issue within a wider context without a focused section that offers a clear, standalone solution. \
+Base your decision on the alignment between the user's need and the\
+article's solution, ranging from direct resolution to no relevance."
+
+
+### BINARY_version
+gpt-3.5-turbo-1106: 0.5186
+gpt-4-turbo-preview: 0.5607
+
+python run_pipeline.py \
+--prompt "When classifying '{message}#{article}' combinations, label them as 'Relevant' if the article provides a specific solution for the precise issue raised in the user query, especially focusing on actionable steps for broken automations or product variant pricing. Additionally, confirm the relevance if the article addresses issues with event ticketing that directly correspond to customer reservation concerns. Conversely, label an article as 'Irrelevant' if it merely offers general advice on automation setup, product variants, or event ticketing without addressing the particular problem presented by the user, or if it provides broad information that does not translate into a concrete and immediate resolution for the user's query. Ensure the classification accurately reflects a deep understanding of the user's problem and the article's ability to provide a clear, specific answer with actionable instructions that directly solve the issue. " \
+--task_description "As a Wix expert agent, your task is to review input in the format '{message}#{article}',\
+where '{message}' is a user query and '{article}' is retrieved article from the Wix Knowledge Base. Classify the combination into one of two\
+categories based on relevance: 1. **Relevant** if it directly resolves the user's question through a specific, in-depth section providing actionable guidance\
+or procedures that pertain exclusively to the issue at hand. An article should be rated. **Irrelevant** if it only generally discusses the topic\
+or includes the user's issue within a wider context without a focused section that offers a clear, standalone solution.\
+Base your decision on the alignment between the user's need and the\
+article's solution, ranging from direct resolution to no relevance. "
+--num_steps 1
+
+### BINARY_version_verbose
+gpt-3.5-turbo-1106: 0.6588
+gpt-4-turbo-preview:
+
+python run_pipeline.py \
+--prompt "Improve the classification of Wix Knowledge Base articles in relation to user queries by incorporating precise guidelines that address the issues highlighted in the error analysis. Utilize the scratchpad to conduct an in-depth analysis, focusing on the explicit intent of user queries and the detailed solutions within the articles.
+
+          Scratchpad:
+          1. Query-Resolution Match: Ensure the article directly resolves the user's specific query through an in-depth section that is pertinent and provides a clear solution.
+          2. Avoiding Misclassification: Double-check for actionable content that might seem relevant but does not correspond to the user's immediate question, such as troubleshooting steps for different issues.
+          3. Contextual Accuracy: Ascertain that the article's advice is not only relevant in a broad sense but also precisely responds to the query's context, incorporating any specific terms used by the user.
+          4. Specificity and Applicability: Confirm that the article's solutions are specific to the user's Wix plan and include actionable steps that are immediately implementable.
+
+          After using the scratchpad for analysis, classify the input as 'Relevant' if the article contains a focused section offering a direct resolution to the user's query, or 'Irrelevant' if it fails to provide such a targeted solution. Always use the classification labels ['Relevant', 'Irrelevant']. " \
+--task_description "As a Wix expert agent, your task is to review input in the format '{message}#{article}',\
+where '{message}' is a user query and '{article}' is retrieved article from the Wix Knowledge Base. Classify the combination into one of two\
+categories based on relevance: 1. **Relevant** if it directly resolves the user's question through a specific, in-depth section providing actionable guidance\
+or procedures that pertain exclusively to the issue at hand. An article should be rated. **Irrelevant** if it only generally discusses the topic\
+or includes the user's issue within a wider context without a focused section that offers a clear, standalone solution.\
+Base your decision on the alignment between the user's need and the\
+article's solution, ranging from direct resolution to no relevance. " \
+--num_steps 1
+
+### BINARY_version_verbose [WITH OPENAI]
+gpt-3.5-turbo-1106: RECALL FOR RELEVANT IS ALMOST 0
+gpt-4-turbo-preview:
+
+python run_pipeline.py \
+--prompt "Classify the relevance of Wix Knowledge Base articles to user queries. Follow these guidelines:
+
+          1. **Query-Resolution Match**: Confirm the article directly addresses the user's specific question with a relevant section that provides a clear solution.
+          2. **Avoiding Misclassification**: Ensure there's no content that, while seemingly relevant, does not answer the user's immediate question or involves troubleshooting unrelated issues.
+          3. **Contextual Accuracy**: Verify the article's advice directly responds to the query's context, including any specific terms used by the user.
+          4. **Specificity and Applicability**: Ensure the solutions are specific to the user's Wix plan and include actionable steps that can be immediately implemented.
+
+          After analysis, classify the article as 'Relevant' or 'Irrelevant'. Use the scratchpad for your evaluation and then provide your classification.
+
+          ### Scratchpad:
+          - Query-Resolution Match:
+          - Avoiding Misclassification:
+          - Contextual Accuracy:
+          - Specificity and Applicability:
+
+          ### Classification:
+          [Insert 'Relevant' or 'Irrelevant' here]. " \
+--task_description "As a Wix expert agent, your task is to review input in the format '{message}#{article}',\
+where '{message}' is a user query and '{article}' is retrieved article from the Wix Knowledge Base. Classify the combination into one of two\
+categories based on relevance: 1. **Relevant** if it directly resolves the user's question through a specific, in-depth section providing actionable guidance\
+or procedures that pertain exclusively to the issue at hand. An article should be rated. **Irrelevant** if it only generally discusses the topic\
+or includes the user's issue within a wider context without a focused section that offers a clear, standalone solution.\
+Base your decision on the alignment between the user's need and the\
+article's solution, ranging from direct resolution to no relevance. " \
+--num_steps 1
+
+
+### OPENAI_BEST_PRACTICES_BINARY
+gpt-3.5-turbo-1106: 0.6542
+gpt-4-turbo-preview: 0.6074
+
+python run_pipeline.py \
+--prompt "### Task: Article Relevance Classification Your task is to classify a combination of a user query (message) and a support article (article) as 'Relevant' or 'Irrelevant'. A classification is 'Relevant' if the article provides a specific solution to the exact issue mentioned in the user query, particularly with actionable steps for resolving broken automations or product variant pricing. It is also 'Relevant' if it addresses event ticketing issues that directly relate to customer reservation concerns. Classify as 'Irrelevant' if the article offers only general advice on automation setup, product variants, or event ticketing without addressing the specific problem, or if it provides broad information that does not lead to a concrete and immediate resolution for the user's query. ### Instructions: 1. Carefully read the user query and the associated article. 2. Assess if the article provides a specific solution to the precise issue raised in the user query. 3. Use the label 'Relevant' if: - The article provides actionable steps for fixing broken automations or adjusting product variant pricing. - The article directly addresses event ticketing issues relevant to customer reservations. 4. Use the label 'Irrelevant' if: - The article offers general advice without addressing the specific problem mentioned. - The article's information is too broad and doesn't lead to an immediate solution. 5. Your classification must reflect a deep understanding of the user's issue and the article's ability to offer clear, specific, and actionable instructions that directly solve the problem. ### Example: User query: 'How do I fix a broken automation that's not sending confirmation emails after a purchase?' Article: 'Troubleshooting Email Automations: Step-by-Step Guide to Ensure Your Customers Receive Confirmation Emails' Classification: Relevant ### Provide your classification 'Classification: [Relevant/Irrelevant]' for the following '{message}#{article}' combination:  " \
+--task_description "As a Wix expert agent, your task is to review input in the format '{message}#{article}',\
+where '{message}' is a user query and '{article}' is retrieved article from the Wix Knowledge Base. Classify the combination into one of two\
+categories based on relevance: 1. **Relevant** if it directly resolves the user's question through a specific, in-depth section providing actionable guidance\
+or procedures that pertain exclusively to the issue at hand. An article should be rated. **Irrelevant** if it only generally discusses the topic\
+or includes the user's issue within a wider context without a focused section that offers a clear, standalone solution.\
+Base your decision on the alignment between the user's need and the\
+article's solution, ranging from direct resolution to no relevance."
+--num_steps 1
+
+
+### OPENAI_BEST_PRACTICES_BINARY [WITH SPACES]
+gpt-3.5-turbo-1106: 0.6635
+gpt-4-turbo-preview: 0.6168
+
+python run_pipeline.py \
+--prompt "### Task: Article Relevance Classification
+          Your task is to classify a combination of a user query (message) and a support article (article) as 'Relevant' or 'Irrelevant'. A classification is 'Relevant' if the article provides a specific solution to the exact issue mentioned in the user query, particularly with actionable steps for resolving broken automations or product variant pricing. It is also 'Relevant' if it addresses event ticketing issues that directly relate to customer reservation concerns. Classify as 'Irrelevant' if the article offers only general advice on automation setup, product variants, or event ticketing without addressing the specific problem, or if it provides broad information that does not lead to a concrete and immediate resolution for the user's query.
+
+          ### Instructions:
+          1. Carefully read the user query and the associated article.
+          2. Assess if the article provides a specific solution to the precise issue raised in the user query.
+          3. Use the label 'Relevant' if:
+             - The article provides actionable steps for fixing broken automations or adjusting product variant pricing.
+             - The article directly addresses event ticketing issues relevant to customer reservations.
+          4. Use the label 'Irrelevant' if:
+             - The article offers general advice without addressing the specific problem mentioned.
+             - The article's information is too broad and doesn't lead to an immediate solution.
+          5. Your classification must reflect a deep understanding of the user's issue and the article's ability to offer clear, specific, and actionable instructions that directly solve the problem.
+
+          ### Example '{message}#{article}':
+          {How do I fix a broken automation that's not sending confirmation emails after a purchase?}#{Troubleshooting Email Automations: Step-by-Step Guide to Ensure Your Customers Receive Confirmation Emails}
+
+          Classification: Relevant
+
+          ### Provide your classification for the following '{message}#{article}' combination: " \
+--task_description "As a Wix expert agent, your task is to review input in the format '{message}#{article}',\
+where '{message}' is a user query and '{article}' is retrieved article from the Wix Knowledge Base. Classify the combination into one of two\
+categories based on relevance: 1. **Relevant** if it directly resolves the user's question through a specific, in-depth section providing actionable guidance\
+or procedures that pertain exclusively to the issue at hand. An article should be rated. **Irrelevant** if it only generally discusses the topic\
+or includes the user's issue within a wider context without a focused section that offers a clear, standalone solution.\
+Base your decision on the alignment between the user's need and the\
+article's solution, ranging from direct resolution to no relevance."
+--num_steps 1
+
+
+
+
+
+________________________________________________________________________________________________________________________________________________________________
+
+### PROMPT - multi-label
+GPT3-5: 0.3271
+GPT4: 0.5140
+
+python run_pipeline.py \
+--prompt "When analyzing the input formatted as '{message}#{article}', where '{message}' is a user's inquiry and '{article}' includes a title and content from a Wix Knowledge Base article, assign the relevance of the article to the query into one of three categories: **Relevant**, **Partially**, or **Irrelevant**. Mark an article as **Relevant** only if it provides a specific, current, and actionable solution that exactly matches the user's question. Use **Partially** if the article covers the general subject of the question or offers a partial insight or workaround, but lacks a full, precise solution for the user's issue. Label an article as **Irrelevant** if it fails to address the user's query in any direct way, including discussing unrelated topics, general information without actionable steps, or future functionalities that do not resolve the present need. Make sure to carefully assess the user's actual requirements versus the solutions presented in the article to avoid overvaluing the relevance of general or unrelated content. " \
+--task_description "As a Wix expert agent, your task is to review input in the format '{message}#{article}',\
+                    where '{message}' is a user query and '{article}' combines the title (first sentence) with the content \
+                    (following text) of a retrieved article from the Wix Knowledge Base. Classify the combination into one of three\
+                    categories based on relevance: 1. **Relevant** If the article  directly solves the\
+                    user's issue with specific, actionable advice. 2. **Partially** If the\
+                    article  broadly addresses the topic or indirectly provides partial solutions or\
+                    insights. 3. **Irrelevant** If the article  does not answer the user's query\
+                    at all. Base your decision on the alignment between the user's need and the\
+                    article's solution, ranging from direct resolution to no relevance."
+
+
+
+### OPENAI_BEST_PRACTICES_multi-label
+gpt-3.5-turbo-1106: 0.3785
+GPT4: 0.5280
+
+python run_pipeline.py \
+--prompt "**Task**: For each submission featuring a Wix user's query followed by an article from the Wix Knowledge Base, formatted as 'User Query#Article Title and Content', classify the combination into one of three relevance categories: **Relevant**, **Partially**, or **Irrelevant**.
+
+          **Classification Criteria**:
+          - **Relevant**: Choose this label if the article provides actionable, step-by-step guidance that specifically addresses the user's query, offering a full solution. This category is reserved for articles that leave no additional questions on the user's part regarding the issue at hand.
+          - **Partially**: This label is for articles that address the core topic of the user's query but either lack specific instructions necessary for complete resolution, or suggest steps that only lead to a partial solution. Articles that mention features or functionalities not present on the Wix platform should also be categorized here as they imply potential future resolutions but do not solve the current query.
+          - **Irrelevant**: Apply this label if the article's content is unrelated to the user's query, provides no actionable advice, or if the article's general information cannot be translated into a solution for the specific issue posed by the user.
+
+          **Focus Adjustment**:
+          - Place emphasis on the completeness and specificity of the solution. Articles must provide all the steps required to resolve the user's issue to be considered relevant.
+          - Identify articles that discuss the query's subject but fail to offer a complete solution, including cases where a user's request for functionality not offered by Wix is answered with general information or future possibilities.
+          - Disregard articles that are topically related but do not address the user's exact question, ensuring that the presence of keywords alone does not influence the classification. " \
+--task_description "As a Wix expert agent, your task is to review input in the format '{message}#{article}',\
+                    where '{message}' is a user query and '{article}' combines the title (first sentence) with the content \
+                    (following text) of a retrieved article from the Wix Knowledge Base. Classify the combination into one of three\
+                    categories based on relevance: 1. **Relevant** If the article  directly solves the\
+                    user's issue with specific, actionable advice. 2. **Partially** If the\
+                    article  broadly addresses the topic or indirectly provides partial solutions or\
+                    insights. 3. **Irrelevant** If the article  does not answer the user's query\
+                    at all. Base your decision on the alignment between the user's need and the\
+                    article's solution, ranging from direct resolution to no relevance."

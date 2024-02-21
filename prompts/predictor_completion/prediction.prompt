@@ -7,5 +7,9 @@ Given a list of {batch_size} samples classify them according to the following ta
 {samples}
 ##
 Answer exactly in the following format for each sample:
-#### Sample <ID>: <label>
+###
+<sample scratchpad> #a scratchpad for writing notes
+###
+#### Sample <ID>: <label> #Provide only the final label
 ############
+

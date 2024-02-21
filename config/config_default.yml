@@ -2,25 +2,46 @@ use_wandb: True
 dataset:
     name: 'dataset'
     records_path: null
-    initial_dataset: ''
-    label_schema: ["Yes", "No"]
+    initial_dataset: './formatted_classifier_dataset_binary.csv'
+    label_schema: ["Relevant", "Irrelevant"]
     max_samples: 50
     semantic_sampling: False # Change to True in case you don't have M1. Currently there is an issue with faiss and M1
+#dataset:
+#    name: 'dataset'
+#    records_path: null
+#    initial_dataset: './formatted_classifier_dataset.csv'
+#    label_schema: ["Relevant", "Partially", "Irrelevant"]
+#    max_samples: 50
+#    semantic_sampling: False # Change to True in case you don't have M1. Currently there is an issue with faiss and M1
 
 estimator:
-    method : 'argilla'
+    method : ''
     config:
         api_url: ''
         api_key: 'admin.apikey'
         workspace: 'admin'
         time_interval: 5
 
+#estimator:
+#    method: 'llm'
+#    config:
+#        llm:
+#            type: 'OpenAI'
+#            name: 'gpt-4'
+#        instruction:
+#            'Assess whether the article is "Relevant", "Partially-relevant" or "Irrelevant" for the given user-chatbot conversation'
+#        num_workers: 5
+#        prompt: 'prompts/predictor_completion/prediction.prompt'
+#        mini_batch_size: 1
+#        mode: 'annotation'
+
 predictor:
     method : 'llm'
     config:
         llm:
             type: 'OpenAI'
-            name: 'gpt-3.5-turbo-0613'
+            name: 'gpt-3.5-turbo-0125'
+#            name: 'gpt-4-turbo-preview'
 #            async_params:
 #                retry_interval: 10
 #                max_retries: 2
@@ -53,6 +74,6 @@ llm:
     temperature: 0.8
 
 stop_criteria:
-    max_usage: 2 #In $ in case of OpenAI models, otherwise number of tokens
+    max_usage: 100 #In $ in case of OpenAI models, otherwise number of tokens
     patience: 10 # Number of patience steps
     min_delta: 0.01 # Delta for the improvement definition
