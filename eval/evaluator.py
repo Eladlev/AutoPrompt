@@ -45,6 +45,9 @@ class Eval:
         Calculate the score on each row and return the mean score.
         :return: The mean score
         """
+        # filter out the discarded samples
+        self.dataset = self.dataset[(self.dataset['prediction'] != 'Discarded') &
+                                    (self.dataset['annotation'] != 'Discarded')]
         self.dataset = self.score_func(self.dataset)
         self.mean_score = self.dataset['score'].mean()
         return self.mean_score
