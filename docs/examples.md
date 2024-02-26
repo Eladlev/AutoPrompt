@@ -13,7 +13,7 @@ This document provides practical examples of using the AutoPrompt pipeline acros
 
 ### Filtering Movie Reviews with Spoilers (Classification task)
 
-In this binary classification example, we aim to filter out movie reviews containing spoilers for a specific movie. A corectly implemented filter can be a powerful tool in a large-scale movie review system.
+In this binary classification example, we aim to filter out movie reviews containing spoilers for a specific movie. A correctly implemented filter can be a powerful tool in a large-scale movie review system.
 
 We'll start with a simple initial prompt and task description: 
  - Initial prompt: “Does this movie review contain a spoiler? answer Yes or No”<br>
