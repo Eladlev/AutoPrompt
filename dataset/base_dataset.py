@@ -3,6 +3,7 @@ import logging
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
+import csv
 
 from utils.dedup import Dedup
 
@@ -98,7 +99,7 @@ class DatasetBase:
         self.records[column_name] = self.records.apply(function, axis=1)
 
     def save_dataset(self, path: Path):
-        self.records.to_csv(path, index=False)
+        self.records.to_csv(path, index=False, quoting=csv.QUOTE_NONNUMERIC)
 
     def load_dataset(self, path: Path):
         """
@@ -106,7 +107,7 @@ class DatasetBase:
         :param path: path for the csv
         """
         if os.path.isfile(path):
-            self.records = pd.read_csv(path)
+            self.records = pd.read_csv(path, dtype={'annotation': str, 'prediction': str, 'batch_id': int})
         else:
             logging.warning('Dataset dump not found, initializing from zero')
 

@@ -60,7 +60,7 @@ class LLMEstimator:
         """
         chain_input = ''
         mini_batch_inputs = []
-
+        record[self.mode] = 'Discarded'
         # prepare all the inputs for the chains
         for i, row in record.iterrows():
             chain_input += self.generate_sample_text(i, row['text'])
