@@ -22,3 +22,12 @@ Your task is to generate {num_samples} by following this guidelines:
     2. targeting weakness that are different from the existing examples in the failure cases
 4. The number of generated samples from each class should be almost balanced (i.e. the same number of samples for each class)
 5. The generated samples should include only the sample content without additional information! (like the model prediction and the ground truth)
+
+Please answer in the following JSON form:
+
+{{
+    sample1:"<challengling sample>",
+    sample2:"<challengling sample>",
+    ...
+}}
+###

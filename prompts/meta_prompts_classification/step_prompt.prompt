@@ -19,3 +19,10 @@ You must adhere the error analysis instructions! even in case it seems there is 
 The generated prompt should be phrased as a clear classification instruction! it should not include any instructions and descriptions on the modification that should be done to the prompt.
 Note that the previous prompt contains an implicit assumptions on the intent of the task that might be incorrect. You should replace this assumption with more accurate assumptions using the score of the previous prompts and the error analysis.
 The result prompt should indicate that the task is a classification class with the following labels {labels}!
+
+please answer in the following json format:
+
+{{
+    "prompt":"<new prompt>",
+    "score":"<int>"
+}}

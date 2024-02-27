@@ -44,10 +44,13 @@ def get_llm(config: dict):
                               openai_organization=LLM_ENV['openai']['OPENAI_ORGANIZATION'],
                               model_kwargs=model_kwargs)
     elif config['type'] == 'Azure':
-        AzureChatOpenAI(temperature=temperature, model_name=config['name'],
-                        openai_api_key=LLM_ENV['azure']['AZURE_OPENAI_API_KEY'],
-                        azure_endpoint=LLM_ENV['azure']['AZURE_OPENAI_ENDPOINT'],
-                        openai_api_version=LLM_ENV['azure']['OPENAI_API_VERSION'])
+        return AzureChatOpenAI(
+            temperature=temperature, 
+            deployment_name=config['name'],
+            openai_api_key=LLM_ENV['azure']['AZURE_OPENAI_API_KEY'],
+            openai_api_base=LLM_ENV['azure']['AZURE_OPENAI_ENDPOINT'],
+            openai_api_version=LLM_ENV['azure']['OPENAI_API_VERSION']
+        )
 
 
     elif config['type'] == 'HuggingFacePipeline':

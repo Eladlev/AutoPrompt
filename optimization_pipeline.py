@@ -111,13 +111,14 @@ class OptimizationPipeline:
         if 'label_schema' in self.config.dataset.keys():
             prompt_input["labels"] = json.dumps(self.config.dataset.label_schema)
         prompt_suggestion = self.meta_chain.step_prompt_chain.invoke(prompt_input)
+        new_prompt = json.loads(prompt_suggestion['text'])["prompt"]
         self.log_and_print(f'Previous prompt score:\n{self.eval.mean_score}\n#########\n')
-        self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
+        self.log_and_print(f'Get new prompt:\n{new_prompt}')
         self.batch_id += 1
         if len(self.dataset) < self.config.dataset.max_samples:
             batch_input = {"num_samples": self.config.meta_prompts.samples_generation_batch,
                            "task_description": self.task_description,
-                           "prompt": prompt_suggestion['prompt']}
+                           "prompt": new_prompt}
             batch_inputs = self.generate_samples_batch(batch_input, self.config.meta_prompts.num_generated_samples,
                                                        self.config.meta_prompts.samples_generation_batch)
 
@@ -139,11 +140,11 @@ class OptimizationPipeline:
 
             samples_batches = self.meta_chain.step_samples.batch_invoke(batch_inputs,
                                                                          self.config.meta_prompts.num_workers)
-            new_samples = [element for sublist in samples_batches for element in sublist['samples']]
+            new_samples = json.loads(samples_batches[0]['text']).values()
             new_samples = self.dataset.remove_duplicates(new_samples)
             self.dataset.add(new_samples, self.batch_id)
             logging.info('Get new samples')
-        self.cur_prompt = prompt_suggestion['prompt']
+        self.cur_prompt = new_prompt
 
     def stop_criteria(self):
         """
@@ -189,7 +190,7 @@ class OptimizationPipeline:
                                                    self.config.meta_prompts.samples_generation_batch)
 
         samples_batches = self.meta_chain.initial_chain.batch_invoke(batch_inputs, self.config.meta_prompts.num_workers)
-        samples_list = [element for sublist in samples_batches for element in sublist['samples']]
+        samples_list = json.loads(samples_batches[0]['text']).values()
         samples_list = self.dataset.remove_duplicates(samples_list)
         self.dataset.add(samples_list, 0)
 
