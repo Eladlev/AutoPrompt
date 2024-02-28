@@ -5,7 +5,7 @@ This guide provides detailed instructions for setting up your development enviro
 ### Environment Setup
 We recommend installing using Conda:
 ```bash
-> conda env create -f environment_dev.yaml
+> conda env create -f environment_dev.yml
 > conda activate AutoPrompt
 ```
 
