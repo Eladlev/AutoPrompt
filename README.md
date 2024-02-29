@@ -84,6 +84,12 @@ Using pip:
 pip install -r requirements.txt
 ```
 
+Using pipenv:
+```bash
+pip install pipenv
+pipenv synch
+```
+
 <br />
 
 > **Step 3** - Configure your LLM. 
@@ -116,11 +122,11 @@ dataset:
 
 For a **classification pipeline**, use the following command from your terminal within the appropriate working directory: 
 ```bash
-> python run_pipeline.py
+python run_pipeline.py
 ```
 If the initial prompt and task description are not provided directly as input, you will be guided to provide these details.  Alternatively, specify them as command-line arguments:
 ```bash
-> python run_pipeline.py \
+python run_pipeline.py \
     --prompt "Does this movie review contain a spoiler? answer Yes or No" \
     --task_description "Assistant is an expert classifier that will classify a movie review, and let the user know if it contains a spoiler for the reviewed movie or not." \
     --num_steps 30
@@ -128,10 +134,20 @@ If the initial prompt and task description are not provided directly as input, y
 You can track the optimization progress using the [W&B](https://wandb.ai/site) dashboard, with setup instructions available  [here](docs/installation.md#monitoring-weights-and-biases-setup). 
 
 
+If you are using pipenv, be sure to activate the environment:
+``` bash
+pipenv shell
+python run_pipeline.py  
+```
+or alternatively prefix your command with `pipenv run`:
+```bash
+pipenv run python run_pipeline.py 
+```
+
 #### Generation pipeline
 To run the generation pipeline, use the following example command:
 ```bash
-> python run_generation_pipeline.py \
+python run_generation_pipeline.py \
     --prompt "Write a good and comprehensive movie review about a specific movie." \
     --task_description "Assistant is a large language model that is tasked with writing movie reviews."
 ```
