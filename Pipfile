@@ -1,0 +1,24 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+openai = "*"
+langchain = "*"
+pandas = "*"
+wandb = "*"
+transformers = "*"
+tqdm = "*"
+faiss-cpu = "*"
+sentence-transformers = "*"
+prodict = "*"
+schedule = "*"
+easydict = "*"
+argilla = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
+python_full_version = "3.10.13"
