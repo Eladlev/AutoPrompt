@@ -15,7 +15,7 @@ dependencies:
   - sentence-transformers
   - pip:
       - prodict
-      - argilla==1.20.0
+      - argilla==1.25.0
       - schedule
       - pandas
       - easydict
