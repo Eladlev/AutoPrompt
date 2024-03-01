@@ -7,3 +7,5 @@ azure:
   AZURE_OPENAI_ENDPOINT: ''
   OPENAI_API_VERSION: ''
 
+google:
+  GOOGLE_API_KEY: ''
