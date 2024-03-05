@@ -1,4 +1,4 @@
-use_wandb: True
+use_wandb: False
 dataset:
     name: 'dataset'
     records_path: null

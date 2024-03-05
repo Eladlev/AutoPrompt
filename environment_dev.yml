@@ -2,7 +2,6 @@ name: AutoPrompt
 
 channels:
   - conda-forge
-
 dependencies:
   - python=3.10.13
   - pip>=2.22.0
@@ -16,7 +15,9 @@ dependencies:
   - sentence-transformers
   - pip:
       - prodict
-      - argilla==1.20.0
+      - argilla==1.25.0
       - schedule
       - pandas
       - easydict
+      - pillow==10.2.0
+      - langchain-google-genai==0.0.9

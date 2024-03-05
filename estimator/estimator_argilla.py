@@ -1,7 +1,7 @@
 import argilla as rg
 import time
-from argilla.client import api
 import pandas as pd
+from argilla.client.singleton import active_client
 from utils.config import Color
 from dataset.base_dataset import DatasetBase
 import json
@@ -83,7 +83,7 @@ class ArgillaEstimator:
         :param dataset: DatasetBase object, contains all the processed records
         :param batch_id: The batch id to annotate
         """
-        current_api = api.active_api()
+        current_api = active_client()
         try:
             rg_dataset = current_api.datasets.find_by_name(dataset.name)
         except:

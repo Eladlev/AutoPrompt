@@ -1,10 +1,10 @@
 import yaml
 from easydict import EasyDict as edict
 from langchain.prompts import PromptTemplate
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from pathlib import Path
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
-from langchain.chat_models import AzureChatOpenAI
+from langchain_community.chat_models import AzureChatOpenAI
 from langchain.chains import LLMChain
 import logging
 
@@ -44,10 +44,16 @@ def get_llm(config: dict):
                               openai_organization=LLM_ENV['openai']['OPENAI_ORGANIZATION'],
                               model_kwargs=model_kwargs)
     elif config['type'] == 'Azure':
-        AzureChatOpenAI(temperature=temperature, model_name=config['name'],
+        return AzureChatOpenAI(temperature=temperature, deployment_name=config['name'],
                         openai_api_key=LLM_ENV['azure']['AZURE_OPENAI_API_KEY'],
                         azure_endpoint=LLM_ENV['azure']['AZURE_OPENAI_ENDPOINT'],
                         openai_api_version=LLM_ENV['azure']['OPENAI_API_VERSION'])
+
+    elif config['type'] == 'Google':
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        return ChatGoogleGenerativeAI(temperature=temperature, model=config['name'],
+                              google_api_key=LLM_ENV['google']['GOOGLE_API_KEY'],
+                              model_kwargs=model_kwargs)
 
 
     elif config['type'] == 'HuggingFacePipeline':
