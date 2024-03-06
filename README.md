@@ -59,7 +59,7 @@ This joint synthetic data generation and prompt optimization approach outperform
 
 
 ## QuickStart
-
+AutoPrompt requires `python <= 3.10`
 <br />
 
 > **Step 1** - Download the project
