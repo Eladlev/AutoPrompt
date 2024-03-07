@@ -16,6 +16,7 @@ prodict = "*"
 schedule = "*"
 easydict = "*"
 argilla = "*"
+langchain-google-genai = "*"
 
 [dev-packages]
 
