@@ -23,7 +23,7 @@ The framework automatically generates high-quality, detailed prompts tailored to
 
 ## News
 
-* **2024-03-04:** Intent-based Prompt Calibration was accepted to the Data Problems for Foundation Models (DPFM) workshop in the upcoming ICLR2024!
+* **2024-03-04:** AutoPrompt paper was accepted to the Data Problems for Foundation Models (DPFM) workshop in ICLR2024!
 * **2024-03-01:** Support for Google Gemini added. 
 * **2024-02-05:** [Paper](https://arxiv.org/abs/2402.03099) and codes are released.
 
