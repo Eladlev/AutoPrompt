@@ -4,6 +4,8 @@
     <!-- license badge -->
     <a href="https://github.com/Eladlev/AutoPrompt/blob/main/LICENSE">
         <img alt="License" src="https://img.shields.io/badge/License-Apache_2.0-blue.svg"></a>
+    <!-- arxiv badge -->
+    <a href="https://arxiv.org/abs/2402.03099"><img src="https://img.shields.io/badge/arXiv-AutoPrompt-blue"></a>
 </p>
 
 # 📝 AutoPrompt
@@ -18,6 +20,12 @@ The framework automatically generates high-quality, detailed prompts tailored to
 
 
 **Our mission:** Empower users to produce high-quality robust prompts using the power of large language models (LLMs).
+
+## News
+
+* **2024-03-04:** Intent-based Prompt Calibration was accepted to the Data Problems for Foundation Models (DPFM) workshop in the upcoming ICLR2024!
+* **2024-03-01:** Support for Google Gemini added. 
+* **2024-02-05:** [Paper](https://arxiv.org/abs/2402.03099) and codes are released.
 
 # Why Auto Prompt?
 - **Prompt Engineering Challenges.** The quality of LLMs greatly depends on the prompts used. Even [minor changes](#prompt-sensitivity-example) can significantly affect their performance. 
