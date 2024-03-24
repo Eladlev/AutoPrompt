@@ -87,7 +87,7 @@ pip install -r requirements.txt
 Using pipenv:
 ```bash
 pip install pipenv
-pipenv synch
+pipenv sync
 ```
 
 <br />
