@@ -4,7 +4,7 @@ pandas==1.5.3
 tqdm==4.66.1
 prodict==0.8.18
 langchain==0.1.9
-openai==0.28.0
+openai==1.1.0
 tiktoken==0.5.1
 easydict==1.11
 wandb==0.16.0
