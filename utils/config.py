@@ -59,10 +59,15 @@ def get_llm(config: dict):
 
 
     elif config['type'] == 'HuggingFacePipeline':
+        device = config.get('gpu_device', -1)
+        device_map = config.get('device_map', None)
+
         return HuggingFacePipeline.from_model_id(
             model_id=config['name'],
             task="text-generation",
             pipeline_kwargs={"max_new_tokens": config['max_new_tokens']},
+            device=device,
+            device_map=device_map
         )
     else:
         raise NotImplementedError("LLM not implemented")
