@@ -6,6 +6,8 @@ from pathlib import Path
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain_community.chat_models import AzureChatOpenAI
 from langchain.chains import LLMChain
+from utils.sn_llm import GAIChat
+
 import logging
 
 LLM_ENV = yaml.safe_load(open('config/llm_env.yml', 'r'))
@@ -57,7 +59,8 @@ def get_llm(config: dict):
                               google_api_key=LLM_ENV['google']['GOOGLE_API_KEY'],
                               model_kwargs=model_kwargs)
 
-
+    elif config['type'] == 'SN_LLM':
+        return GAIChat(openai_api_key=config.get('key', ''))
     elif config['type'] == 'HuggingFacePipeline':
         device = config.get('gpu_device', -1)
         device_map = config.get('device_map', None)

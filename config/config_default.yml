@@ -19,8 +19,9 @@ predictor:
     method : 'llm'
     config:
         llm:
-            type: 'OpenAI'
+            type: 'SN_LLM'
             name: 'gpt-3.5-turbo-0613'
+            key: ''
 #            async_params:
 #                retry_interval: 10
 #                max_retries: 2
@@ -48,9 +49,10 @@ eval:
     error_threshold: 0.5
 
 llm:
-    type: 'OpenAI'
+    type: 'SN_LLM'
     name: 'gpt-4-1106-preview'
     temperature: 0.8
+    key: ''
 
 stop_criteria:
     max_usage: 2 #In $ in case of OpenAI models, otherwise number of tokens
