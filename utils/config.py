@@ -37,7 +37,7 @@ def get_llm(config: dict):
         if LLM_ENV['openai']['OPENAI_ORGANIZATION'] == '':
             return ChatOpenAI(temperature=temperature, model_name=config['name'],
                               openai_api_key=config.get('openai_api_key', LLM_ENV['openai']['OPENAI_API_KEY']),
-                              openai_api_base=config.get('openai_api_base', 'https://api.openai.com/v1'),
+                              openai_api_base=config.get('openai_api_base', LLM_ENV['openai']['OPENAI_API_BASE']),
                               model_kwargs=model_kwargs)
         else:
             return ChatOpenAI(temperature=temperature, model_name=config['name'],

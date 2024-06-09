@@ -221,7 +221,7 @@ class OptimizationPipeline:
             self.task_description = state['task_description']
             self.patient = state['patient']
 
-    def step(self):
+    def step(self, current_iter, total_iter):
         """
         This is the main optimization process step.
         """
@@ -261,7 +261,8 @@ class OptimizationPipeline:
         if self.stop_criteria():
             self.log_and_print('Stop criteria reached')
             return True
-        self.run_step_prompt()
+        if current_iter != total_iter-1:
+            self.run_step_prompt()
         self.save_state()
         return False
 
@@ -269,7 +270,7 @@ class OptimizationPipeline:
         # Run the optimization pipeline for num_steps
         num_steps_remaining = num_steps - self.batch_id
         for i in range(num_steps_remaining):
-            stop_criteria = self.step()
+            stop_criteria = self.step(i, num_steps_remaining)
             if stop_criteria:
                 break
         final_result = self.extract_best_prompt()
