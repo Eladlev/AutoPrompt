@@ -270,7 +270,7 @@ class OptimizationPipeline:
         # Run the optimization pipeline for num_steps
         num_steps_remaining = num_steps - self.batch_id
         for i in range(num_steps_remaining):
-            stop_criteria = self.step(i, num_steps)
+            stop_criteria = self.step(i, num_steps_remaining)
             if stop_criteria:
                 break
         final_result = self.extract_best_prompt()
