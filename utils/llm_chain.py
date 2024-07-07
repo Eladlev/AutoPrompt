@@ -83,6 +83,9 @@ class ChainWrapper:
         delay = self.llm_config.async_params.retry_interval
         timeout = delay * self.llm_config.async_params.max_retries
 
+        # Ensure all tasks are explicitly created
+        tasks = [asyncio.create_task(task) for task in tasks]
+
         start_time = asyncio.get_event_loop().time()
         end_time = start_time + timeout
         results = []
