@@ -1,0 +1,72 @@
+use_wandb: True
+dataset:
+    name: 'dataset'
+#    records_path: '/home/omer/work/kitty-server4/external/tools/AutoPrompt/dump/dataset.csv'
+#    initial_dataset: '/home/omer/work/kitty-server4/external/tools/AutoPrompt/dump'
+    records_path: null
+    initial_dataset: ''
+    label_schema: ["Yes", "No"]
+    max_samples: 50
+    semantic_sampling: True # Change to True in case you don't have M1. Currently there is an issue with faiss and M1
+
+annotator:
+    method : 'argilla'
+    config:
+        api_url: 'http://0.0.0.0:6900'
+        api_key: 'admin.apikey'
+        workspace: 'admin'
+        time_interval: 5
+#    method: 'llm'
+#    config:
+#        llm:
+#            type: 'Azure'
+#            name: 'ug-dev-east-us2-gpt-4-32k'
+#        instruction:
+#            'Assess whether the User would like to finish the interaction.
+#            Answer Yes if it does and No otherwise.'
+#        num_workers: 5
+#        prompt: 'prompts/predictor_completion/prediction.prompt'
+#        mini_batch_size: 1
+#        mode: 'annotation'
+
+predictor:
+    method : 'llm'
+    config:
+        llm:
+            type: 'Azure'
+            name: 'ug-dev-east-us2-gpt-4-32k'
+            async_params:
+                retry_interval: 10
+                max_retries: 2
+            model_kwargs: {"seed": 220}
+        num_workers: 5
+        prompt: 'prompts/predictor_completion/prediction.prompt'
+        mini_batch_size: 1  #change to >1 if you want to include multiple samples in the one prompt
+        mode: 'prediction'
+
+meta_prompts:
+    folder: 'prompts/meta_prompts_classification'
+    num_err_prompt: 1  # Number of error examples per sample in the prompt generation
+    num_err_samples: 2 # Number of error examples per sample in the sample generation
+    history_length: 4 # Number of sample in the meta-prompt history
+    num_generated_samples: 2 # Number of generated samples at each iteration
+    num_initialize_samples: 3 # Number of generated samples at iteration 0, in zero-shot case
+    samples_generation_batch: 3 # Number of samples generated in one call to the LLM
+    num_workers: 3 #Number of parallel workers
+    warmup: 4 # Number of warmup steps
+
+eval:
+    function_name: 'accuracy'
+    num_large_errors: 4
+    num_boundary_predictions : 0
+    error_threshold: 0.5
+
+llm:
+    type: 'Azure'
+    name: 'ug-dev-east-us2-gpt-4-32k'
+    temperature: 0.8
+
+stop_criteria:
+    max_usage: 2 #In $ in case of OpenAI models, otherwise number of tokens
+    patience: 10 # Number of patience steps
+    min_delta: 0.01 # Delta for the improvement definition
