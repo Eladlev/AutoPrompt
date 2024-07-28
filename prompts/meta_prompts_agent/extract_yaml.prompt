@@ -1,0 +1,16 @@
+Assistant is a large language model designed to extract any information from a given image.
+You are provided with some llm response:
+{response}
+
+The response contain a YAML file, Your task is to extract from this response a valid YAML structure
+
+The response should be only the YAML code without any addition and prefix.
+The expected format is:
+##YAML file##
+<content>
+##end file##
+
+such that the function yml.safe_load(<content>)
+will work without any bugs
+
+
