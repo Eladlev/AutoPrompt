@@ -1,0 +1,88 @@
+{
+    "metrics_list": [
+        {
+            "metric_name": "Accuracy",
+            "metric_desc": "Measures how accurately the assistant retrieves and presents information from the knowledge base in response to the questions asked.",
+            "metric_prompt": "Evaluate the performance of our agent using a five-point assessment scale that emphasizes accuracy in retrieving and presenting information from the knowledge base. Assign a single score of either 1, 2, 3, 4, or 5, with each level representing different degrees of perfection with respect to the accuracy of retrieved and presented information.",
+            "metric_scale": [
+                {
+                    "deficient_desc": "The assistant provides incorrect or misleading information that does not address the questions asked.",
+                    "adequate_desc": "The assistant provides partially correct or incomplete information with some errors.",
+                    "competent_desc": "The assistant provides mostly accurate information with minor errors or omissions.",
+                    "proficient_desc": "The assistant provides accurate information with minimal errors and complete responses to the questions.",
+                    "exemplary_desc": "The assistant provides entirely accurate and comprehensive information that fully addresses the questions asked."
+                }
+            ]
+        },
+        {
+            "metric_name": "Relevance",
+            "metric_desc": "Assesses whether the information retrieved and presented by the assistant is pertinent to the questions asked.",
+            "metric_prompt": "Evaluate the performance of our agent using a five-point assessment scale that emphasizes relevance of the information retrieved and presented to the questions asked. Assign a single score of either 1, 2, 3, 4, or 5, with each level representing different degrees of perfection with respect to the relevance of information retrieved and presented.",
+            "metric_scale": [
+                {
+                    "deficient_desc": "The assistant retrieves and presents information that is not related to the questions asked.",
+                    "adequate_desc": "The assistant retrieves and presents information that is partially related or tangential to the questions asked.",
+                    "competent_desc": "The assistant retrieves and presents information that is mostly relevant to the questions asked.",
+                    "proficient_desc": "The assistant retrieves and presents information that is highly relevant with few extraneous details.",
+                    "exemplary_desc": "The assistant retrieves and presents information that is perfectly relevant to the questions asked without any extraneous details."
+                }
+            ]
+        },
+        {
+            "metric_name": "Completeness",
+            "metric_desc": "Evaluates whether the assistant provides full and thorough answers to the questions asked, covering all necessary aspects.",
+            "metric_prompt": "Evaluate the performance of our agent using a five-point assessment scale that emphasizes completeness of the answers provided to the questions asked. Assign a single score of either 1, 2, 3, 4, or 5, with each level representing different degrees of perfection with respect to the completeness of answers provided.",
+            "metric_scale": [
+                {
+                    "deficient_desc": "The assistant provides answers that are significantly lacking in necessary details and aspects.",
+                    "adequate_desc": "The assistant provides answers that cover some aspects but omit several necessary details.",
+                    "competent_desc": "The assistant provides answers that cover most necessary aspects with minor omissions.",
+                    "proficient_desc": "The assistant provides answers that are thorough, covering nearly all necessary aspects with minimal omissions.",
+                    "exemplary_desc": "The assistant provides answers that are comprehensive, covering all necessary aspects in full detail."
+                }
+            ]
+        },
+        {
+            "metric_name": "Clarity",
+            "metric_desc": "Measures how clearly the assistant conveys the retrieved information in its responses, ensuring they are easy to understand.",
+            "metric_prompt": "Evaluate the performance of our agent using a five-point assessment scale that emphasizes the clarity of the information conveyed in responses. Assign a single score of either 1, 2, 3, 4, or 5, with each level representing different degrees of perfection with respect to the clarity of conveyed information.",
+            "metric_scale": [
+                {
+                    "deficient_desc": "The assistant provides responses that are confusing or unclear, making it difficult to understand the information.",
+                    "adequate_desc": "The assistant provides responses that are somewhat clear but may contain confusing elements or lack coherence.",
+                    "competent_desc": "The assistant provides responses that are mostly clear with minor elements of confusion or lack of coherence.",
+                    "proficient_desc": "The assistant provides responses that are clear and coherent with minimal elements of confusion.",
+                    "exemplary_desc": "The assistant provides responses that are exceptionally clear, coherent, and easy to understand without any confusing elements."
+                }
+            ]
+        },
+        {
+            "metric_name": "Conciseness",
+            "metric_desc": "Assesses whether the assistant provides information in a succinct manner without unnecessary verbosity.",
+            "metric_prompt": "Evaluate the performance of our agent using a five-point assessment scale that emphasizes conciseness in providing information. Assign a single score of either 1, 2, 3, 4, or 5, with each level representing different degrees of perfection with respect to the conciseness of provided information.",
+            "metric_scale": [
+                {
+                    "deficient_desc": "The assistant provides responses that are overly verbose and contain a lot of unnecessary information.",
+                    "adequate_desc": "The assistant provides responses that are somewhat concise but still contain some unnecessary information.",
+                    "competent_desc": "The assistant provides responses that are mostly concise with minor instances of unnecessary information.",
+                    "proficient_desc": "The assistant provides responses that are concise with minimal unnecessary information.",
+                    "exemplary_desc": "The assistant provides responses that are highly concise, containing only necessary and relevant information without any unnecessary verbosity."
+                }
+            ]
+        },
+        {
+            "metric_name": "Responsiveness",
+            "metric_desc": "Evaluates how promptly the assistant retrieves and provides answers to the questions asked.",
+            "metric_prompt": "Evaluate the performance of our agent using a five-point assessment scale that emphasizes responsiveness in retrieving and providing answers. Assign a single score of either 1, 2, 3, 4, or 5, with each level representing different degrees of perfection with respect to the responsiveness of retrieving and providing answers.",
+            "metric_scale": [
+                {
+                    "deficient_desc": "The assistant provides answers with significant delays, making the interaction feel slow and unresponsive.",
+                    "adequate_desc": "The assistant provides answers with moderate delays, impacting the flow of interaction.",
+                    "competent_desc": "The assistant provides answers with some delays, but the interaction remains relatively smooth.",
+                    "proficient_desc": "The assistant provides answers promptly with minimal delays, ensuring a smooth interaction.",
+                    "exemplary_desc": "The assistant provides answers almost instantaneously, ensuring a highly responsive and smooth interaction."
+                }
+            ]
+        }
+    ]
+}
