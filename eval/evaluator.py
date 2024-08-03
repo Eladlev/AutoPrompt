@@ -2,6 +2,12 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import confusion_matrix
 import eval.eval_utils as utils
+from utils.llm_chain import ChainWrapper
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+class MetricMetadata(BaseModel):
+    metric_score: float = Field(description="The score for the metric")
+    metric_reason: str = Field(description="The reason for the metric score")
 
 class Eval:
     """
@@ -28,6 +34,23 @@ class Eval:
         self.history = []
         self.analyzer = analyzer
         self.score_func = self.get_eval_function(config)
+
+        This function initializes a ChainWrapper with the given configuration, prompt file, and MetricMetadata.
+        It then defines a new function that invokes the chain with the input prompt and returns the results.
+
+        :param input_prompt: The input prompt to be evaluated.
+        :param prompt_file: The file containing the prompts.
+        :param config: The configuration dictionary containing the 'llm' configuration.
+        :return: A function that takes an input prompt, invokes the chain, and returns the results.
+        """
+
+        chain = ChainWrapper(config.llm, prompt_file, MetricMetadata)
+
+        def new_function(input_prompt):
+            results = chain.invoke(input_prompt)
+            return results
+
+        return new_function
 
     @staticmethod
     def get_eval_function(config: dict):
