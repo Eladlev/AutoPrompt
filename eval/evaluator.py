@@ -2,6 +2,12 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import confusion_matrix
 import eval.eval_utils as utils
+from utils.llm_chain import ChainWrapper
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+class MetricMetadata(BaseModel):
+    metric_score: float = Field(description="The score for the metric")
+    metric_reason: str = Field(description="The reason for the metric score")
 
 class Eval:
     """
@@ -47,6 +53,27 @@ class Eval:
                 "metric_prompt": "Establish a revised five-point assessment scale for evaluating the quality of the response to a given prompt that emphasizes precise differentiation between all levels of accuracy and relevance. Assign the classification labels '1', '2', '3', '4', and '5,' with each level distinctly representing the depth and accuracy of the response: 1. Deficient Accuracy and Lacking Relevance ('1'): Responses that fundamentally misinterpret or ignore the prompt and display a lack of relevance, signaling a complete disconnect and an ineffective response. 2. Basic Accuracy and Low Relevance ('2'): Responses that mention aspects of the prompt without depth and show only a low level of relevance, resulting in a response that lacks persuasive power and engagement. 3. Adequate Accuracy and Moderate Relevance ('3'): Responses that reflect the prompt accurately and convey moderate relevance, offering a fair and constructive response that is neither overly detailed nor overly superficial. 4. Detailed Accuracy and High Relevance ('4'): Responses that capture the nuances of the prompt in detail and exhibit high relevance, presenting a response that is both engaging and substantively insightful. 5. Exceptional Accuracy and Complete Relevance ('5'): Responses that deeply engage with the prompt, demonstrating both an exceptional level of accuracy and complete relevance, significantly enhancing the analysis and effectively addressing the prompt. This adjusted scale is designed to correct prior misclassifications by ensuring clear and accurate recognition of each level of response quality, thereby avoiding the underestimation of high-quality responses and providing a fair representation for lower-quality outputs."
             },
         ]
+    
+    def build_score_function(self, input_prompt, prompt_file, config: dict):
+        """
+        Constructs a scoring function based on the provided configuration.
+
+        This function initializes a ChainWrapper with the given configuration, prompt file, and MetricMetadata. 
+        It then defines a new function that invokes the chain with the input prompt and returns the results.
+
+        :param input_prompt: The input prompt to be evaluated.
+        :param prompt_file: The file containing the prompts.
+        :param config: The configuration dictionary containing the 'llm' configuration.
+        :return: A function that takes an input prompt, invokes the chain, and returns the results.
+        """
+
+        chain = ChainWrapper(config.llm, prompt_file, MetricMetadata)
+
+        def new_function(input_prompt):
+            results = chain.invoke(input_prompt)
+            return results
+
+        return new_function
 
     @staticmethod
     def get_eval_function(config: dict):
