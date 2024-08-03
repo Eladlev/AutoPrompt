@@ -56,10 +56,7 @@ class Eval:
     
     def build_score_function(self, input_prompt, prompt_file, config: dict):
         """
-        Constructs a scoring function based on the provided configuration.
-
-        This function initializes a ChainWrapper with the given configuration, prompt file, and MetricMetadata. 
-        It then defines a new function that invokes the chain with the input prompt and returns the results.
+        Initializes ChainWrapper and defines a function to invoke the chain with input prompt, based on provided configuration.
 
         :param input_prompt: The input prompt to be evaluated.
         :param prompt_file: The file containing the prompts.
