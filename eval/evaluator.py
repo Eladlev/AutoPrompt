@@ -35,6 +35,10 @@ class Eval:
         self.analyzer = analyzer
         self.score_func = self.get_eval_function(config)
 
+    def build_score_function(self, input_prompt, prompt_file, config: dict):
+        """
+        Constructs a scoring function based on the provided configuration.
+
         This function initializes a ChainWrapper with the given configuration, prompt file, and MetricMetadata.
         It then defines a new function that invokes the chain with the input prompt and returns the results.
 
