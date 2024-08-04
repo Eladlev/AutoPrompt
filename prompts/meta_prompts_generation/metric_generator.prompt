@@ -6,10 +6,6 @@ The task specific details are as follows:
 {task_description}
 ###
 
-### Task Instruction:
-{instruction}
-###
-
 Generate all possible rules that would be important to assess whether this assistant performed the above task perfectly or not.
 
 Make sure that these rules are:

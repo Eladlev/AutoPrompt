@@ -1,4 +1,0 @@
-llm:
-    type: 'OpenAI'
-    name: 'gpt-4o'
-    temperature: 0.8

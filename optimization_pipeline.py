@@ -1,5 +1,5 @@
 import pandas as pd
-
+from metric_generator.metric_gen import MetricHandler
 from eval.evaluator import Eval
 from dataset.base_dataset import DatasetBase
 from utils.llm_chain import MetaChain
@@ -55,7 +55,12 @@ class OptimizationPipeline:
 
         self.predictor = give_estimator(config.predictor)
         self.annotator = give_estimator(config.annotator)
-        self.eval = Eval(config.eval, self.meta_chain.error_analysis, self.dataset.label_schema)
+        self.metric_handler = None
+        if config.eval.function_name == 'generator':
+            self.metric_handler = MetricHandler(config.metric_generator, self.meta_chain.chain.metric_generator,
+                                                task_description)
+        error_analysis = self.meta_chain.chain.get('error_analysis', None)
+        self.eval = Eval(config.eval, error_analysis, self.metric_handler, self.dataset.label_schema)
         self.batch_id = 0
         self.patient = 0
 
@@ -104,8 +109,8 @@ class OptimizationPipeline:
                                     reverse=False)
             last_history = sorted_history[-self.config.meta_prompts.history_length:]
         history_prompt = '\n'.join([self.eval.sample_to_text(sample,
-                                                        num_errors_per_label=self.config.meta_prompts.num_err_prompt,
-                                                        is_score=True) for sample in last_history])
+                                                             num_errors_per_label=self.config.meta_prompts.num_err_prompt,
+                                                             is_score=True) for sample in last_history])
         prompt_input = {"history": history_prompt, "task_description": self.task_description,
                         'error_analysis': last_history[-1]['analysis']}
         if 'label_schema' in self.config.dataset.keys():
@@ -123,8 +128,8 @@ class OptimizationPipeline:
 
             if sum([len(t['errors']) for t in last_history]) > 0:
                 history_samples = '\n'.join([self.eval.sample_to_text(sample,
-                                                                 num_errors_per_label=self.config.meta_prompts.num_err_samples,
-                                                                 is_score=False) for sample in last_history])
+                                                                      num_errors_per_label=self.config.meta_prompts.num_err_samples,
+                                                                      is_score=False) for sample in last_history])
                 for batch in batch_inputs:
                     extra_samples = self.dataset.sample_records()
                     extra_samples_text = DatasetBase.samples_to_text(extra_samples)
@@ -138,7 +143,7 @@ class OptimizationPipeline:
                     batch['extra_samples'] = extra_samples_text
 
             samples_batches = self.meta_chain.step_samples.batch_invoke(batch_inputs,
-                                                                         self.config.meta_prompts.num_workers)
+                                                                        self.config.meta_prompts.num_workers)
             new_samples = [element for sublist in samples_batches for element in sublist['samples']]
             new_samples = self.dataset.remove_duplicates(new_samples)
             self.dataset.add(new_samples, self.batch_id)
@@ -156,7 +161,7 @@ class OptimizationPipeline:
         if len(self.eval.history) <= self.config.meta_prompts.warmup:
             self.patient = 0
             return False
-        min_batch_id, max_score = self.eval.get_max_score(self.config.meta_prompts.warmup-1)
+        min_batch_id, max_score = self.eval.get_max_score(self.config.meta_prompts.warmup - 1)
         if max_score - self.eval.history[-1]['score'] > -self.config.stop_criteria.min_delta:
             self.patient += 1
         else:
@@ -261,7 +266,7 @@ class OptimizationPipeline:
         if self.stop_criteria():
             self.log_and_print('Stop criteria reached')
             return True
-        if current_iter != total_iter-1:
+        if current_iter != total_iter - 1:
             self.run_step_prompt()
         self.save_state()
         return False
