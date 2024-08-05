@@ -102,7 +102,11 @@ Set your OpenAI API key  by updating the configuration file `config/llm_env.yml`
 <br />
 
 > **Step 4** - Configure your Annotator
-- Select an annotation approach for your project. We recommend beginning with a human-in-the-loop method, utilizing [Argilla](https://docs.argilla.io/en/latest/index.html). Follow the [Argilla setup instructions](https://docs.argilla.io/en/latest/getting_started/installation/deployments/huggingface-spaces.html) to configure your server. Alternatively, you can set up an LLM as your annotator by following these [configuration steps](docs/installation.md#configure-llm-annotator).
+- Select an annotation approach for your project:
+    -  We recommend beginning with a human-in-the-loop method, utilizing [Argilla](https://docs.v1.argilla.io/en/v1.11.0). Observe that AutoPrompt is compatible with **Argilla V1**, not with the latest V2. Follow the [Argilla setup instructions](https://docs.v1.argilla.io/en/v1.11.0/getting_started/quickstart_installation.html), with the following modifications:
+        -  If you are using local docker use `v1.29.0` instead of the `latest` tag.
+        -  For a quick setup using HF, duplicate the following [space](https://huggingface.co/spaces/Eladlev/test4)
+    -  Alternatively, you can set up an LLM as your annotator by following these [configuration steps](docs/installation.md#configure-llm-annotator).
 
 - The default predictor LLM, GPT-3.5, for estimating prompt performance, is configured in the `predictor` section of `config/config_default.yml`.
 
