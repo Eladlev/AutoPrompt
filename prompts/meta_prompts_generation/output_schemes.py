@@ -163,7 +163,7 @@ metric_generator_schema = {
   "description": "The collection of Metrics."
   "properties": {
     "metrics_list": {
-      "description": "The list of all possible metrics that would be important to assess whether this assistant performed the above task perfectly or not.",
+      "description": "The list of all possible metrics that would be important to assess whether this assistant performed the given task perfectly or not.",
       "items": {
         "$ref": "#/$defs/Metric"
         },
