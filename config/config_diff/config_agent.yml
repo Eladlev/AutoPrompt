@@ -1,0 +1,4 @@
+agent_config:
+    tools_path: 'agent/agent_tools.py'
+meta_prompts:
+    folder: 'prompts/meta_prompts_agent'

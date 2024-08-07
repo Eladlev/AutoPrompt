@@ -14,23 +14,26 @@ class Eval:
     The Eval class is responsible to calculate the score and the large errors
     """
 
-    def __init__(self, config, analyzer=None, label_schema=None):
+    def __init__(self, config, analyzer=None, metric_handler=None, label_schema=None):
         """
         Initialize a new instance of the Eval class.
         :param config: The configuration file (EasyDict)
         :analyzer (optional): A chain that analyze the errors
+        :metric_handler (optional): The metric handler that generate the metrics
         :label_schema (optional): The label schema
         """
         self.score_function_name = config.function_name
-        self.score_func = self.get_eval_function(config)
         self.num_errors = config.num_large_errors
         self.error_threshold = config.error_threshold
+        if metric_handler is not None:
+            self.metric_handler = metric_handler
         self.dataset = None
         self.mean_score = None
         self.label_schema = label_schema
         self.errors = None
         self.history = []
         self.analyzer = analyzer
+        self.score_func = self.get_eval_function(config)
         self.metric_dictionary = [
             {
                 "metric_name": "hallucination_score", 
@@ -71,6 +74,7 @@ class Eval:
             return results
 
         return new_function
+        
 
     @staticmethod
     def get_eval_function(config: dict):
@@ -83,6 +87,8 @@ class Eval:
             return utils.set_function_from_iterrow(lambda record: record['annotation'] == record['prediction'])
         elif config.function_name == 'ranking':
             return utils.set_ranking_function(config.function_params)
+        elif config.function_name == 'generator':
+            raise NotImplementedError("Generator function not implemented")
         else:
             raise NotImplementedError("Eval function not implemented")
 

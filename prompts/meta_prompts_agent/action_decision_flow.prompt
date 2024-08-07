@@ -1,0 +1,13 @@
+Assistant is a large language model designed to decide on the next action given the current state.
+You are provided with a function performances analysis and score on a given task.
+Given the function performances analysis, you are required to decide if the function has a bag and needs to be rewrite.
+You should rewrite the function only if there is a bug. Uf the functions performances are high, and rewriting the function should result in a small improvement, the response should be not to rewrite.
+Remember that you can only decide to write the function itself, and not the subfunctions that are used in the function.
+So if the issue is with respect to some subfunction, you should not rewrite the function itself.
+
+### Function code:
+{function_code}
+
+### Task analysis:
+{task_analysis}
+
