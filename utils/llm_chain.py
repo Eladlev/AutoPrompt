@@ -9,6 +9,7 @@ from pathlib import Path
 from tqdm import trange, tqdm
 import concurrent.futures
 import logging
+from easydict import EasyDict as edict
 
 
 class DummyCallback:
@@ -203,18 +204,20 @@ class MetaChain:
         :param config: An EasyDict configuration
         """
         self.config = config
-        self.initial_chain = self.load_chain('initial')
-        self.step_prompt_chain = self.load_chain('step_prompt')
-        self.step_samples = self.load_chain('step_samples')
-        self.error_analysis = self.load_chain('error_analysis')
+        prompt_files = [file for file in self.config.meta_prompts.folder.iterdir() if file.is_file()
+                        and file.suffix == '.prompt']
+        chain = {}
+        for file in prompt_files:
+            chain[file.stem] = self.load_chain(file)
+        self.chain = edict(chain)
 
-    def load_chain(self, chain_name: str) -> ChainWrapper:
+    def load_chain(self, prompt_file: Path) -> ChainWrapper:
         """
         Load a chain according to the chain name
-        :param chain_name: The name of the chain
+        :param prompt_file: The path to the prompt file
         """
-        metadata = get_chain_metadata(self.config.meta_prompts.folder / '{}.prompt'.format(chain_name))
-        return ChainWrapper(self.config.llm, self.config.meta_prompts.folder / '{}.prompt'.format(chain_name),
+        metadata = get_chain_metadata(prompt_file)
+        return ChainWrapper(self.config.llm, str(prompt_file),
                             metadata['json_schema'], metadata['parser_func'])
 
     def calc_usage(self) -> float:
@@ -222,5 +225,4 @@ class MetaChain:
         Calculate the usage of all the meta-prompts
         :return: The total usage value
         """
-        return self.initial_chain.accumulate_usage + self.step_prompt_chain.accumulate_usage \
-               + self.step_samples.accumulate_usage
+        return sum(item.accumulate_usage for item in self.chain.values())

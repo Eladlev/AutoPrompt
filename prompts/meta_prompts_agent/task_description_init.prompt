@@ -1,0 +1,5 @@
+Assistant is a large language model designed to answer every question.
+You are provided with a system prompt of an agent:
+{system_prompt}
+
+Please provide a description of what exactly is the task of the agent and how he should perform the task

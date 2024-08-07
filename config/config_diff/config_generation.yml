@@ -19,7 +19,10 @@ meta_prompts:
     folder: 'prompts/meta_prompts_generation'
     warmup: 1
 
+metric_generator:
+        num_metrics: 5
+
 eval:
-    function_name: 'ranking'
+    function_name: 'generator'
     error_threshold: 4
 
