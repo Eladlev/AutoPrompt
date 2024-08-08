@@ -1,3 +1,5 @@
+import os.path
+
 import yaml
 from easydict import EasyDict as edict
 from langchain.prompts import PromptTemplate
@@ -90,13 +92,16 @@ def load_yaml(yaml_path: str, as_edict: bool = True) -> edict:
     return yaml_data
 
 
-def load_prompt(prompt_path: str) -> PromptTemplate:
+def load_prompt(prompt_input: str) -> PromptTemplate:
     """
     Reads and returns the contents of a prompt file.
-    :param prompt_path: The path to the prompt file
+    :param prompt_input: Either The path to the prompt file or the prompt itself
     """
-    with open(prompt_path, 'r') as file:
-        prompt = file.read().rstrip()
+    if os.path.isfile(prompt_input):
+        with open(prompt_input, 'r') as file:
+            prompt = file.read().rstrip()
+    else:
+        prompt = prompt_input
     return PromptTemplate.from_template(prompt)
 
 
