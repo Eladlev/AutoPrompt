@@ -160,7 +160,7 @@ metric_generator_schema = {
       "type": "object"
     }
   },
-  "description": "The collection of Metrics."
+  "description": "The collection of Metrics.",
   "properties": {
     "metrics_list": {
       "description": "The list of all possible metrics that would be important to assess whether this assistant performed the given task perfectly or not.",
