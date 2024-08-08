@@ -50,7 +50,7 @@ class ChainWrapper:
         self.prompt = load_prompt(prompt_path)
         self.build_chain()
         self.accumulate_usage = 0
-        if self.llm_config.type.lower() == 'openai':
+        if self.llm_config.type.lower() == 'openai' or self.llm_config.type.lower() == 'azure':
             self.callback = get_openai_callback
         else:
             self.callback = get_dummy_callback
