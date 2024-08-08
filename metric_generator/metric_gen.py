@@ -20,5 +20,5 @@ class MetricHandler:
         """
         Generate new metrics
         """
-        metrics = self.metric_generator.invoke({'task_description': self.task_description, 'num_metrics': self.config.metric_generator.num_metrics})
-        return metrics.dict()['metrics_list']
+        metrics = self.metric_generator.invoke({'task_description': self.task_description, 'num_metrics': self.config.num_metrics})
+        return metrics['metrics_list']
