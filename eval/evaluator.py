@@ -28,13 +28,7 @@ class Eval:
         self.errors = None
         self.history = []
         self.analyzer = analyzer
-        self.score_func = self.get_eval_function(config)
-
-        def new_function(input_prompt):
-            results = chain.invoke(input_prompt)
-            return results
-
-        return new_function
+        self.score_func = self.get_eval_function()
 
     def get_eval_function(self):
         """
