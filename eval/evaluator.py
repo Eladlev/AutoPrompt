@@ -41,7 +41,7 @@ class Eval:
         elif self.score_function_name == 'ranking':
             return utils.set_ranking_function(self.config.function_params)
         elif self.score_function_name == 'generator':
-            raise NotImplementedError("Generator function not implemented")
+            return {metric['metric_name']: metric['metric_function'] for metric in self.metric_handler.metrics}
         else:
             raise NotImplementedError("Eval function not implemented")
 

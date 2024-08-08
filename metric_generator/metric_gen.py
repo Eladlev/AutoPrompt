@@ -34,7 +34,7 @@ class MetricHandler:
         for metric in metrics:
             prompt = f'{metric["metric_prompt"]}\nThe following input should be evaluated according to the metric guidlines. \n###Evaluated input:\n{{sample}}\n###End'
             metric['metric_function'] = self.build_score_function(prompt)
-        return metrics['metrics_list']
+        return metrics
 
     def build_score_function(self, metric_prompt: str):
         """
