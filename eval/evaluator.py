@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 import numpy as np
 from sklearn.metrics import confusion_matrix
@@ -49,7 +50,7 @@ class Eval:
         self.dataset = self.dataset[(self.dataset['prediction'] != 'Discarded') &
                                     (self.dataset['annotation'] != 'Discarded')]
         self.dataset = self.score_func(self.dataset)
-        self.mean_score = self.dataset['score'].mean()
+        self.mean_score = np.mean([np.mean([metric['metric_score'] for metric in json.loads(score)]) for score in self.dataset['score']])     #to be discussed
         return self.mean_score
 
     def get_max_score(self, warmup=0):
