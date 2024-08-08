@@ -28,22 +28,7 @@ class Eval:
         self.errors = None
         self.history = []
         self.analyzer = analyzer
-        self.score_func = self.get_eval_function()
-
-    def build_score_function(self, input_prompt, prompt_file, config: dict):
-        """
-        Constructs a scoring function based on the provided configuration.
-
-        This function initializes a ChainWrapper with the given configuration, prompt file, and MetricMetadata.
-        It then defines a new function that invokes the chain with the input prompt and returns the results.
-
-        :param input_prompt: The input prompt to be evaluated.
-        :param prompt_file: The file containing the prompts.
-        :param config: The configuration dictionary containing the 'llm' configuration.
-        :return: A function that takes an input prompt, invokes the chain, and returns the results.
-        """
-
-        chain = ChainWrapper(config.llm, prompt_file, MetricMetadata)
+        self.score_func = self.get_eval_function(config)
 
         def new_function(input_prompt):
             results = chain.invoke(input_prompt)
