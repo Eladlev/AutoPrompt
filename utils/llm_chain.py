@@ -35,11 +35,11 @@ class ChainWrapper:
     A wrapper for a LLM chain
     """
 
-    def __init__(self, llm_config, prompt_path: str, json_schema: dict = None, parser_func=None):
+    def __init__(self, llm_config, prompt: str, json_schema: dict = None, parser_func=None):
         """
         Initialize a new instance of the ChainWrapper class.
         :param llm_config: The config for the LLM
-        :param prompt_path: A path to the prompt file (text file)
+        :param prompt: Either path to the prompt file (text file), or the prompt itself
         :param json_schema: A dict for the json schema, to get a structured output for the LLM
         :param parser_func: A function to parse the output of the LLM
         """
@@ -47,7 +47,7 @@ class ChainWrapper:
         self.llm = get_llm(llm_config)
         self.json_schema = json_schema
         self.parser_func = parser_func
-        self.prompt = load_prompt(prompt_path)
+        self.prompt = load_prompt(prompt)
         self.build_chain()
         self.accumulate_usage = 0
         if self.llm_config.type.lower() == 'openai' or self.llm_config.type.lower() == 'azure':

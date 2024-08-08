@@ -1,4 +1,13 @@
 from utils.llm_chain import ChainWrapper
+from utils.llm_chain import ChainWrapper
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+class MetricMetadata(BaseModel):
+    metric_score: float = Field(description="The score for the metric")
+    metric_reason: str = Field(description="The reason for the metric score")
+
+
 class MetricHandler:
     """
     A Class responsible for handling and generating metrics
@@ -20,5 +29,29 @@ class MetricHandler:
         """
         Generate new metrics
         """
-        metrics = self.metric_generator.invoke({'task_description': self.task_description, 'num_metrics': self.config.num_metrics})
+        metrics = self.metric_generator.invoke(
+            {'task_description': self.task_description, 'num_metrics': self.config.num_metrics})
+        metrics = metrics['metrics_list']
+        for metric in metrics:
+            prompt = f'{metric["metric_prompt"]}\nThe following input should be evaluated according to the metric guidlines. \n###Evaluated input:\n{{sample}}\n###End'
+            metric['metric_function'] = self.build_score_function(prompt)
         return metrics['metrics_list']
+
+    def build_score_function(self, metric_prompt: str):
+        """
+        Constructs a scoring function based on the provided configuration.
+
+        This function initializes a ChainWrapper with the given configuration, prompt file, and MetricMetadata.
+        It then defines a new function that invokes the chain with the input prompt and returns the results.
+
+        :param metric_prompt: The prompts.
+        :return: A function that takes an input prompt, invokes the chain, and returns the results.
+        """
+
+        chain = ChainWrapper(self.config.llm, metric_prompt, MetricMetadata)
+
+        def new_function(input_prompt):
+            results = chain.invoke({'sample':input_prompt})
+            return results
+
+        return new_function

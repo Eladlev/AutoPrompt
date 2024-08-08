@@ -2,12 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import confusion_matrix
 import eval.eval_utils as utils
-from utils.llm_chain import ChainWrapper
-from langchain_core.pydantic_v1 import BaseModel, Field
 
-class MetricMetadata(BaseModel):
-    metric_score: float = Field(description="The score for the metric")
-    metric_reason: str = Field(description="The reason for the metric score")
 
 class Eval:
     """
@@ -33,7 +28,7 @@ class Eval:
         self.errors = None
         self.history = []
         self.analyzer = analyzer
-        self.score_func = self.get_eval_function(config)
+        self.score_func = self.get_eval_function()
 
     def build_score_function(self, input_prompt, prompt_file, config: dict):
         """
@@ -56,18 +51,17 @@ class Eval:
 
         return new_function
 
-    @staticmethod
-    def get_eval_function(config: dict):
+    def get_eval_function(self):
         """
         Returns the eval function
         :param config: The eval configuration
         :return: The function implementation on a record
         """
-        if config.function_name == 'accuracy':
+        if self.score_function_name == 'accuracy':
             return utils.set_function_from_iterrow(lambda record: record['annotation'] == record['prediction'])
-        elif config.function_name == 'ranking':
-            return utils.set_ranking_function(config.function_params)
-        elif config.function_name == 'generator':
+        elif self.score_function_name == 'ranking':
+            return utils.set_ranking_function(self.config.function_params)
+        elif self.score_function_name == 'generator':
             raise NotImplementedError("Generator function not implemented")
         else:
             raise NotImplementedError("Eval function not implemented")
