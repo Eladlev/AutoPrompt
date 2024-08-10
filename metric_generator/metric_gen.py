@@ -1,7 +1,7 @@
 from utils.llm_chain import ChainWrapper
 from langchain_core.pydantic_v1 import BaseModel, Field
-
-
+import pandas as pd
+import pickle
 class MetricMetadata(BaseModel):
     metric_score: float = Field(description="The score for the metric")
     metric_reason: str = Field(description="The reason for the metric score")
@@ -49,8 +49,13 @@ class MetricHandler:
 
         chain = ChainWrapper(self.config.llm, metric_prompt, MetricMetadata)
 
-        def new_function(input_prompt):
-            results = chain.invoke({'sample':input_prompt})
-            return results
+        def new_function(record: pd.DataFrame, num_workers: int = 1):
+            batch_inputs = []
+            # prepare all the inputs for the chains
+            for i, row in record.iterrows():
+                batch_inputs.append({'sample': row['text']})
+            all_results = chain.batch_invoke(batch_inputs, num_workers, get_index=True)
+            all_results = {res['index']: res['result'].dict() for res in all_results}
+            return all_results
 
         return new_function

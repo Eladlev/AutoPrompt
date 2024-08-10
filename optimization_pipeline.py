@@ -115,7 +115,7 @@ class OptimizationPipeline:
                         'error_analysis': last_history[-1]['analysis']}
         if 'label_schema' in self.config.dataset.keys():
             prompt_input["labels"] = json.dumps(self.config.dataset.label_schema)
-        prompt_suggestion = self.meta_chain.step_prompt_chain.invoke(prompt_input)
+        prompt_suggestion = self.meta_chain.chain.step_prompt_chain.invoke(prompt_input)
         self.log_and_print(f'Previous prompt score:\n{self.eval.mean_score}\n#########\n')
         self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
         self.batch_id += 1
@@ -142,7 +142,7 @@ class OptimizationPipeline:
                     batch['history'] = 'No previous errors information'
                     batch['extra_samples'] = extra_samples_text
 
-            samples_batches = self.meta_chain.step_samples.batch_invoke(batch_inputs,
+            samples_batches = self.meta_chain.chain.step_samples.batch_invoke(batch_inputs,
                                                                         self.config.meta_prompts.num_workers)
             new_samples = [element for sublist in samples_batches for element in sublist['samples']]
             new_samples = self.dataset.remove_duplicates(new_samples)
@@ -193,7 +193,7 @@ class OptimizationPipeline:
         batch_inputs = self.generate_samples_batch(batch_input, self.config.meta_prompts.num_initialize_samples,
                                                    self.config.meta_prompts.samples_generation_batch)
 
-        samples_batches = self.meta_chain.initial_chain.batch_invoke(batch_inputs, self.config.meta_prompts.num_workers)
+        samples_batches = self.meta_chain.chain.initial.batch_invoke(batch_inputs, self.config.meta_prompts.num_workers)
         samples_list = [element for sublist in samples_batches for element in sublist['samples']]
         samples_list = self.dataset.remove_duplicates(samples_list)
         self.dataset.add(samples_list, 0)
