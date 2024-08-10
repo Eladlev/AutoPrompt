@@ -10,6 +10,7 @@ import os
 import json
 import logging
 import wandb
+from dataset.sample_generator import SampleGenerator
 
 
 class OptimizationPipeline:
@@ -60,6 +61,7 @@ class OptimizationPipeline:
             self.metric_handler = MetricHandler(config.metric_generator, self.meta_chain.chain.metric_generator,
                                                 task_description)
         error_analysis = self.meta_chain.chain.get('error_analysis', None)
+        self.sample_generator = SampleGenerator(config.meta_prompts, task_description, self.meta_chain)
         self.eval = Eval(config.eval, error_analysis, self.metric_handler, self.dataset.label_schema)
         self.batch_id = 0
         self.patient = 0
@@ -115,38 +117,13 @@ class OptimizationPipeline:
                         'error_analysis': last_history[-1]['analysis']}
         if 'label_schema' in self.config.dataset.keys():
             prompt_input["labels"] = json.dumps(self.config.dataset.label_schema)
-        prompt_suggestion = self.meta_chain.chain.step_prompt_chain.invoke(prompt_input)
+        prompt_suggestion = self.meta_chain.chain.step_prompt.invoke(prompt_input)
         self.log_and_print(f'Previous prompt score:\n{self.eval.mean_score}\n#########\n')
         self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
         self.batch_id += 1
         if len(self.dataset) < self.config.dataset.max_samples:
-            batch_input = {"num_samples": self.config.meta_prompts.samples_generation_batch,
-                           "task_description": self.task_description,
-                           "prompt": prompt_suggestion['prompt']}
-            batch_inputs = self.generate_samples_batch(batch_input, self.config.meta_prompts.num_generated_samples,
-                                                       self.config.meta_prompts.samples_generation_batch)
-
-            if sum([len(t['errors']) for t in last_history]) > 0:
-                history_samples = '\n'.join([self.eval.sample_to_text(sample,
-                                                                      num_errors_per_label=self.config.meta_prompts.num_err_samples,
-                                                                      is_score=False) for sample in last_history])
-                for batch in batch_inputs:
-                    extra_samples = self.dataset.sample_records()
-                    extra_samples_text = DatasetBase.samples_to_text(extra_samples)
-                    batch['history'] = history_samples
-                    batch['extra_samples'] = extra_samples_text
-            else:
-                for batch in batch_inputs:
-                    extra_samples = self.dataset.sample_records()
-                    extra_samples_text = DatasetBase.samples_to_text(extra_samples)
-                    batch['history'] = 'No previous errors information'
-                    batch['extra_samples'] = extra_samples_text
-
-            samples_batches = self.meta_chain.chain.step_samples.batch_invoke(batch_inputs,
-                                                                        self.config.meta_prompts.num_workers)
-            new_samples = [element for sublist in samples_batches for element in sublist['samples']]
-            new_samples = self.dataset.remove_duplicates(new_samples)
-            self.dataset.add(new_samples, self.batch_id)
+            self.sample_generator.generate_samples(self.dataset, prompt_suggestion['prompt'], last_history,
+                                                   self.batch_id, self.eval.sample_to_text)
             logging.info('Get new samples')
         self.cur_prompt = prompt_suggestion['prompt']
 
@@ -169,34 +146,6 @@ class OptimizationPipeline:
         if self.patient > self.config.stop_criteria.patience:
             return True
         return False
-
-    @staticmethod
-    def generate_samples_batch(batch_input, num_samples, batch_size):
-        """
-        Generate samples in batch
-        """
-        batch_num = num_samples // batch_size
-        all_batches = [batch_input.copy() for _ in range(batch_num)]
-        reminder = num_samples - batch_num * batch_size
-        if reminder > 0:
-            all_batches.append(batch_input.copy())
-            all_batches[-1]['num_samples'] = reminder
-        return all_batches
-
-    def generate_initial_samples(self):
-        """
-        In case the initial dataset is empty generate the initial samples
-        """
-        batch_input = {"num_samples": self.config.meta_prompts.samples_generation_batch,
-                       "task_description": self.task_description,
-                       "instruction": self.cur_prompt}
-        batch_inputs = self.generate_samples_batch(batch_input, self.config.meta_prompts.num_initialize_samples,
-                                                   self.config.meta_prompts.samples_generation_batch)
-
-        samples_batches = self.meta_chain.chain.initial.batch_invoke(batch_inputs, self.config.meta_prompts.num_workers)
-        samples_list = [element for sublist in samples_batches for element in sublist['samples']]
-        samples_list = self.dataset.remove_duplicates(samples_list)
-        self.dataset.add(samples_list, 0)
 
     def save_state(self):
         """
@@ -233,7 +182,7 @@ class OptimizationPipeline:
         self.log_and_print(f'Starting step {self.batch_id}')
         if len(self.dataset.records) == 0:
             self.log_and_print('Dataset is empty generating initial samples')
-            self.generate_initial_samples()
+            self.sample_generator.generate_initial_samples(self.dataset, self.cur_prompt)
         if self.config.use_wandb:
             cur_batch = self.dataset.get_leq(self.batch_id)
             random_subset = cur_batch.sample(n=min(10, len(cur_batch)))[['text']]
