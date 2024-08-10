@@ -1,7 +1,8 @@
 from utils.llm_chain import ChainWrapper
 from langchain_core.pydantic_v1 import BaseModel, Field
 import pandas as pd
-import pickle
+
+
 class MetricMetadata(BaseModel):
     metric_score: float = Field(description="The score for the metric")
     metric_reason: str = Field(description="The reason for the metric score")
