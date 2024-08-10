@@ -124,21 +124,30 @@ class ChainWrapper:
                 return [self.parser_func(t.result()) for t in list(all_res)]
             return [t.result() for t in list(all_res)]
 
-    def batch_invoke(self, inputs: list[dict], num_workers: int):
+    def batch_invoke(self, inputs: list[dict], num_workers: int, get_index=False) -> list[dict]:
         """
         Invoke the chain on a batch of inputs either async or not
         :param inputs: The list of all inputs
         :param num_workers: The number of workers
+        :param get_index: If True, return the index of the input
         :return: A list of results
         """
 
         def sample_generator():
-            for sample in inputs:
-                yield sample
+            if get_index:
+                for i, sample in enumerate(inputs):
+                    yield (i,sample)
+            else:
+                for sample in inputs:
+                    yield sample
 
         def process_sample_with_progress(sample):
+            if get_index:
+                i, sample = sample
             result = self.invoke(sample)
             pbar.update(1)  # Update the progress bar
+            if get_index:
+                return {'index': i, 'result': result}
             return result
 
         if not ('async_params' in self.llm_config.keys()):  # non async mode, use regular workers

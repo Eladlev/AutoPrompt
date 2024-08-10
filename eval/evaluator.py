@@ -21,6 +21,7 @@ class Eval:
         self.score_function_name = config.function_name
         self.num_errors = config.num_large_errors
         self.error_threshold = config.error_threshold
+        self.num_workers = config.get("num_workers", 1)
         if metric_handler is not None:
             self.metric_handler = metric_handler
         self.dataset = None
@@ -42,7 +43,9 @@ class Eval:
         elif self.score_function_name == 'ranking':
             return utils.set_ranking_function(self.config.function_params)
         elif self.score_function_name == 'generator':
-            return {metric['metric_name']: metric['metric_function'] for metric in self.metric_handler.metrics}
+            return utils.set_multiscore_function({metric['metric_name']: metric['metric_function']
+                                                  for metric in self.metric_handler.metrics},
+                                                 num_workers=self.num_workers)
         else:
             raise NotImplementedError("Eval function not implemented")
 
@@ -55,7 +58,11 @@ class Eval:
         self.dataset = self.dataset[(self.dataset['prediction'] != 'Discarded') &
                                     (self.dataset['annotation'] != 'Discarded')]
         self.dataset = self.score_func(self.dataset)
-        self.mean_score = np.mean([np.mean([metric['metric_score'] for metric in json.loads(score)]) for score in self.dataset['score']])     #to be discussed
+        if self.score_function_name == 'generator':
+            self.mean_score = {metric['metric_name']: self.dataset['score_{}'.format(metric['metric_name'])].mean()
+                               for metric in self.metric_handler.metrics}
+        else:
+            self.mean_score = self.dataset['score'].mean()
         return self.mean_score
 
     def get_max_score(self, warmup=0):
