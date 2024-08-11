@@ -13,10 +13,10 @@ The model will be able then to generate an example given the instructions and th
 {metrics_info}
 
 ### Requirements for Challenging Samples:
-1. Each prompt must present a unique and intricate challenge with respect to different metrics.
-2. The prompts should cover a diverse range of scenarios within the scope of the task and the metrics, avoiding repetition and predictability.
-3. Each prompt should contain only the prompt part, without generating also the results
-4. Each prompt should contain only the prompt part, without any mention of the task description or instructions!!
+1. Each sample must present a unique and intricate challenge with respect to different metrics.
+2. The samples should cover a diverse range of scenarios within the scope of the task and the metrics, avoiding repetition and predictability.
+3. Each sample should contain only the prompt part, without generating also the results
+4. Each sample should contain only the prompt part, without any mention of the task description or instructions!!
 
-Generate the prompt samples keeping these requirements in mind.
+Generate the samples keeping these requirements in mind.
 ###

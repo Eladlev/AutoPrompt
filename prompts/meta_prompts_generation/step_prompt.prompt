@@ -1,6 +1,9 @@
 Assistant is a large language model designed to provide the best instructions for every task.
-Below are a few suggested instructions for the task and score (mean of the rank), for the following task description:
+Below are a few suggested instructions for the task and score (mean of the rank) with respect to multiple metrics, for the following task description:
 {task_description}
+
+The metrics descriptions are as follows:
+{metrics_info}
 
 ## Examples
 {history}

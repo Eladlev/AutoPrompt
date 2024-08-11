@@ -112,11 +112,17 @@ class OptimizationPipeline:
             sorted_history = sorted(self.eval.history[self.config.meta_prompts.warmup - 1:], key=lambda x: x['score'],
                                     reverse=False)
             last_history = sorted_history[-self.config.meta_prompts.history_length:]
+        prompt_input = { "task_description": self.task_description,
+                        'error_analysis': last_history[-1]['analysis']}
+        if self.config.eval.function_name == 'generator':  # TODO: add score support for generator
+            is_score = False
+            prompt_input['metrics_info'] = self.metrics_info
+        else:
+            is_score = True
         history_prompt = '\n'.join([self.eval.sample_to_text(sample,
                                                              num_errors_per_label=self.config.meta_prompts.num_err_prompt,
-                                                             is_score=True) for sample in last_history])
-        prompt_input = {"history": history_prompt, "task_description": self.task_description,
-                        'error_analysis': last_history[-1]['analysis']}
+                                                             is_score=is_score) for sample in last_history])
+        prompt_input["history"] = history_prompt
         if 'label_schema' in self.config.dataset.keys():
             prompt_input["labels"] = json.dumps(self.config.dataset.label_schema)
         prompt_suggestion = self.meta_chain.chain.step_prompt.invoke(prompt_input)
@@ -125,7 +131,7 @@ class OptimizationPipeline:
         self.batch_id += 1
         if len(self.dataset) < self.config.dataset.max_samples:
             self.sample_generator.generate_samples(self.dataset, prompt_suggestion['prompt'], last_history,
-                                                   self.batch_id, self.eval.sample_to_text)
+                                                   self.batch_id, self.eval.sample_to_text, self.metrics_info)
             logging.info('Get new samples')
         self.cur_prompt = prompt_suggestion['prompt']
 
@@ -141,7 +147,8 @@ class OptimizationPipeline:
             self.patient = 0
             return False
         min_batch_id, max_score = self.eval.get_max_score(self.config.meta_prompts.warmup - 1)
-        if max_score - self.eval.history[-1]['score'] > -self.config.stop_criteria.min_delta:
+        cur_score = self.eval.history[-1]['score']
+        if max_score - cur_score > -self.config.stop_criteria.min_delta:
             self.patient += 1
         else:
             self.patient = 0

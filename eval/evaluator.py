@@ -26,6 +26,7 @@ class Eval:
             self.metric_handler = metric_handler
         self.dataset = None
         self.mean_score = None
+        self.score_info = None
         self.label_schema = label_schema
         self.errors = None
         self.history = []
@@ -59,8 +60,9 @@ class Eval:
                                     (self.dataset['annotation'] != 'Discarded')]
         self.dataset = self.score_func(self.dataset)
         if self.score_function_name == 'generator':
-            self.mean_score = {metric['metric_name']: self.dataset['score_{}'.format(metric['metric_name'])].mean()
+            self.score_info = {metric['metric_name']: self.dataset['score_{}'.format(metric['metric_name'])].mean()
                                for metric in self.metric_handler.metrics}
+            self.mean_score = sum(self.score_info .values()) / len(self.score_info)
         else:
             self.mean_score = self.dataset['score'].mean()
         return self.mean_score
@@ -122,7 +124,7 @@ class Eval:
         """
         conf_matrix = None
         large_error_to_str = self.large_error_to_str(self.errors, self.num_errors)
-        prompt_input = {'task_description': task_description, 'accuracy': self.mean_score, 'prompt': prompt,
+        prompt_input = {'task_description': task_description, 'accuracy': str(self.mean_score), 'prompt': prompt,
                                          'failure_cases': large_error_to_str}
         if self.score_function_name == 'accuracy':
             conf_matrix = confusion_matrix(self.dataset['annotation'],
@@ -131,11 +133,11 @@ class Eval:
             for i, row in enumerate(conf_matrix):
                 conf_text += f"\n{self.label_schema[i]}: {row}"
             prompt_input['confusion_matrix'] = conf_text
-        elif self.score_function_name == 'ranking':
+        elif self.score_function_name == 'ranking' or self.score_function_name == 'generator':
             prompt_input['labels'] = self.label_schema
         analysis = self.analyzer.invoke(prompt_input)
 
-        self.history.append({'prompt': prompt, 'score': self.mean_score,
+        self.history.append({'prompt': prompt, 'score': self.mean_score, 'score_info': self.score_info,
                              'errors': self.errors, 'confusion_matrix': conf_matrix, 'analysis': analysis['text']})
 
     def extract_errors(self) -> pd.DataFrame:

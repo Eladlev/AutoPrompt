@@ -65,6 +65,9 @@ class SampleGenerator:
         batch_input = {"num_samples": self.config.samples_generation_batch,
                        "task_description": self.task_description,
                        "prompt": cur_prompt}
+        if metrics_info is not None:
+            metrics_text = self.metric_to_text(metrics_info)
+            batch_input['metrics_info'] = metrics_text
         batch_inputs = self.generate_samples_batch(batch_input, self.config.num_generated_samples,
                                                    self.config.samples_generation_batch)
 
