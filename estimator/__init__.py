@@ -26,12 +26,13 @@ class DummyEstimator:
         """
         return pd.DataFrame()
 
+
 def give_estimator(opt):
-    if opt.method == 'argilla':
+    if opt.method == "argilla":
         return ArgillaEstimator(opt.config)
-    elif opt.method == 'llm':
+    elif opt.method == "llm":
         return LLMEstimator(opt.config)
-    elif opt.method == 'llm_batch':
+    elif opt.method == "llm_batch":
         return LLMBatchEstimator(opt.config)
     else:
         return DummyEstimator()

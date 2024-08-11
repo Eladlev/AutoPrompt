@@ -1,7 +1,9 @@
-from utils.llm_chain import ChainWrapper, get_chain_metadata
 from pathlib import Path
-from dataset.base_dataset import DatasetBase
+
 import pandas as pd
+from dataset.base_dataset import DatasetBase
+from utils.llm_chain import ChainWrapper, get_chain_metadata
+
 
 class LLMEstimator:
     """
@@ -18,7 +20,7 @@ class LLMEstimator:
         self.mini_batch_size = opt.mini_batch_size
         self.mode = opt.mode
         self.num_workers = opt.num_workers
-        if 'instruction' in opt.keys():
+        if "instruction" in opt.keys():
             self.cur_instruct = opt.instruction
         else:
             self.cur_instruct = None
@@ -34,7 +36,7 @@ class LLMEstimator:
         return f"ID: {sample_id};  Sample: {text}\n"
 
     def calc_usage(self) -> float:
-        """"
+        """ "
         Calculate the usage of the estimator
         """
         return self.chain.accumulate_usage
@@ -45,37 +47,55 @@ class LLMEstimator:
         :param label_schema: The label schema
         """
         chain_metadata = get_chain_metadata(Path(self.opt.prompt), retrieve_module=True)
-        if hasattr(chain_metadata['module'], 'update_classification_prediction_schema'):
-            chain_metadata['json_schema'] = chain_metadata['module'].update_classification_prediction_schema(
-                chain_metadata['json_schema'],
-                label_schema
+        if hasattr(chain_metadata["module"], "update_classification_prediction_schema"):
+            chain_metadata["json_schema"] = chain_metadata[
+                "module"
+            ].update_classification_prediction_schema(
+                chain_metadata["json_schema"], label_schema
             )
-        self.chain = ChainWrapper(self.opt.llm, self.opt.prompt, chain_metadata['json_schema'],
-                                  chain_metadata['parser_func'])
+        self.chain = ChainWrapper(
+            self.opt.llm,
+            self.opt.prompt,
+            chain_metadata["json_schema"],
+            chain_metadata["parser_func"],
+        )
 
     def apply_dataframe(self, record: pd.DataFrame):
         """
         Apply the estimator on a dataframe
         :param record: The record
         """
-        chain_input = ''
+        chain_input = ""
         mini_batch_inputs = []
-        record[self.mode] = 'Discarded'
+        record[self.mode] = "Discarded"
         # prepare all the inputs for the chains
         for i, row in record.iterrows():
-            chain_input += self.generate_sample_text(i, row['text'])
+            chain_input += self.generate_sample_text(i, row["text"])
             if ((i + 1) % self.mini_batch_size) == 0:
-                mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
-                                          'samples': chain_input})
-                chain_input = ''
-        if not (chain_input == ''):
-            mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
-                                      'samples': chain_input})
-
+                mini_batch_inputs.append(
+                    {
+                        "batch_size": self.mini_batch_size,
+                        "task_instruction": self.cur_instruct,
+                        "samples": chain_input,
+                    }
+                )
+                chain_input = ""
+        if not (chain_input == ""):
+            mini_batch_inputs.append(
+                {
+                    "batch_size": self.mini_batch_size,
+                    "task_instruction": self.cur_instruct,
+                    "samples": chain_input,
+                }
+            )
+        print(
+            f"Applying on {len(mini_batch_inputs)} mini-batches (with {self.num_workers} workers)")
         all_results = self.chain.batch_invoke(mini_batch_inputs, self.num_workers)
-        union_results = [element for sublist in all_results for element in sublist['results']]
+        union_results = [
+            element for sublist in all_results for element in sublist["results"]
+        ]
         for res in union_results:
-            record.loc[res['id'], self.mode] = res['prediction']
+            record.loc[res["id"], self.mode] = res["prediction"]
         return record
 
     def apply(self, dataset: DatasetBase, idx: int, leq: bool = False):

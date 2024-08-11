@@ -1,7 +1,8 @@
-import pandas as pd
-import numpy as np
-from sklearn.metrics import confusion_matrix
 import eval.eval_utils as utils
+import numpy as np
+import pandas as pd
+from sklearn.metrics import confusion_matrix
+
 
 class Eval:
     """
@@ -33,9 +34,11 @@ class Eval:
         :param config: The eval configuration
         :return: The function implementation on a record
         """
-        if config.function_name == 'accuracy':
-            return utils.set_function_from_iterrow(lambda record: record['annotation'] == record['prediction'])
-        elif config.function_name == 'ranking':
+        if config.function_name == "accuracy":
+            return utils.set_function_from_iterrow(
+                lambda record: record["annotation"] == record["prediction"]
+            )
+        elif config.function_name == "ranking":
             return utils.set_ranking_function(config.function_params)
         else:
             raise NotImplementedError("Eval function not implemented")
@@ -46,10 +49,12 @@ class Eval:
         :return: The mean score
         """
         # filter out the discarded samples
-        self.dataset = self.dataset[(self.dataset['prediction'] != 'Discarded') &
-                                    (self.dataset['annotation'] != 'Discarded')]
+        self.dataset = self.dataset[
+            (self.dataset["prediction"] != "Discarded")
+            & (self.dataset["annotation"] != "Discarded")
+            ]
         self.dataset = self.score_func(self.dataset)
-        self.mean_score = self.dataset['score'].mean()
+        self.mean_score = self.dataset["score"].mean()
         return self.mean_score
 
     def get_max_score(self, warmup=0):
@@ -57,29 +62,32 @@ class Eval:
         Return the maximum 'mean score' (with respect to all history epochs, starting form warmup, up to last) and the epoch index of the maximum score
         :return: The epoch index of the maximum score, and the maximum score
         """
-        max_idx = np.argmax([epoch['score'] for epoch in self.history[warmup:-1]])
+        max_idx = np.argmax([epoch["score"] for epoch in self.history[warmup:-1]])
         max_idx += warmup
-        return max_idx, self.history[max_idx]['score']
+        return max_idx, self.history[max_idx]["score"]
 
-
-    def large_error_to_str(self, error_df: pd.DataFrame, num_large_errors_per_label: int) -> str:
+    def large_error_to_str(
+        self, error_df: pd.DataFrame, num_large_errors_per_label: int
+    ) -> str:
         """
         Return a string that contains the large errors
         :param error_df: A dataframe contains all the mislabeled samples
         :param num_large_errors_per_label: The (maximum) number of large errors per label
         :return: A string that contains the large errors that is used in the meta-prompt
         """
-        required_columns = ['annotation', 'text', 'score', 'prediction']
-        label_schema = error_df['annotation'].unique()
-        if self.score_function_name == 'ranker':
-            gt_name = 'Rank:'
+        required_columns = ["annotation", "text", "score", "prediction"]
+        label_schema = error_df["annotation"].unique()
+        if self.score_function_name == "ranker":
+            gt_name = "Rank:"
         else:
-            gt_name = 'GT:'
+            gt_name = "GT:"
         error_res_df_list = []
-        txt_res = ''
+        txt_res = ""
         for label in label_schema:
-            cur_df = error_df[error_df['annotation'] == label]
-            cur_df = cur_df.sample(frac=1.0, random_state=42)[:num_large_errors_per_label]
+            cur_df = error_df[error_df["annotation"] == label]
+            cur_df = cur_df.sample(frac=1.0, random_state=42)[
+                     :num_large_errors_per_label
+                     ]
             error_res_df_list.append(cur_df[required_columns])
         if len(error_res_df_list) > 0:
             error_res_df = pd.concat(error_res_df_list, ignore_index=True)
@@ -88,7 +96,9 @@ class Eval:
                 txt_res += f"Sample: {row.text}\nPrediction: {row.prediction}, {gt_name}: {row.annotation}\n#\n"
         return txt_res
 
-    def sample_to_text(self, sample: dict, num_errors_per_label: int = 0, is_score: bool = True) -> str:
+    def sample_to_text(
+        self, sample: dict, num_errors_per_label: int = 0, is_score: bool = True
+    ) -> str:
         """
         Return a string that organize the information of from the step run for the meta-prompt
         :param sample: The eval information for specific step
@@ -109,21 +119,44 @@ class Eval:
         """
         conf_matrix = None
         large_error_to_str = self.large_error_to_str(self.errors, self.num_errors)
-        prompt_input = {'task_description': task_description, 'accuracy': self.mean_score, 'prompt': prompt,
-                                         'failure_cases': large_error_to_str}
-        if self.score_function_name == 'accuracy':
-            conf_matrix = confusion_matrix(self.dataset['annotation'],
-                                           self.dataset['prediction'], labels=self.label_schema)
+        prompt_input = {
+            "task_description": task_description,
+            "accuracy": self.mean_score,
+            "prompt": prompt,
+            "failure_cases": large_error_to_str,
+        }
+        if self.score_function_name == "accuracy":
+            print(
+                f"num true: {len(self.dataset[self.dataset['annotation'] == 'yes'])}")
+            print(
+                f"num false: {len(self.dataset[self.dataset['annotation'] == 'no'])}")
+            print(
+                f"num true pred: {len(self.dataset[self.dataset['prediction'] == 'yes'])}")
+            print(
+                f"num false pred: {len(self.dataset[self.dataset['prediction'] == 'no'])}")
+            print("dataset\n", self.dataset)
+            conf_matrix = confusion_matrix(
+                self.dataset["annotation"],
+                self.dataset["prediction"],
+                labels=self.label_schema,
+            )
             conf_text = f"Confusion matrix columns:{self.label_schema} the matrix data:"
             for i, row in enumerate(conf_matrix):
                 conf_text += f"\n{self.label_schema[i]}: {row}"
-            prompt_input['confusion_matrix'] = conf_text
-        elif self.score_function_name == 'ranking':
-            prompt_input['labels'] = self.label_schema
+            prompt_input["confusion_matrix"] = conf_text
+        elif self.score_function_name == "ranking":
+            prompt_input["labels"] = self.label_schema
         analysis = self.analyzer.invoke(prompt_input)
 
-        self.history.append({'prompt': prompt, 'score': self.mean_score,
-                             'errors': self.errors, 'confusion_matrix': conf_matrix, 'analysis': analysis['text']})
+        self.history.append(
+            {
+                "prompt": prompt,
+                "score": self.mean_score,
+                "errors": self.errors,
+                "confusion_matrix": conf_matrix,
+                "analysis": analysis["text"],
+            }
+        )
 
     def extract_errors(self) -> pd.DataFrame:
         """
@@ -131,8 +164,8 @@ class Eval:
         :return: records that contains the errors
         """
         df = self.dataset
-        err_df = df[df['score'] < self.error_threshold]
-        err_df.sort_values(by=['score'])
+        err_df = df[df["score"] < self.error_threshold]
+        err_df.sort_values(by=["score"])
         self.errors = err_df
         return self.errors
 
@@ -142,7 +175,7 @@ class Eval:
         :return: records that contains the correct samples
         """
         df = self.dataset
-        return df[df['score'] > self.error_threshold]
+        return df[df["score"] > self.error_threshold]
 
     def extract_boundary_predictions(self) -> pd.DataFrame:
         """

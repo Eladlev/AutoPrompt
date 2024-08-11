@@ -1,14 +1,15 @@
-from langchain.chains.openai_functions import (
-    create_structured_output_runnable)
-from utils.config import get_llm, load_prompt
-from langchain_community.callbacks import get_openai_callback
 import asyncio
-from langchain.chains import LLMChain
-import importlib
-from pathlib import Path
-from tqdm import trange, tqdm
 import concurrent.futures
+import importlib
 import logging
+from pathlib import Path
+
+from langchain.chains import LLMChain
+from langchain.chains.openai_functions import create_structured_output_runnable
+from langchain_community.callbacks import get_openai_callback
+from openai import BadRequestError
+from tqdm import tqdm, trange
+from utils.config import get_llm, load_prompt
 
 
 class DummyCallback:
@@ -34,7 +35,9 @@ class ChainWrapper:
     A wrapper for a LLM chain
     """
 
-    def __init__(self, llm_config, prompt_path: str, json_schema: dict = None, parser_func=None):
+    def __init__(
+        self, llm_config, prompt_path: str, json_schema: dict = None, parser_func=None
+    ):
         """
         Initialize a new instance of the ChainWrapper class.
         :param llm_config: The config for the LLM
@@ -49,7 +52,7 @@ class ChainWrapper:
         self.prompt = load_prompt(prompt_path)
         self.build_chain()
         self.accumulate_usage = 0
-        if self.llm_config.type.lower() == 'openai':
+        if self.llm_config.type.lower() == "openai":
             self.callback = get_openai_callback
         else:
             self.callback = get_dummy_callback
@@ -62,14 +65,24 @@ class ChainWrapper:
         """
         with self.callback() as cb:
             try:
+                # result = create_conversation(
+                #     task_instructions=chain_input['task_instructions'],
+                #     samples=chain_input['samples'],
+                #     n=chain_input['batch_size'],
+                # )
                 result = self.chain.invoke(chain_input)
                 if self.parser_func is not None:
                     result = self.parser_func(result)
+            except (BadRequestError, KeyError) as e:
+                logging.error("Error in chain invoke: {}".format(e))
+                raise e
             except Exception as e:
                 if e.http_status == 401:
                     raise e
                 else:
-                    logging.error('Error in chain invoke: {}'.format(e.user_message))
+                    logging.error("Error in chain invoke: {}".format(
+                        e.user_message)
+                    )
                     result = None
             self.accumulate_usage += cb.total_cost
             return result
@@ -130,6 +143,8 @@ class ChainWrapper:
         :param num_workers: The number of workers
         :return: A list of results
         """
+        print(f"got {len(inputs)} inputs")
+        inputs = inputs[:5]
 
         def sample_generator():
             for sample in inputs:
@@ -140,14 +155,22 @@ class ChainWrapper:
             pbar.update(1)  # Update the progress bar
             return result
 
-        if not ('async_params' in self.llm_config.keys()):  # non async mode, use regular workers
-            with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+        if not (
+            "async_params" in self.llm_config.keys()
+        ):  # non async mode, use regular workers
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=num_workers
+            ) as executor:
                 with tqdm(total=len(inputs), desc="Processing samples") as pbar:
-                    all_results = list(executor.map(process_sample_with_progress, sample_generator()))
+                    all_results = list(
+                        executor.map(process_sample_with_progress, sample_generator())
+                    )
         else:
             all_results = []
-            for i in trange(0, len(inputs), num_workers, desc='Predicting'):
-                results = asyncio.run(self.async_batch_invoke(inputs[i:i + num_workers]))
+            for i in trange(0, len(inputs), num_workers, desc="Predicting"):
+                results = asyncio.run(
+                    self.async_batch_invoke(inputs[i: i + num_workers])
+                )
                 all_results += results
         all_results = [res for res in all_results if res is not None]
         return all_results
@@ -156,8 +179,13 @@ class ChainWrapper:
         """
         Build the chain according to the LLM type
         """
-        if (self.llm_config.type.lower() == 'openai' or self.llm_config.type.lower() == 'azure') and self.json_schema is not None:
-            self.chain = create_structured_output_runnable(self.json_schema, self.llm, self.prompt)
+        if (
+            self.llm_config.type.lower() == "openai"
+            or self.llm_config.type.lower() == "azure"
+        ) and self.json_schema is not None:
+            self.chain = create_structured_output_runnable(
+                self.json_schema, self.llm, self.prompt
+            )
         else:
             self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
 
@@ -172,23 +200,25 @@ def get_chain_metadata(prompt_fn: Path, retrieve_module: bool = False) -> dict:
     prompt_directory = str(prompt_fn.parent)
     prompt_name = str(prompt_fn.stem)
     try:
-        spec = importlib.util.spec_from_file_location('output_schemes', prompt_directory + '/output_schemes.py')
+        spec = importlib.util.spec_from_file_location(
+            "output_schemes", prompt_directory + "/output_schemes.py"
+        )
         schema_parser = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(schema_parser)
     except ImportError as e:
         print(f"Error loading module {prompt_directory + '/output_schemes'}: {e}")
 
-    if hasattr(schema_parser, '{}_schema'.format(prompt_name)):
-        json_schema = getattr(schema_parser, '{}_schema'.format(prompt_name))
+    if hasattr(schema_parser, "{}_schema".format(prompt_name)):
+        json_schema = getattr(schema_parser, "{}_schema".format(prompt_name))
     else:
         json_schema = None
-    if hasattr(schema_parser, '{}_parser'.format(prompt_name)):
-        parser_func = getattr(schema_parser, '{}_parser'.format(prompt_name))
+    if hasattr(schema_parser, "{}_parser".format(prompt_name)):
+        parser_func = getattr(schema_parser, "{}_parser".format(prompt_name))
     else:
         parser_func = None
-    result = {'json_schema': json_schema, 'parser_func': parser_func}
+    result = {"json_schema": json_schema, "parser_func": parser_func}
     if retrieve_module:
-        result['module'] = schema_parser
+        result["module"] = schema_parser
     return result
 
 
@@ -203,24 +233,33 @@ class MetaChain:
         :param config: An EasyDict configuration
         """
         self.config = config
-        self.initial_chain = self.load_chain('initial')
-        self.step_prompt_chain = self.load_chain('step_prompt')
-        self.step_samples = self.load_chain('step_samples')
-        self.error_analysis = self.load_chain('error_analysis')
+        self.initial_chain = self.load_chain("initial")
+        self.step_prompt_chain = self.load_chain("step_prompt")
+        self.step_samples = self.load_chain("step_samples")
+        self.error_analysis = self.load_chain("error_analysis")
 
     def load_chain(self, chain_name: str) -> ChainWrapper:
         """
         Load a chain according to the chain name
         :param chain_name: The name of the chain
         """
-        metadata = get_chain_metadata(self.config.meta_prompts.folder / '{}.prompt'.format(chain_name))
-        return ChainWrapper(self.config.llm, self.config.meta_prompts.folder / '{}.prompt'.format(chain_name),
-                            metadata['json_schema'], metadata['parser_func'])
+        metadata = get_chain_metadata(
+            self.config.meta_prompts.folder / "{}.prompt".format(chain_name)
+        )
+        return ChainWrapper(
+            self.config.llm,
+            self.config.meta_prompts.folder / "{}.prompt".format(chain_name),
+            metadata["json_schema"],
+            metadata["parser_func"],
+        )
 
     def calc_usage(self) -> float:
         """
         Calculate the usage of all the meta-prompts
         :return: The total usage value
         """
-        return self.initial_chain.accumulate_usage + self.step_prompt_chain.accumulate_usage \
-               + self.step_samples.accumulate_usage
+        return (
+            self.initial_chain.accumulate_usage
+            + self.step_prompt_chain.accumulate_usage
+            + self.step_samples.accumulate_usage
+        )
