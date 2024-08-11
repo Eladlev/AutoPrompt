@@ -25,6 +25,12 @@ class MetricHandler:
         self.task_description = task_description
         self.metrics = self.generate_metrics()
 
+    def get_metrics_info(self) -> dict:
+        """
+        Get the metrics
+        """
+        return {t['metric_name']: t['metric_desc'] for t in self.metrics}
+
     def generate_metrics(self) -> dict:
         """
         Generate new metrics

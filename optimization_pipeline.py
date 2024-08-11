@@ -57,9 +57,11 @@ class OptimizationPipeline:
         self.predictor = give_estimator(config.predictor)
         self.annotator = give_estimator(config.annotator)
         self.metric_handler = None
+        self.metrics_info = None
         if config.eval.function_name == 'generator':
             self.metric_handler = MetricHandler(config.metric_generator, self.meta_chain.chain.metric_generator,
                                                 task_description)
+            self.metrics_info = self.metric_handler.get_metrics_info()
         error_analysis = self.meta_chain.chain.get('error_analysis', None)
         self.sample_generator = SampleGenerator(config.meta_prompts, task_description, self.meta_chain)
         self.eval = Eval(config.eval, error_analysis, self.metric_handler, self.dataset.label_schema)
@@ -182,7 +184,7 @@ class OptimizationPipeline:
         self.log_and_print(f'Starting step {self.batch_id}')
         if len(self.dataset.records) == 0:
             self.log_and_print('Dataset is empty generating initial samples')
-            self.sample_generator.generate_initial_samples(self.dataset, self.cur_prompt)
+            self.sample_generator.generate_initial_samples(self.dataset, self.cur_prompt, self.metrics_info)
         if self.config.use_wandb:
             cur_batch = self.dataset.get_leq(self.batch_id)
             random_subset = cur_batch.sample(n=min(10, len(cur_batch)))[['text']]
