@@ -31,6 +31,15 @@ class MetricHandler:
         """
         return {t['metric_name']: t['metric_desc'] for t in self.metrics}
 
+    def update_metrics(self, metrics_list) -> dict:
+        """
+        Update metrics dictionary to merge metric_scale into metric_prompt
+        """
+        for metric_dict in metrics_list:
+            for _, eval_prompt in metric_dict['metric_scale'][0].items():
+                metric_dict['metric_prompt'] += f'\n{eval_prompt}'
+            del metric_dict['metric_scale']
+
     def generate_metrics(self) -> dict:
         """
         Generate new metrics
@@ -38,8 +47,9 @@ class MetricHandler:
         metrics = self.metric_generator.invoke(
             {'task_description': self.task_description, 'num_metrics': self.config.num_metrics})
         metrics = metrics['metrics_list']
+        self.update_metrics(metrics)
         for metric in metrics:
-            prompt = f'{metric["metric_prompt"]}\nThe following input should be evaluated according to the metric guidlines. \n###Evaluated input:\n{{sample}}\n###End'
+            prompt = f'{metric["metric_prompt"]}\nThe following input should be evaluated according to the metric guidelines. \n###Evaluated input:\n{{sample}}\n###End'
             metric['metric_function'] = self.build_score_function(prompt)
         return metrics
 
