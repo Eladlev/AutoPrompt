@@ -62,9 +62,7 @@ class Eval:
         if self.score_function_name == 'generator':
             self.score_info = {metric['metric_name']: self.dataset['score_{}'.format(metric['metric_name'])].mean()
                                for metric in self.metric_handler.metrics}
-            self.mean_score = sum(self.score_info .values()) / len(self.score_info)
-        else:
-            self.mean_score = self.dataset['score'].mean()
+        self.mean_score = self.dataset['score'].mean()
         return self.mean_score
 
     def get_max_score(self, warmup=0):

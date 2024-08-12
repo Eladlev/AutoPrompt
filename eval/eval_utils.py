@@ -34,7 +34,7 @@ def set_multiscore_function(scores_dic, num_workers=1):
         generation_dataset['text'] = '###User input:\n' + generation_dataset['text'] + '\n####model prediction:\n' + \
                                      generation_dataset['prediction']
         for metric_name, metric_function in scores_dic.items():
-            generation_dataset['{}_{}'.format('score', metric_name)] = 'Discarded'
+            generation_dataset['{}_{}'.format('score', metric_name)] = -1
             generation_dataset['{}_{}'.format('reasoning', metric_name)] = 'Discarded'
         for metric_name, metric_function in scores_dic.items():
             res = metric_function(generation_dataset, num_workers)
@@ -42,8 +42,14 @@ def set_multiscore_function(scores_dic, num_workers=1):
                 generation_dataset.loc[index, '{}_{}'.format('score', metric_name)] = score['metric_score']
                 generation_dataset.loc[index, '{}_{}'.format('reasoning', metric_name)] = score['metric_reason']
 
-        columns_to_copy = ['{}_{}'.format('score', metric_name) for metric_name in scores_dic.keys()] + \
-                          ['{}_{}'.format('reasoning', metric_name) for metric_name in scores_dic.keys()]
+        columns_to_copy = ['{}_{}'.format('score', metric_name) for metric_name in scores_dic.keys()]
+        def avg_above_zero(row):
+            values = [row[col] for col in columns_to_copy if row[col] > 0]
+            return sum(values) / len(values) if values else 0
+
+        generation_dataset['score'] = generation_dataset.apply(avg_above_zero, axis=1)
+
+        columns_to_copy += ['{}_{}'.format('reasoning', metric_name) for metric_name in scores_dic.keys()] + ['score']
         dataset[columns_to_copy] = generation_dataset[columns_to_copy]
         return dataset
 
