@@ -29,6 +29,14 @@ class DummyCallback:
 def get_dummy_callback():
     return DummyCallback()
 
+def set_callbck(llm_type):
+    if llm_type.lower() == 'openai' or llm_type.lower() == 'azure':
+        callback = get_openai_callback
+    else:
+        callback = get_dummy_callback
+    return callback
+
+
 
 class ChainWrapper:
     """
@@ -50,10 +58,7 @@ class ChainWrapper:
         self.prompt = load_prompt(prompt)
         self.build_chain()
         self.accumulate_usage = 0
-        if self.llm_config.type.lower() == 'openai' or self.llm_config.type.lower() == 'azure':
-            self.callback = get_openai_callback
-        else:
-            self.callback = get_dummy_callback
+        self.callback = set_callbck(self.llm_config.type)
 
     def invoke(self, chain_input: dict) -> dict:
         """
