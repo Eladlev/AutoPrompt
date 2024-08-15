@@ -32,13 +32,16 @@ class MetricHandler:
         """
         return {t['metric_name']: t['metric_desc'] for t in self.metrics}
 
-    def update_metrics(self, metrics_list) -> dict:
+    def update_metrics(self, metrics_list):
         """
         Update metrics dictionary to merge metric_scale into metric_prompt
         """
+        # TODO: This is hardcoded, should be extracted from the schema
+        score_translation = {'deficient_desc': 1, 'adequate_desc': 2, 'competent_desc': 3,
+                             'proficient_desc': 4, 'exemplary_desc': 5}
         for metric_dict in metrics_list:
-            for _, eval_prompt in metric_dict['metric_scale'][0].items():
-                metric_dict['metric_prompt'] += f'\n{eval_prompt}'
+            for metric_key, eval_prompt in metric_dict['metric_scale'][0].items():
+                metric_dict['metric_prompt'] += f'\nscore {score_translation[metric_key]}: {eval_prompt}'
             del metric_dict['metric_scale']
             
     def hard_filter_metrics(self, metrics) -> list[bool]:
