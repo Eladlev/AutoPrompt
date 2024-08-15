@@ -12,4 +12,7 @@ Make sure that these rules are:
 1. Comprehensive, i.e., they cover all possible scenarios in which our assistant could fail in performing the above task
 2. General, i.e., do not depend on the specifics of the task description and task instructions. Hence, these should be applicable to any large language model performing such a task.
 
-Also make sure that the total number of rules generated are exactly {num_metrics}.
+The total number of rules generated should be exactly equal to the number specified below:
+### 
+{num_metrics} 
+###
