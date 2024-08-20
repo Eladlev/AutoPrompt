@@ -143,7 +143,12 @@ class ChainWrapper:
         if not ('async_params' in self.llm_config.keys()):  # non async mode, use regular workers
             with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
                 with tqdm(total=len(inputs), desc="Processing samples") as pbar:
-                    all_results = list(executor.map(process_sample_with_progress, sample_generator()))
+                    # all_results = list(executor.map(process_sample_with_progress, sample_generator()))
+                    all_results = []
+                    for sample in sample_generator():
+                        result = process_sample_with_progress(sample)
+                        all_results.append(result)
+                        pbar.update(1)
         else:
             all_results = []
             for i in trange(0, len(inputs), num_workers, desc='Predicting'):
@@ -213,14 +218,27 @@ class MetaChain:
         Load a chain according to the chain name
         :param chain_name: The name of the chain
         """
-        metadata = get_chain_metadata(self.config.meta_prompts.folder / '{}.prompt'.format(chain_name))
-        return ChainWrapper(self.config.llm, self.config.meta_prompts.folder / '{}.prompt'.format(chain_name),
-                            metadata['json_schema'], metadata['parser_func'])
+        prompt_path = self.config.meta_prompts.folder / '{}.prompt'.format(chain_name)
+        if prompt_path.exists():
+            metadata = get_chain_metadata(prompt_path)
+            chain_wrapper = ChainWrapper(self.config.llm,
+                                         prompt_path,
+                                         metadata['json_schema'],
+                                         metadata['parser_func'])
+            return chain_wrapper
+        else:
+            return None
 
     def calc_usage(self) -> float:
         """
         Calculate the usage of all the meta-prompts
         :return: The total usage value
         """
-        return self.initial_chain.accumulate_usage + self.step_prompt_chain.accumulate_usage \
-               + self.step_samples.accumulate_usage
+        total_usage = 0
+        for chain in [self.initial_chain, self.step_prompt_chain, self.step_samples]:
+            if chain is not None:
+                total_usage += chain.accumulate_usage
+        # total_usage = self.initial_chain.accumulate_usage
+        # total_usage += self.step_prompt_chain.accumulate_usage
+        # total_usage += self.step_samples.accumulate_usage
+        return total_usage

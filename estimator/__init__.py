@@ -2,6 +2,8 @@ import pandas as pd
 
 from .estimator_argilla import ArgillaEstimator
 from .estimator_llm import LLMEstimator
+from .estimator_t2i import T2IEstimator
+from .estimator_vlm import VLMEstimator
 from .estimator_llm_batch import LLMBatchEstimator
 from dataset.base_dataset import DatasetBase
 
@@ -26,6 +28,7 @@ class DummyEstimator:
         """
         return pd.DataFrame()
 
+
 def give_estimator(opt):
     if opt.method == 'argilla':
         return ArgillaEstimator(opt.config)
@@ -33,5 +36,12 @@ def give_estimator(opt):
         return LLMEstimator(opt.config)
     elif opt.method == 'llm_batch':
         return LLMBatchEstimator(opt.config)
+    elif opt.method == 't2i':
+        return T2IEstimator(opt.config)
+    elif opt.method == 't2i_batch':
+        raise NotImplementedError("Batch image mode not yet implemented")
+    elif opt.method == 'vlm':
+        return DummyEstimator()
+        # return VLMEstimator(opt.config)
     else:
         return DummyEstimator()

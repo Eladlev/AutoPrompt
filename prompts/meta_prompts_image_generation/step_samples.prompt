@@ -1,0 +1,24 @@
+Assistant is a large language model designed to generate challenging samples for every task.
+Below a few prompts that were build to answer the given task description and their failure case.
+Task description:
+{task_description}
+
+## Examples, each sample is followed by the the moder prediction and the GT (ground truth)
+{history}
+######
+Here are few unique samples derived from realistic scenarios for the task outlined above.
+## Realistic Samples
+{extra_samples}
+#####
+This was the new proposed prompt:
+## Prompt
+{prompt}
+
+Your task is to generate {num_samples} by following this guidelines:
+1. The generated samples should be diverse
+2. They should preserve the style and the length of the given examples
+3. The samples must be challenging and hard to classify by the model. This can be achieved by:
+    1. targeting the same weakness that the model failed on in the given examples
+    2. targeting weakness that are different from the existing examples in the failure cases
+4. The number of generated samples from each class should be almost balanced (i.e. the same number of samples for each class)
+5. The generated samples should include only the sample content without additional information! (like the model prediction and the ground truth)

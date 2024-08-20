@@ -103,10 +103,12 @@ class OptimizationPipeline:
             sorted_history = sorted(self.eval.history[self.config.meta_prompts.warmup - 1:], key=lambda x: x['score'],
                                     reverse=False)
             last_history = sorted_history[-self.config.meta_prompts.history_length:]
-        history_prompt = '\n'.join([self.eval.sample_to_text(sample,
-                                                        num_errors_per_label=self.config.meta_prompts.num_err_prompt,
-                                                        is_score=True) for sample in last_history])
-        prompt_input = {"history": history_prompt, "task_description": self.task_description,
+        history_prompt = '\n'.join([
+            self.eval.sample_to_text(sample,
+                                     num_errors_per_label=self.config.meta_prompts.num_err_prompt,
+                                     is_score=True) for sample in last_history])
+        prompt_input = {"history": history_prompt,
+                        "task_description": self.task_description,
                         'error_analysis': last_history[-1]['analysis']}
         if 'label_schema' in self.config.dataset.keys():
             prompt_input["labels"] = json.dumps(self.config.dataset.label_schema)
@@ -118,13 +120,15 @@ class OptimizationPipeline:
             batch_input = {"num_samples": self.config.meta_prompts.samples_generation_batch,
                            "task_description": self.task_description,
                            "prompt": prompt_suggestion['prompt']}
-            batch_inputs = self.generate_samples_batch(batch_input, self.config.meta_prompts.num_generated_samples,
+            batch_inputs = self.generate_samples_batch(batch_input,
+                                                       self.config.meta_prompts.num_generated_samples,
                                                        self.config.meta_prompts.samples_generation_batch)
 
             if sum([len(t['errors']) for t in last_history]) > 0:
-                history_samples = '\n'.join([self.eval.sample_to_text(sample,
-                                                                 num_errors_per_label=self.config.meta_prompts.num_err_samples,
-                                                                 is_score=False) for sample in last_history])
+                history_samples = '\n'.join([
+                    self.eval.sample_to_text(sample,
+                                             num_errors_per_label=self.config.meta_prompts.num_err_samples,
+                                             is_score=False) for sample in last_history])
                 for batch in batch_inputs:
                     extra_samples = self.dataset.sample_records()
                     extra_samples_text = DatasetBase.samples_to_text(extra_samples)
@@ -185,10 +189,13 @@ class OptimizationPipeline:
         batch_input = {"num_samples": self.config.meta_prompts.samples_generation_batch,
                        "task_description": self.task_description,
                        "instruction": self.cur_prompt}
-        batch_inputs = self.generate_samples_batch(batch_input, self.config.meta_prompts.num_initialize_samples,
+        batch_inputs = self.generate_samples_batch(batch_input,
+                                                   self.config.meta_prompts.num_initialize_samples,
                                                    self.config.meta_prompts.samples_generation_batch)
 
-        samples_batches = self.meta_chain.initial_chain.batch_invoke(batch_inputs, self.config.meta_prompts.num_workers)
+        samples_batches = self.meta_chain.initial_chain.batch_invoke(batch_inputs,
+                                                                     self.config.meta_prompts.num_workers)
+
         samples_list = [element for sublist in samples_batches for element in sublist['samples']]
         samples_list = self.dataset.remove_duplicates(samples_list)
         self.dataset.add(samples_list, 0)

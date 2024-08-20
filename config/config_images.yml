@@ -1,0 +1,67 @@
+use_wandb: False
+dataset:
+    name: 'dataset'
+    records_path: null
+    initial_dataset: ''
+    label_schema: ["Yes", "No"]
+    max_samples: 3
+    semantic_sampling: False # Change to True in case you don't have M1. Currently there is an issue with faiss and M1
+
+annotator:
+    method : 'dummy'
+    config:
+        llm:
+            type: 'OpenAI'
+            name: 'gpt-4-1106-preview'
+        instruction:
+            ''
+        num_workers: 0
+        prompt: 'prompts/predictor_completion/prediction.prompt'
+        mini_batch_size: 1
+        mode: 'annotation'
+
+predictor:
+    method : 't2i'
+    config:
+        llm:
+            type: 'OpenAI'
+            name: 'dall-e-3'
+            model_kwargs: {
+                "size": "1024x1024",
+                "quality": "hd",
+                "n": 1
+            }
+        num_workers: 0
+        prompt: 'prompts/predictor_completion/prediction.prompt'
+        mini_batch_size: 1  #change to >1 if you want to include multiple samples in the one prompt
+        mode: 'prediction'
+
+meta_prompts:
+    folder: 'prompts/meta_prompts_image_generation'
+    num_err_prompt: 1  # Number of error examples per sample in the prompt generation
+    num_err_samples: 2 # Number of error examples per sample in the sample generation
+    history_length: 4 # Number of sample in the meta-prompt history
+    num_generated_samples: 2 # Number of generated samples at each iteration
+    num_initialize_samples: 2 # Number of generated samples at iteration 0, in zero-shot case
+    samples_generation_batch: 2 # Number of samples generated in one call to the LLM
+    num_workers: 2 #Number of parallel workers
+    warmup: 2 # Number of warmup steps
+
+eval:
+    function_name: 't2i_vlm_score'
+    image_description_model_name: 'gpt-4-vision-preview'
+    text_embedding_model_name: 'text-embedding-3-small'
+    num_large_errors: 4
+    num_boundary_predictions : 0
+    error_threshold: 0.5
+    mini_batch_size: 1
+
+llm:
+    type: 'OpenAI'
+    name: 'gpt-4-1106-preview'
+    temperature: 0.8
+
+stop_criteria:
+    max_usage: 2 #In $ in case of OpenAI models, otherwise number of tokens
+    patience: 10 # Number of patience steps
+    min_delta: 0.01 # Delta for the improvement definition

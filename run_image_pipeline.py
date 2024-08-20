@@ -4,18 +4,18 @@ import argparse
 # General Training Parameters
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--basic_config_path', default='config/config_matan_llms.yml', type=str, help='Configuration file path')
+parser.add_argument('--basic_config_path', default='config/config_images.yml', type=str, help='Configuration file path')
 parser.add_argument('--batch_config_path', default='',
                     type=str, help='Batch classification configuration file path')
 parser.add_argument('--prompt',
-                    default='classify the comment if it is possible or negative',
+                    default='Generate an 8-bit style image of a golden retriever dog playing with a stick near a lake in summer',
                     required=False, type=str, help='Prompt to use as initial.')
 parser.add_argument('--task_description',
-                    default='agent as an expert linguistic that can tell between positive and negative intents in user comments.',
+                    default='Assistant is an expert image generator that will generate great image,according to the intent described by the user.',
                     required=False, type=str, help='Describing the task')
 parser.add_argument('--load_path', default='', required=False, type=str, help='In case of loading from checkpoint')
 parser.add_argument('--output_dump', default='dump', required=False, type=str, help='Output to save checkpoints')
-parser.add_argument('--num_steps', default=40, type=int, help='Number of iterations')
+parser.add_argument('--num_steps', default=2, type=int, help='Number of iterations')
 
 opt = parser.parse_args()
 
@@ -38,9 +38,8 @@ else:
 
 # Initializing the pipeline
 pipeline = OptimizationPipeline(config_params, task_description, initial_prompt, output_path=opt.output_dump)
-if (opt.load_path != ''):
+if opt.load_path != '':
     pipeline.load_state(opt.load_path)
 best_prompt = pipeline.run_pipeline(opt.num_steps)
 print('\033[92m' + 'Calibrated prompt score:', str(best_prompt['score']) + '\033[0m')
 print('\033[92m' + 'Calibrated prompt:', best_prompt['prompt'] + '\033[0m')
-

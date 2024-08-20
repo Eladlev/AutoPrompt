@@ -5,8 +5,12 @@ from langchain_community.chat_models import ChatOpenAI
 from pathlib import Path
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain_community.chat_models import AzureChatOpenAI
+from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
+
 from langchain.chains import LLMChain
 import logging
+
+from openai import OpenAI
 
 LLM_ENV = yaml.safe_load(open('config/llm_env.yml', 'r'))
 
@@ -36,16 +40,18 @@ def get_llm(config: dict):
 
     if config['type'].lower() == 'openai':
         if LLM_ENV['openai']['OPENAI_ORGANIZATION'] == '':
-            return ChatOpenAI(temperature=temperature, model_name=config['name'],
-                              openai_api_key=config.get('openai_api_key', LLM_ENV['openai']['OPENAI_API_KEY']),
-                              openai_api_base=config.get('openai_api_base', 'https://api.openai.com/v1'),
-                              model_kwargs=model_kwargs)
+            openai_organization = config.get('openai_organization', LLM_ENV['openai']['OPENAI_ORGANIZATION'])
+        else:
+            openai_organization = None
+        if "dall" in config['name']:
+            return OpenAI(api_key=LLM_ENV['openai']['OPENAI_API_KEY'])
         else:
             return ChatOpenAI(temperature=temperature, model_name=config['name'],
                               openai_api_key=config.get('openai_api_key', LLM_ENV['openai']['OPENAI_API_KEY']),
                               openai_api_base=config.get('openai_api_base', 'https://api.openai.com/v1'),
-                              openai_organization=config.get('openai_organization', LLM_ENV['openai']['OPENAI_ORGANIZATION']),
+                              openai_organization=openai_organization,
                               model_kwargs=model_kwargs)
+
     elif config['type'].lower() == 'azure':
         return AzureChatOpenAI(temperature=temperature, azure_deployment=config['name'],
                         openai_api_key=config.get('openai_api_key', LLM_ENV['azure']['AZURE_OPENAI_API_KEY']),
@@ -58,7 +64,6 @@ def get_llm(config: dict):
                               google_api_key=LLM_ENV['google']['GOOGLE_API_KEY'],
                               model_kwargs=model_kwargs)
 
-
     elif config['type'].lower() == 'huggingfacepipeline':
         device = config.get('gpu_device', -1)
         device_map = config.get('device_map', None)
@@ -70,6 +75,7 @@ def get_llm(config: dict):
             device=device,
             device_map=device_map
         )
+
     else:
         raise NotImplementedError("LLM not implemented")
 

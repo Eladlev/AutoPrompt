@@ -58,8 +58,10 @@ class DatasetBase:
         :param records: dataframes, update using pandas
         """
         if records is None:
-            records = pd.DataFrame([{'id': len(self.records) + i, 'text': sample, 'batch_id': batch_id} for
-                       i, sample in enumerate(sample_list)])
+            records = pd.DataFrame([
+                {'id': len(self.records) + i,
+                 'text': sample, 'batch_id': batch_id}
+                for i, sample in enumerate(sample_list)])
         self.records = pd.concat([self.records, records], ignore_index=True)
 
     def update(self, records: pd.DataFrame):
@@ -80,7 +82,7 @@ class DatasetBase:
         # Remove null annotations
         if len(self.records.loc[self.records["annotation"]=="Discarded"]) > 0:
             discarded_annotation_records = self.records.loc[self.records["annotation"]=="Discarded"]
-            #TODO: direct `discarded_annotation_records` to another dataset to be used later for corner-cases
+            # TODO: direct `discarded_annotation_records` to another dataset to be used later for corner-cases
             self.records = self.records.loc[self.records["annotation"]!="Discarded"]
 
         # Reset index
@@ -132,7 +134,7 @@ class DatasetBase:
         :param n: The number of samples to return
         :return: A sample of the records
         """
-        n = n or self.sample_size
+        n = n or min(self.sample_size, len(self.records))
         if self.semantic_sampling:
             dd = self.dedup.copy()
             df_samples = dd.sample(self.records).head(n)

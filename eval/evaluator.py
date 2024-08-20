@@ -37,6 +37,8 @@ class Eval:
             return utils.set_function_from_iterrow(lambda record: record['annotation'] == record['prediction'])
         elif config.function_name == 'ranking':
             return utils.set_ranking_function(config.function_params)
+        elif config.function_name == 't2i_vlm_score':
+            return utils.get_t2i_vlm_score_func(config)
         else:
             raise NotImplementedError("Eval function not implemented")
 
@@ -60,7 +62,6 @@ class Eval:
         max_idx = np.argmax([epoch['score'] for epoch in self.history[warmup:-1]])
         max_idx += warmup
         return max_idx, self.history[max_idx]['score']
-
 
     def large_error_to_str(self, error_df: pd.DataFrame, num_large_errors_per_label: int) -> str:
         """
@@ -109,21 +110,33 @@ class Eval:
         """
         conf_matrix = None
         large_error_to_str = self.large_error_to_str(self.errors, self.num_errors)
-        prompt_input = {'task_description': task_description, 'accuracy': self.mean_score, 'prompt': prompt,
-                                         'failure_cases': large_error_to_str}
+        prompt_input = {'task_description': task_description,
+                        'accuracy': self.mean_score,
+                        'prompt': prompt,
+                        'failure_cases': large_error_to_str}
         if self.score_function_name == 'accuracy':
             conf_matrix = confusion_matrix(self.dataset['annotation'],
-                                           self.dataset['prediction'], labels=self.label_schema)
+                                           self.dataset['prediction'],
+                                           labels=self.label_schema)
             conf_text = f"Confusion matrix columns:{self.label_schema} the matrix data:"
             for i, row in enumerate(conf_matrix):
                 conf_text += f"\n{self.label_schema[i]}: {row}"
             prompt_input['confusion_matrix'] = conf_text
         elif self.score_function_name == 'ranking':
             prompt_input['labels'] = self.label_schema
-        analysis = self.analyzer.invoke(prompt_input)
+        elif self.score_function_name == 't2i_vlm_score':
+            prompt_input['scores'] = self.dataset.score.values
 
-        self.history.append({'prompt': prompt, 'score': self.mean_score,
-                             'errors': self.errors, 'confusion_matrix': conf_matrix, 'analysis': analysis['text']})
+        if self.analyzer is not None:
+            analysis = self.analyzer.invoke(prompt_input)
+        else:
+            analysis = {"text": "generated image is not good enough"}  # This is where the VLM output goes
+
+        self.history.append({'prompt': prompt,
+                             'score': self.mean_score,
+                             'errors': self.errors,
+                             'confusion_matrix': conf_matrix,
+                             'analysis': analysis['text']})
 
     def extract_errors(self) -> pd.DataFrame:
         """

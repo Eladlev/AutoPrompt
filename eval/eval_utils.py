@@ -1,4 +1,6 @@
 from estimator.estimator_llm import LLMEstimator
+from estimator.estimator_vlm import VLMEstimator
+from random import random
 
 
 def set_function_from_iterrow(func):
@@ -16,9 +18,19 @@ def set_ranking_function(params):
     def wrapper(dataset):
         generation_dataset = dataset.copy()
         generation_dataset['text'] = '###User input:\n' + generation_dataset['text'] + '\n####model prediction:\n' + generation_dataset['prediction']
-
         generation_dataset = evaluator.apply_dataframe(generation_dataset)
         generation_dataset.score = generation_dataset.score.astype(int)
         dataset.score = generation_dataset.score
+        return dataset
+    return wrapper
+
+
+def get_t2i_vlm_score_func(params):
+    evaluator = VLMEstimator(params)
+    evaluator.mode = 'score'
+    def wrapper(dataset):
+        vlm_dataset = dataset.copy()
+        vlm_dataset = evaluator.apply_dataframe(vlm_dataset)
+        dataset.score = vlm_dataset.score
         return dataset
     return wrapper
