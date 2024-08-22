@@ -33,6 +33,7 @@ class Eval:
         self.errors = None
         self.history = []
         self.analyzer = analyzer
+        self.config = config
         self.score_func = self.get_eval_function()
 
     def get_eval_function(self):
