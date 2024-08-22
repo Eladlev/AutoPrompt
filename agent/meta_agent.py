@@ -5,7 +5,7 @@ from utils.llm_chain import MetaChain
 from agent.agent_instantiation import FunctionBuilder
 import importlib
 from collections import deque
-
+from agent.agent_utils import load_tools
 
 class MetaAgent:
     """
@@ -22,7 +22,8 @@ class MetaAgent:
         self.code_tree = None
         self.code_root = None
         self.tools = []
-        self.load_tools()
+        self.tools = load_tools(self.config.agent_config.tools_path)
+        self.tools_metadata = {t.name: t.description for t in self.tools}
         self.function_builder = FunctionBuilder(config, self.tools)
         self.apply_flow_optimization = self.apply_agent_optimization  # TODO: Mock function, implement the optimization
 
@@ -105,28 +106,6 @@ class MetaAgent:
             local_scope[cur_node.function_metadata['name']] = cur_node.local_scope[cur_node.function_metadata['name']]
             global_scope.update(local_scope)
         return global_scope  # usage example:  exec('root(input="What is the return policy")', global_scope)
-
-    def load_tools(self):
-        """
-        Load the agent tools from the function file
-        """
-
-        try:
-            spec = importlib.util.spec_from_file_location('agent_tools', self.config.agent_config.tools_path)
-            schema_parser = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(schema_parser)
-        except ImportError as e:
-            raise ImportError(f"Error loading module {self.config.agent_config.tools_path}: {e}")
-        # <class 'langchain_core.tools.StructuredTool'>
-        for attribute in dir(schema_parser):
-            # Skip special attributes
-            if not attribute.startswith("__"):
-                value = getattr(schema_parser, attribute)
-                attr_type = str(type(value))
-                # This is hardcoded for now, should be careful when updating langchain version
-                if "<class 'langchain_core.tools" in attr_type:
-                    self.tools.append(value)
-        self.tools_metadata = {t.name: t.description for t in self.tools}
 
     def apply_agent_optimization(self, node: AgentNode):
         """
@@ -286,8 +265,9 @@ class MetaAgent:
         self.__dict__.update(state)
         # Restore or reinitialize the non-picklable attribute
         self.meta_chain = MetaChain(self.config)
-        self.tools = []
-        self.load_tools()
+        self.tools = load_tools(self.config.agent_config.tools_path)
+        self.tools_metadata = {t.name: t.description for t in self.tools}
+
         self.function_builder = FunctionBuilder(self.config, self.tools)
         # Go through the code tree and update the local scope
         for node_name, node in self.code_tree.items():

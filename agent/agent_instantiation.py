@@ -1,15 +1,10 @@
-import yaml
-from langchain.chains import LLMChain
 from utils.llm_chain import ChainWrapper
 from utils.config import get_llm
-from langchain.agents import create_tool_calling_agent, AgentExecutor
-from langchain_core.prompts import ChatPromptTemplate
-import json
-import re
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import Dict
 from langchain_core.pydantic_v1 import BaseModel, Field
+from agent.agent_utils import build_agent
 
 
 class Variable(BaseModel):
@@ -72,71 +67,12 @@ class FunctionBuilder:
                                                   None, None)
         self.tools = tools
 
-    @staticmethod
-    def parse_yaml(response: dict):
-        # Parse the YAML file from the model response
-        pattern = r"##YAML file##\s*(.*?)\s*##end file##"
-        # Search for the pattern in the text
-        match = re.search(pattern, response['text'], re.DOTALL | re.MULTILINE)
-        content = match.group(1)
-        return yaml.safe_load(content)
-
-    @staticmethod
-    def parse(text: str) -> dict:
-        return json.loads(text)
-
-    @staticmethod
-    def extract_response(text: dict) -> dict:
-        return {'response': text['text']}
-
-    def build_agent(self, agent_info):
-        """
-        Build an agent from metadata
-        :param agent_info: The metadata of the agent
-        """
-        cur_tools = [t for t in self.tools if t.name in agent_info['tools']]
-        if len(cur_tools) > 0:
-
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    (
-                        "system",
-                        agent_info['prompt'],
-                    ),
-                    ("placeholder", "{chat_history}"),
-                    ("human", "{input}"),
-                    ("placeholder", "{agent_scratchpad}"),
-                ]
-            )
-
-            agent = create_tool_calling_agent(self.llm, cur_tools, prompt)
-            # agent = agent | StrOutputParser() | parse
-            agent_executor = AgentExecutor(
-                agent=agent, tools=cur_tools, verbose=True
-            )
-        else:
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    (
-                        "system",
-                        agent_info['prompt'],
-                    ),
-                    ("human", "{input}"),
-                ]
-            )
-            agent = LLMChain(llm=self.llm, prompt=prompt)
-            #TODO: Remove the chain_yaml_extraction, the results should directly the YAML
-            agent_executor = agent | FunctionBuilder.extract_response \
-                             | self.chain_yaml_extraction.chain | FunctionBuilder.parse_yaml
-
-        return agent_executor
-
     def build_agent_function(self, agent_info):
         """
         wrap the agent in a function
         :param agent_info: The metadata of the agent
         """
-        agent = self.build_agent(agent_info)
+        agent = build_agent(self.llm, self.tools, self.chain_yaml_extraction, agent_info)
 
         def new_function(**kwargs):
             # Pre-processing: Log the call

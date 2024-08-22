@@ -1,6 +1,7 @@
 from utils.llm_chain import ChainWrapper
 from langchain_core.pydantic_v1 import BaseModel, Field
 import pandas as pd
+import copy
 
 
 class MetricMetadata(BaseModel):
@@ -13,23 +14,39 @@ class MetricHandler:
     A Class responsible for handling and generating metrics
     """
 
-    def __init__(self, config, metric_generator: ChainWrapper, task_description: str):
+    def __init__(self, config, metric_generator: ChainWrapper, task_metadata: dict):
         """
         Initialize a new instance of the MetricHandler class.
         :param config: The configuration file (EasyDict)
         :metric_generator: The metric generator chain
-        :task_description: Describe the task that needed to be solved
+        :task_metadata: The task metadata
         """
         self.config = config
         self.metric_generator = metric_generator
-        self.task_description = task_description
+        self.task_metadata = task_metadata
         self.metrics = self.generate_metrics()
 
-    def get_metrics_info(self) -> dict:
+    def get_metrics_info(self, as_text=True) -> dict or str:
         """
         Get the metrics
         """
-        return {t['metric_name']: t['metric_desc'] for t in self.metrics}
+        metric_dic = {t['metric_name']: t['metric_desc'] for t in self.metrics}
+        if as_text:
+            return self.metric_to_text(metric_dic)
+        return metric_dic
+
+    @staticmethod
+    def metric_to_text(metric: dict) -> str:
+        """
+        Convert a metric to text
+        :param metric: The metric dictionary
+        :return: All metric info as text
+        """
+        text = '####Metrics info:\n'
+        for key, value in metric.items():
+            text += f'{key}: {value}\n##\n'
+        text += '####End of metrics info\n'
+        return text
 
     def update_metrics(self, metrics_list):
         """
@@ -47,8 +64,9 @@ class MetricHandler:
         """
         Generate new metrics
         """
-        metrics = self.metric_generator.invoke(
-            {'task_description': self.task_description, 'num_metrics': self.config.num_metrics})
+        chain_params = copy.deepcopy(self.task_metadata)
+        chain_params.update({'num_metrics': self.config.num_metrics})
+        metrics = self.metric_generator.invoke(chain_params)
         metrics = metrics['metrics_list']
         self.update_metrics(metrics)
         for metric in metrics:
