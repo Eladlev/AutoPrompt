@@ -8,7 +8,7 @@ import re
 from tqdm import trange, tqdm
 import concurrent.futures
 import logging
-
+from utils.llm_chain import dict_to_prompt_text
 
 def load_tools(tools_path: str):
     """
@@ -31,6 +31,14 @@ def load_tools(tools_path: str):
             if "<class 'langchain_core.tools" in attr_type:
                 tools.append(value)
     return tools
+
+def get_tools_description(tools_path: str):
+    """
+    Get the tools information
+    """
+    tools = load_tools(tools_path)
+    tools_dict = {tool.name: tool.description for tool in tools}
+    return dict_to_prompt_text({tool.name: tool.description for tool in tools}), tools_dict
 
 
 def parse_yaml(response: dict):
@@ -63,10 +71,10 @@ def build_agent(llm, tools, chain_yaml_extraction, agent_info, intermediate_step
         cur_tools = tools
     else:
         cur_tools = [t for t in tools if t.name in agent_info['tools']]
-    if 'tools_description' in agent_info.keys():
+    if 'tools_metadata' in agent_info.keys():
         for tool in cur_tools:
-            if tool.name in agent_info['tools_description']:
-                tool.description = agent_info['tools_description'][tool.name]
+            if tool.name in agent_info['tools_metadata']:
+                tool.description = agent_info['tools_metadata'][tool.name]
     if len(cur_tools) > 0:
 
         prompt = ChatPromptTemplate.from_messages(

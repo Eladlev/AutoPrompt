@@ -1,0 +1,15 @@
+We have an assistant based on a large language model, that is designed to perform a task.
+
+The task specific details are as follows:
+
+### Task description:
+{task_description}
+###
+
+Generate all possible rules that would be important to assess whether this assistant performed the above task perfectly or not.
+
+Make sure that these rules are:
+1. Comprehensive, i.e., they cover all possible scenarios in which our assistant could fail in performing the above task
+2. General, i.e., do not depend on the specifics of the task description and task instructions. Hence, these should be applicable to any large language model performing such a task.
+
+Also make sure that the total number of rules generated are exactly {num_metrics}.

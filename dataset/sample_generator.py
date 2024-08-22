@@ -1,5 +1,6 @@
 from dataset.base_dataset import DatasetBase
 from easydict import EasyDict as edict
+import copy
 
 
 class SampleGenerator:
@@ -7,41 +8,28 @@ class SampleGenerator:
     This class is responsible for generating samples for the dataset.
     """
 
-    def __init__(self, config: edict, task_description: str, meta_chain: dict):
+    def __init__(self, config: edict, task_metadata: dict, meta_chain: dict):
         """
         Initialize a new instance of the SampleGenerator class.
         :param config: The configuration file (EasyDict)
-        :param task_description: The task description
+        :param task_metadata: The task information
         :param meta_chain: The meta chain
         """
         self.config = config
-        self.task_description = task_description
+        self.task_metadata = task_metadata
         self.meta_chain = meta_chain
 
-    def metric_to_text(self, metric: dict) -> str:
-        """
-        Convert a metric to text
-        :param metric: The metric dictionary
-        :return: All metric info as text
-        """
-        text = '####Metrics info:\n'
-        for key, value in metric.items():
-            text += f'{key}: {value}\n##\n'
-        text += '####End of metrics info\n'
-        return text
-    def generate_initial_samples(self, dataset: DatasetBase, cur_prompt: str, metrics_info: dict = None):
+    def generate_initial_samples(self, dataset: DatasetBase, cur_prompt: dict, metrics_text: str = None):
         """
         In case the initial dataset is empty generate the initial samples
         :param dataset: The dataset
         :param cur_prompt: The current prompt
-        :param metrics_info: The metrics information
+        :param metrics_text: The metrics text to the prompt
         """
-
-        batch_input = {"num_samples": self.config.samples_generation_batch,
-                       "task_description": self.task_description,
-                       "instruction": cur_prompt}
-        if metrics_info is not None:
-            metrics_text = self.metric_to_text(metrics_info)
+        batch_input = copy.deepcopy(self.task_metadata)
+        batch_input.update(cur_prompt)
+        batch_input.update({"num_samples": self.config.samples_generation_batch})
+        if metrics_text is not None:
             batch_input['metrics_info'] = metrics_text
         batch_inputs = self.generate_samples_batch(batch_input, self.config.num_initialize_samples,
                                                    self.config.samples_generation_batch)
@@ -51,8 +39,8 @@ class SampleGenerator:
         samples_list = dataset.remove_duplicates(samples_list)
         dataset.add(samples_list, 0)
 
-    def generate_samples(self, dataset: DatasetBase, cur_prompt: str, history: list, batch_id: int,
-                         samples_to_text, metrics_info: dict = None):
+    def generate_samples(self, dataset: DatasetBase, cur_prompt: dict, history: list, batch_id: int,
+                         samples_to_text, metrics_text: str = None):
         """
         Generate samples for the dataset
         :param dataset: The dataset
@@ -60,21 +48,21 @@ class SampleGenerator:
         :param history: The history of the samples
         :param batch_id: The batch id
         :param samples_to_text: The function to convert samples to text
-        :param metrics_info: The metrics information
+        :param metrics_text: The metrics information
         """
-        batch_input = {"num_samples": self.config.samples_generation_batch,
-                       "task_description": self.task_description,
-                       "prompt": cur_prompt}
-        if metrics_info is not None:
-            metrics_text = self.metric_to_text(metrics_info)
+        batch_input = copy.deepcopy(self.task_metadata)
+        batch_input.update(cur_prompt)
+        batch_input.update({"num_samples": self.config.samples_generation_batch})
+        if metrics_text is not None:
             batch_input['metrics_info'] = metrics_text
         batch_inputs = self.generate_samples_batch(batch_input, self.config.num_generated_samples,
                                                    self.config.samples_generation_batch)
 
-        if sum([len(t['errors']) for t in history]) > 0:
+        # Modify the history error examples to be only from the last batch
+        if sum([len(t['errors']) for t in history[-1:]]) > 0:
             history_samples = '\n'.join([samples_to_text(sample,
                                                          num_errors_per_label=self.config.num_err_samples,
-                                                         is_score=False) for sample in history])
+                                                         is_score=False) for sample in history[-1:]])
             for batch in batch_inputs:
                 extra_samples = dataset.sample_records()
                 extra_samples_text = DatasetBase.samples_to_text(extra_samples)

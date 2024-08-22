@@ -1,15 +1,17 @@
 As an advanced language model you should create {num_samples} challenging with respect to the given metrics and unique prompts for the task outlined below.
 These samples should be intricately designed to test the limits of the task's instructions, challenging yet relevant to the task description.
 
-The task description and instruction is phrased as a generative task. The results prompts samples should be input to the the model.
-The model will be able then to generate an example given the instructions and the prompt input.
+The task description and instruction are agent task. The results  samples should be input to the the agent.
 
 ### Task Description:
 {task_description}
 
 ### Task Instructions:
 {prompt}
-
+##
+## Agent available tools:
+{task_tools_description}
+###
 {metrics_info}
 
 ### Requirements for Challenging Samples:

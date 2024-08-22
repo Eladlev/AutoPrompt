@@ -176,6 +176,29 @@ class ChainWrapper:
         else:
             self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
 
+def dict_to_prompt_text(prompt_dict: dict, style = 'default') -> str:
+    """
+    Convert a prompt dictionary to a text
+    :param prompt_dict: The prompt dictionary
+    :param style: The style of the prompt
+    :return: The prompt text
+    """
+    prompt_text = ''
+    for key, value in prompt_dict.items():
+        if isinstance(value, dict):
+            continue
+        if style == 'default':
+            if isinstance(value, float):
+                prompt_text += f'{key}: {value:.2f}\n'
+            else:
+                prompt_text += f'{key}: {value}\n'
+        elif style == '#':
+            key_str = key.replace("_", " ").capitalize()
+            if isinstance(value, float):
+                prompt_text += f'##{key_str}:\n{value:.2f}\n'
+            else:
+                prompt_text += f'##{key_str}:\n{value}\n'
+    return prompt_text
 
 def get_chain_metadata(prompt_fn: Path, retrieve_module: bool = False) -> dict:
     """
