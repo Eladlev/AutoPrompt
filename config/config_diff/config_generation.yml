@@ -6,20 +6,30 @@ dataset:
     label_schema:  ["1","2","3","4","5"]
 
 predictor:
-    method : 'llm'
+    method : 'agent'
     config:
         prompt: 'prompts/predictor_completion/prediction_generation.prompt'
+        tools_path: 'agent/agent_tools.py'
         mini_batch_size: 1
         llm:
             type: 'OpenAI'
-            name: 'gpt-4-1106-preview' #'gpt-3.5-turbo-1106'
+            name: 'gpt-4o' #'gpt-3.5-turbo-1106'
         num_workers: 7
 
 meta_prompts:
     folder: 'prompts/meta_prompts_generation'
     warmup: 1
 
+metric_generator:
+        num_metrics: 5
+        llm:
+            type: 'OpenAI'
+            name: 'gpt-4o'
+
 eval:
-    function_name: 'ranking'
+    function_name: 'generator'
     error_threshold: 4
+    llm:
+        type: 'OpenAI'
+        name: 'gpt-3.5-turbo-1106'
 

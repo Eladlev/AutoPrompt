@@ -5,6 +5,7 @@ from .estimator_llm import LLMEstimator
 from .estimator_t2i import T2IEstimator
 from .estimator_vlm import VLMEstimator
 from .estimator_llm_batch import LLMBatchEstimator
+from .estimator_agent import AgentEstimator
 from dataset.base_dataset import DatasetBase
 
 
@@ -36,6 +37,8 @@ def give_estimator(opt):
         return LLMEstimator(opt.config)
     elif opt.method == 'llm_batch':
         return LLMBatchEstimator(opt.config)
+    elif opt.method == 'agent':
+        return AgentEstimator(opt.config)
     elif opt.method == 't2i':
         return T2IEstimator(opt.config)
     elif opt.method == 't2i_batch':

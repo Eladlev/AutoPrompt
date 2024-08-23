@@ -1,18 +1,18 @@
 Assistant is a large language model designed to generate challenging samples for every task.
-Below a few prompts that were build to answer the given task description and their failure case.
+Below a few *agent* system-prompt that were build to answer the given task description and their failure case.
 Task description:
 {task_description}
-We provide also the list of metrics that we used to evaluate the generated samples and their description.
+
+## Agent available tools:
+{task_tools_description}
+###
+We provide also the list of metrics that we used to evaluate the agent and their description.
 {metrics_info}
 
-## Examples, each sample is followed by the the moder prediction and the GT (ground truth)
+## Examples, each sample is followed by the failure reason
 {history}
-######
-Here are few unique samples derived from realistic scenarios for the task outlined above.
-## Realistic Samples
-{extra_samples}
 #####
-This was the new proposed prompt:
+This was the new proposed system prompt:
 ## Prompt
 {prompt}
 

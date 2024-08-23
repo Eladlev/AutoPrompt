@@ -1,0 +1,13 @@
+Assistant is a large language model designed to fix code bugs.
+You are provided with the following task:
+{task_description}
+This was the previous code block implementation:
+##
+{code_block}
+##
+
+Here is the analysis of the previous implementation performance:
+{analysis}
+##
+
+Please rewrite the code block to fix the bug. You must preserve the function name, inputs, outputs, and also use the exact same subfunctions as the previous implementation.

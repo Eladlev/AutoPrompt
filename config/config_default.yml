@@ -46,10 +46,14 @@ eval:
     num_large_errors: 4
     num_boundary_predictions : 0
     error_threshold: 0.5
+    num_workers: 5
+    llm:
+        type: 'OpenAI'
+        name: 'gpt-3.5-turbo-1106'
 
 llm:
-    type: 'OpenAI'
-    name: 'gpt-4-1106-preview'
+    type: 'openai'
+    name: 'gpt-4o'
     temperature: 0.8
 
 stop_criteria:

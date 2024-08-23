@@ -9,6 +9,7 @@ from pathlib import Path
 from tqdm import trange, tqdm
 import concurrent.futures
 import logging
+from easydict import EasyDict as edict
 
 
 class DummyCallback:
@@ -28,17 +29,25 @@ class DummyCallback:
 def get_dummy_callback():
     return DummyCallback()
 
+def set_callbck(llm_type):
+    if llm_type.lower() == 'openai' or llm_type.lower() == 'azure':
+        callback = get_openai_callback
+    else:
+        callback = get_dummy_callback
+    return callback
+
+
 
 class ChainWrapper:
     """
     A wrapper for a LLM chain
     """
 
-    def __init__(self, llm_config, prompt_path: str, json_schema: dict = None, parser_func=None):
+    def __init__(self, llm_config, prompt: str, json_schema: dict = None, parser_func=None):
         """
         Initialize a new instance of the ChainWrapper class.
         :param llm_config: The config for the LLM
-        :param prompt_path: A path to the prompt file (text file)
+        :param prompt: Either path to the prompt file (text file), or the prompt itself
         :param json_schema: A dict for the json schema, to get a structured output for the LLM
         :param parser_func: A function to parse the output of the LLM
         """
@@ -46,13 +55,10 @@ class ChainWrapper:
         self.llm = get_llm(llm_config)
         self.json_schema = json_schema
         self.parser_func = parser_func
-        self.prompt = load_prompt(prompt_path)
+        self.prompt = load_prompt(prompt)
         self.build_chain()
         self.accumulate_usage = 0
-        if self.llm_config.type == 'OpenAI':
-            self.callback = get_openai_callback
-        else:
-            self.callback = get_dummy_callback
+        self.callback = set_callbck(self.llm_config.type)
 
     def invoke(self, chain_input: dict) -> dict:
         """
@@ -123,32 +129,36 @@ class ChainWrapper:
                 return [self.parser_func(t.result()) for t in list(all_res)]
             return [t.result() for t in list(all_res)]
 
-    def batch_invoke(self, inputs: list[dict], num_workers: int):
+    def batch_invoke(self, inputs: list[dict], num_workers: int, get_index=False) -> list[dict]:
         """
         Invoke the chain on a batch of inputs either async or not
         :param inputs: The list of all inputs
         :param num_workers: The number of workers
+        :param get_index: If True, return the index of the input
         :return: A list of results
         """
 
         def sample_generator():
-            for sample in inputs:
-                yield sample
+            if get_index:
+                for i, sample in enumerate(inputs):
+                    yield (i,sample)
+            else:
+                for sample in inputs:
+                    yield sample
 
         def process_sample_with_progress(sample):
+            if get_index:
+                i, sample = sample
             result = self.invoke(sample)
             pbar.update(1)  # Update the progress bar
+            if get_index:
+                return {'index': i, 'result': result}
             return result
 
         if not ('async_params' in self.llm_config.keys()):  # non async mode, use regular workers
             with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
                 with tqdm(total=len(inputs), desc="Processing samples") as pbar:
-                    # all_results = list(executor.map(process_sample_with_progress, sample_generator()))
-                    all_results = []
-                    for sample in sample_generator():
-                        result = process_sample_with_progress(sample)
-                        all_results.append(result)
-                        pbar.update(1)
+                    all_results = list(executor.map(process_sample_with_progress, sample_generator()))
         else:
             all_results = []
             for i in trange(0, len(inputs), num_workers, desc='Predicting'):
@@ -161,11 +171,34 @@ class ChainWrapper:
         """
         Build the chain according to the LLM type
         """
-        if (self.llm_config.type == 'OpenAI' or self.llm_config.type == 'Azure') and self.json_schema is not None:
+        if (self.llm_config.type.lower() == 'openai' or self.llm_config.type.lower() == 'azure') and self.json_schema is not None:
             self.chain = create_structured_output_runnable(self.json_schema, self.llm, self.prompt)
         else:
             self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
 
+def dict_to_prompt_text(prompt_dict: dict, style = 'default') -> str:
+    """
+    Convert a prompt dictionary to a text
+    :param prompt_dict: The prompt dictionary
+    :param style: The style of the prompt
+    :return: The prompt text
+    """
+    prompt_text = ''
+    for key, value in prompt_dict.items():
+        if isinstance(value, dict):
+            continue
+        if style == 'default':
+            if isinstance(value, float):
+                prompt_text += f'{key}: {value:.2f}\n'
+            else:
+                prompt_text += f'{key}: {value}\n'
+        elif style == '#':
+            key_str = key.replace("_", " ").capitalize()
+            if isinstance(value, float):
+                prompt_text += f'##{key_str}:\n{value:.2f}\n'
+            else:
+                prompt_text += f'##{key_str}:\n{value}\n'
+    return prompt_text
 
 def get_chain_metadata(prompt_fn: Path, retrieve_module: bool = False) -> dict:
     """
@@ -208,37 +241,25 @@ class MetaChain:
         :param config: An EasyDict configuration
         """
         self.config = config
-        self.initial_chain = self.load_chain('initial')
-        self.step_prompt_chain = self.load_chain('step_prompt')
-        self.step_samples = self.load_chain('step_samples')
-        self.error_analysis = self.load_chain('error_analysis')
+        prompt_files = [file for file in self.config.meta_prompts.folder.iterdir() if file.is_file()
+                        and file.suffix == '.prompt']
+        chain = {}
+        for file in prompt_files:
+            chain[file.stem] = self.load_chain(file)
+        self.chain = edict(chain)
 
-    def load_chain(self, chain_name: str) -> ChainWrapper:
+    def load_chain(self, prompt_file: Path) -> ChainWrapper:
         """
         Load a chain according to the chain name
-        :param chain_name: The name of the chain
+        :param prompt_file: The path to the prompt file
         """
-        prompt_path = self.config.meta_prompts.folder / '{}.prompt'.format(chain_name)
-        if prompt_path.exists():
-            metadata = get_chain_metadata(prompt_path)
-            chain_wrapper = ChainWrapper(self.config.llm,
-                                         prompt_path,
-                                         metadata['json_schema'],
-                                         metadata['parser_func'])
-            return chain_wrapper
-        else:
-            return None
+        metadata = get_chain_metadata(prompt_file)
+        return ChainWrapper(self.config.llm, str(prompt_file),
+                            metadata['json_schema'], metadata['parser_func'])
 
     def calc_usage(self) -> float:
         """
         Calculate the usage of all the meta-prompts
         :return: The total usage value
         """
-        total_usage = 0
-        for chain in [self.initial_chain, self.step_prompt_chain, self.step_samples]:
-            if chain is not None:
-                total_usage += chain.accumulate_usage
-        # total_usage = self.initial_chain.accumulate_usage
-        # total_usage += self.step_prompt_chain.accumulate_usage
-        # total_usage += self.step_samples.accumulate_usage
-        return total_usage
+        return sum(item.accumulate_usage for item in self.chain.values())

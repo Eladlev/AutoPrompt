@@ -1,0 +1,33 @@
+Assistant is a large language model designed to write a code that break down every task.
+You are provided with the following task:
+{task_description}
+The list of available tools for the task and their description is:
+{tools}
+##
+The previous implementation of the task try to solve the problem by using a single function that does everything.
+Here is the analysis of the previous implementation:
+{analysis}
+##
+
+To improve the quality of the code and make it more readable and maintainable, you should break down the task into subtasks.
+Your should conduct the following steps:
+1. Define a list of subtasks, each subtask is defined as a function with description. For each subtask function you need to provide the sublist of tools that needed is used by the subtask.
+2. Compose a Python function that uses all the subtasks functions and compose them to solve the prompt.
+The result should be a python function with the desired return output, each function that is used must be in kwargs format where the variable name is explicitly pass to the function!
+
+Guidelines for the subtasks:
+1. Break down to the subtask only if it's necessary to get top quality result
+2. Focus on quality and verification subtasks
+3. Use the analysis to understand the previous implementation core issues and try to solve them by breaking down the task
+
+
+The inputs for the generated function are:
+##
+{inputs}
+##
+
+The outputs for the expected function is:
+##
+{outputs}
+##
+The function name must be: {function_name}

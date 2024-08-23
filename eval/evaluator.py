@@ -1,40 +1,55 @@
+import json
 import pandas as pd
 import numpy as np
 from sklearn.metrics import confusion_matrix
 import eval.eval_utils as utils
+from utils.llm_chain import dict_to_prompt_text
+import copy
+
 
 class Eval:
     """
     The Eval class is responsible to calculate the score and the large errors
     """
 
-    def __init__(self, config, analyzer=None, label_schema=None):
+    def __init__(self, config, analyzer=None, metric_handler=None, label_schema=None):
         """
         Initialize a new instance of the Eval class.
         :param config: The configuration file (EasyDict)
         :analyzer (optional): A chain that analyze the errors
+        :metric_handler (optional): The metric handler that generate the metrics
         :label_schema (optional): The label schema
         """
         self.score_function_name = config.function_name
-        self.score_func = self.get_eval_function(config)
         self.num_errors = config.num_large_errors
         self.error_threshold = config.error_threshold
+        self.num_workers = config.get("num_workers", 1)
+        if metric_handler is not None:
+            self.metric_handler = metric_handler
         self.dataset = None
         self.mean_score = None
+        self.score_info = None
         self.label_schema = label_schema
         self.errors = None
         self.history = []
         self.analyzer = analyzer
+        self.config = config
+        self.score_func = self.get_eval_function()
 
-    @staticmethod
-    def get_eval_function(config: dict):
+    def get_eval_function(self):
         """
         Returns the eval function
         :param config: The eval configuration
         :return: The function implementation on a record
         """
-        if config.function_name == 'accuracy':
+        if self.score_function_name == 'accuracy':
             return utils.set_function_from_iterrow(lambda record: record['annotation'] == record['prediction'])
+        elif self.score_function_name == 'ranking':
+            return utils.set_ranking_function(self.config.function_params)
+        elif self.score_function_name == 'generator':
+            return utils.set_multiscore_function({metric['metric_name']: metric['metric_function']
+                                                  for metric in self.metric_handler.metrics},
+                                                 num_workers=self.num_workers)
         elif config.function_name == 'ranking':
             return utils.set_ranking_function(config.function_params)
         elif config.function_name == 't2i_vlm_score':
@@ -51,6 +66,9 @@ class Eval:
         self.dataset = self.dataset[(self.dataset['prediction'] != 'Discarded') &
                                     (self.dataset['annotation'] != 'Discarded')]
         self.dataset = self.score_func(self.dataset)
+        if self.score_function_name == 'generator':
+            self.score_info = {metric['metric_name']: self.dataset['score_{}'.format(metric['metric_name'])].mean()
+                               for metric in self.metric_handler.metrics}
         self.mean_score = self.dataset['score'].mean()
         return self.mean_score
 
@@ -70,6 +88,18 @@ class Eval:
         :param num_large_errors_per_label: The (maximum) number of large errors per label
         :return: A string that contains the large errors that is used in the meta-prompt
         """
+        if self.score_function_name == 'generator':
+            error_df = error_df[:num_large_errors_per_label]
+            txt_res = ''
+            metrics_list = [metric['metric_name'] for metric in self.metric_handler.metrics]
+            for index, row in error_df.iterrows():
+                metric_result = ''
+                for metric in metrics_list:
+                    if row['score_{}'.format(metric)] < 5:
+                        metric_result += f"#{metric}: {row['score_{}'.format(metric)]}\n{metric} score reason: {row['reasoning_{}'.format(metric)]}\n"
+                txt_res += f"###Sample text\n{row['text']}\n###Agent response issues:\n{metric_result}\n"
+            return txt_res
+
         required_columns = ['annotation', 'text', 'score', 'prediction']
         label_schema = error_df['annotation'].unique()
         if self.score_function_name == 'ranker':
@@ -97,23 +127,30 @@ class Eval:
         :param is_score: If True, add the score information to the meta-prompt
         :return: A string that contains the information of the step run
         """
+        prompt_str = dict_to_prompt_text(sample['prompt'], style='#')
         if is_score:
-            return f"####\n##Prompt Score: {sample['score']:.2f}\n##Prompt:\n{sample['prompt']}\n#################\n"
+            if 'score_info' in sample.keys():
+                score_str = dict_to_prompt_text(sample['score_info'])
+            else:
+                score_str = f"Score: {sample['score']:.2f}\n"
+            prompt_str = dict_to_prompt_text(sample['prompt'], style='#')
+            return f"####\n##Prompt info:\n{prompt_str}##Prompt score:\n{score_str}#################\n"
         else:
-            return f"####\n##Prompt:\n{sample['prompt']}\n{self.large_error_to_str(sample['errors'], num_errors_per_label)}####\n "
-
-    def add_history(self, prompt: str, task_description: str):
+            return f"####\n##Prompt info:\n{prompt_str}\n{self.large_error_to_str(sample['errors'], num_errors_per_label)}####"
+    def add_history(self, prompt: dict, task_metadata: dict):
         """
         Add the current step information to the history
         :param prompt: The current prompt
-        :param task_description: The task description
+        :param task_metadata: The task metadata
         """
         conf_matrix = None
+        prompt_input = copy.deepcopy(task_metadata)
+        prompt_input.update(prompt)
+
         large_error_to_str = self.large_error_to_str(self.errors, self.num_errors)
-        prompt_input = {'task_description': task_description,
-                        'accuracy': self.mean_score,
-                        'prompt': prompt,
-                        'failure_cases': large_error_to_str}
+        prompt_input.update({
+                        'accuracy': str(self.mean_score),
+                        'failure_cases': large_error_to_str})
         if self.score_function_name == 'accuracy':
             conf_matrix = confusion_matrix(self.dataset['annotation'],
                                            self.dataset['prediction'],
@@ -122,6 +159,11 @@ class Eval:
             for i, row in enumerate(conf_matrix):
                 conf_text += f"\n{self.label_schema[i]}: {row}"
             prompt_input['confusion_matrix'] = conf_text
+        elif self.score_function_name == 'generator':
+            prompt_input['metrics_info'] = self.metric_handler.get_metrics_info()
+            prompt_input['labels'] = self.label_schema
+            prompt_input['accuracy'] = dict_to_prompt_text(self.score_info)
+            # TODO: Need to modify also the large_error_to_str and add there the reason for the error
         elif self.score_function_name == 'ranking':
             prompt_input['labels'] = self.label_schema
         elif self.score_function_name == 't2i_vlm_score':
@@ -131,9 +173,8 @@ class Eval:
             analysis = self.analyzer.invoke(prompt_input)
         else:
             analysis = {"text": "generated image is not good enough"}  # This is where the VLM output goes
-
         self.history.append({'prompt': prompt,
-                             'score': self.mean_score,
+                             'score': self.mean_score, 'score_info': self.score_info,
                              'errors': self.errors,
                              'confusion_matrix': conf_matrix,
                              'analysis': analysis['text']})
@@ -145,7 +186,7 @@ class Eval:
         """
         df = self.dataset
         err_df = df[df['score'] < self.error_threshold]
-        err_df.sort_values(by=['score'])
+        err_df = err_df.sort_values(by='score', ascending=True)
         self.errors = err_df
         return self.errors
 

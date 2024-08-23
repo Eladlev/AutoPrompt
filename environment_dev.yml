@@ -21,3 +21,4 @@ dependencies:
       - easydict
       - pillow==10.2.0
       - langchain-google-genai==0.0.9
+      - langchain_openai==0.1.20  
