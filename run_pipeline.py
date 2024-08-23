@@ -4,7 +4,7 @@ import argparse
 # General Training Parameters
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--basic_config_path', default='config/config_matan_llms.yml', type=str, help='Configuration file path')
+parser.add_argument('--basic_config_path', default='config/config_default.yml', type=str, help='Configuration file path')
 parser.add_argument('--batch_config_path', default='',
                     type=str, help='Batch classification configuration file path')
 parser.add_argument('--prompt',
