@@ -91,7 +91,8 @@ class MetricHandler:
             batch_inputs = []
             # prepare all the inputs for the chains
             for i, row in record.iterrows():
-                batch_inputs.append({'sample': row['text']})
+                batch_inputs.append({'sample_chain_input': {'sample': row['text']},
+                                     'index': i})
             all_results = chain.batch_invoke(batch_inputs, num_workers, get_index=True)
             all_results = {res['index']: res['result'].dict() for res in all_results}
             return all_results

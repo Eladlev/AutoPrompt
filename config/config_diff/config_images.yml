@@ -1,0 +1,33 @@
+dataset:
+    name: 'dataset'
+    max_samples: 3
+
+annotator:
+    method : ''
+
+predictor:
+    method : 't2i'
+    config:
+        t2i:
+            type: 'OpenAI'
+            name: 'dall-e-2'
+            "image_size": "512x512"
+            "quality": "standard"
+        mode: 'prediction'
+
+meta_prompts:
+    folder: 'prompts/meta_prompts_image_generation'
+
+eval:
+    function_name: 't2i_vlm_score'
+    llm:
+        type: 'OpenAI'
+        name: 'gpt-4o'
+    num_workers: 1
+    source_image_folder: '/Users/eladl/Downloads/test3'
+    num_large_errors: 4
+    error_threshold: 5
+llm:
+    type: 'OpenAI'
+    name: 'gpt-4o'
+    temperature: 0.8

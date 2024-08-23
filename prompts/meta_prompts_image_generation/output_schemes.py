@@ -71,15 +71,9 @@ step_prompt_schema = {
       "title": "Prompt",
       "type": "string"
     },
-    "score": {
-      "description": "The score prediction",
-      "title": "Score",
-      "type": "number"
-    }
   },
   "required": [
     "prompt",
-    "score"
   ],
   "title": "Suggested_Prompt",
   "type": "object"
@@ -95,3 +89,11 @@ def update_classification_prediction_schema(label_schema:list)->dict:
   classification_prediction_schema['$defs']['Result']['properties']['prediction'][
     'description'] += 'The answer must be one of the following options: {} !!'.format(label_schema)
   return classification_prediction_schema
+
+def step_prompt_parser(response: dict) -> dict:
+    """
+    Parse the response of the step prompt
+    :param response: The response
+    :return: The parsed response
+    """
+    return {'prompt': response['prompt'][:999]}

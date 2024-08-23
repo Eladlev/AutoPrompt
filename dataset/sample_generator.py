@@ -33,7 +33,7 @@ class SampleGenerator:
             batch_input['metrics_info'] = metrics_text
         batch_inputs = self.generate_samples_batch(batch_input, self.config.num_initialize_samples,
                                                    self.config.samples_generation_batch)
-
+        batch_inputs = [{'sample_chain_input': batch} for batch in batch_inputs]
         samples_batches = self.meta_chain.chain.initial.batch_invoke(batch_inputs, self.config.num_workers)
         samples_list = [element for sublist in samples_batches for element in sublist['samples']]
         samples_list = dataset.remove_duplicates(samples_list)
@@ -74,7 +74,7 @@ class SampleGenerator:
                 extra_samples_text = DatasetBase.samples_to_text(extra_samples)
                 batch['history'] = 'No previous errors information'
                 batch['extra_samples'] = extra_samples_text
-
+        batch_inputs = [{'sample_chain_input': batch} for batch in batch_inputs]
         samples_batches = self.meta_chain.chain.step_samples.batch_invoke(batch_inputs,
                                                                           self.config.num_workers)
         new_samples = [element for sublist in samples_batches for element in sublist['samples']]

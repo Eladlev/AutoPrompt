@@ -73,15 +73,9 @@ step_prompt_schema = {
       "title": "Prompt",
       "type": "string"
     },
-    "score": {
-      "description": "The score prediction",
-      "title": "Score",
-      "type": "number"
-    }
   },
   "required": [
     "prompt",
-    "score"
   ],
   "title": "Suggested_Prompt",
   "type": "object"

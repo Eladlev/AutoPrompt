@@ -37,6 +37,42 @@ def set_callbck(llm_type):
     return callback
 
 
+def sync_chain_batch_run(chain, inputs, num_workers, get_index=False):
+    """
+    Run the chain in sync batch mode with workers
+    :param chain: The chain
+    :param inputs: The inputs
+    :param num_workers: The number of workers
+    :param get_index: If True, return the index of the input
+    :return: A list of results
+    """
+
+    def sample_generator():
+        for sample in inputs:
+            yield sample
+
+    def process_sample_with_progress(sample):
+        if get_index:
+            i = sample['index']
+
+        sample_chain_input = sample['sample_chain_input']
+        cur_chain = sample.get('chain', chain)
+
+        result = cur_chain.invoke(sample_chain_input)
+        pbar.update(1)  # Update the progress bar
+        if get_index:
+            return {'index': i, 'result': result}
+        return result
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+        with tqdm(total=len(inputs), desc="Processing samples") as pbar:
+            all_results = []
+            for sample in sample_generator():
+                result = process_sample_with_progress(sample)
+                all_results.append(result)
+                pbar.update(1)
+    all_results = [res for res in all_results if res is not None]
+    return all_results
 
 class ChainWrapper:
     """
@@ -138,28 +174,10 @@ class ChainWrapper:
         :return: A list of results
         """
 
-        def sample_generator():
-            if get_index:
-                for i, sample in enumerate(inputs):
-                    yield (i,sample)
-            else:
-                for sample in inputs:
-                    yield sample
-
-        def process_sample_with_progress(sample):
-            if get_index:
-                i, sample = sample
-            result = self.invoke(sample)
-            pbar.update(1)  # Update the progress bar
-            if get_index:
-                return {'index': i, 'result': result}
-            return result
-
         if not ('async_params' in self.llm_config.keys()):  # non async mode, use regular workers
-            with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-                with tqdm(total=len(inputs), desc="Processing samples") as pbar:
-                    all_results = list(executor.map(process_sample_with_progress, sample_generator()))
+            all_results = sync_chain_batch_run(self.chain, inputs, num_workers, get_index=get_index)
         else:
+            inputs = [inputs['sample_chain_input'] for inputs in inputs]
             all_results = []
             for i in trange(0, len(inputs), num_workers, desc='Predicting'):
                 results = asyncio.run(self.async_batch_invoke(inputs[i:i + num_workers]))

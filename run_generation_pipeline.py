@@ -63,4 +63,4 @@ if opt.load_dump != '':
     generation_pipeline.load_state(os.path.join(opt.load_dump, 'generator'))
 best_generation_prompt = generation_pipeline.run_pipeline(opt.num_generation_steps)
 print('\033[92m' + 'Calibrated prompt score:', str(best_generation_prompt['score']) + '\033[0m')
-print('\033[92m' + 'Calibrated prompt:', best_generation_prompt['prompt'] + '\033[0m')
+print('\033[92m' + 'Calibrated prompt:', best_generation_prompt['prompt']['prompt'] + '\033[0m')

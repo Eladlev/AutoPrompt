@@ -45,14 +45,11 @@ def get_llm(config: dict):
             openai_organization = config.get('openai_organization', LLM_ENV['openai']['OPENAI_ORGANIZATION'])
         else:
             openai_organization = None
-        if "dall" in config['name']:
-            return OpenAI(api_key=LLM_ENV['openai']['OPENAI_API_KEY'])
-        else:
-            return ChatOpenAI(temperature=temperature, model_name=config['name'],
-                              openai_api_key=config.get('openai_api_key', LLM_ENV['openai']['OPENAI_API_KEY']),
-                              openai_api_base=config.get('openai_api_base', 'https://api.openai.com/v1'),
-                              openai_organization=openai_organization,
-                              model_kwargs=model_kwargs)
+        return ChatOpenAI(temperature=temperature, model_name=config['name'],
+                          openai_api_key=config.get('openai_api_key', LLM_ENV['openai']['OPENAI_API_KEY']),
+                          openai_api_base=config.get('openai_api_base', 'https://api.openai.com/v1'),
+                          openai_organization=openai_organization,
+                          model_kwargs=model_kwargs)
 
     elif config['type'].lower() == 'azure':
         return AzureChatOpenAI(temperature=temperature, azure_deployment=config['name'],
@@ -80,6 +77,21 @@ def get_llm(config: dict):
 
     else:
         raise NotImplementedError("LLM not implemented")
+
+def get_t2i_model(config: dict):
+    if config['type'].lower() == 'openai':
+        client = OpenAI(api_key=LLM_ENV['openai']['OPENAI_API_KEY'])
+        def generate_images(prompt, num_images=1):
+            response = client.images.generate(
+                model=config['name'],
+                prompt=prompt,
+                size=config['image_size'],
+                quality=config['quality'],
+                n=num_images,
+            )
+
+            return [im.url for im in response.data]
+        return generate_images
 
 
 def load_yaml(yaml_path: str, as_edict: bool = True) -> edict:

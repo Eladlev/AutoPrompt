@@ -80,6 +80,7 @@ class LLMEstimator:
             cur_mini_batch = copy.deepcopy(batch_initial)
             cur_mini_batch['samples'] = chain_input
 
+        mini_batch_inputs = [{'sample_chain_input': batch} for batch in mini_batch_inputs]
         all_results = self.chain.batch_invoke(mini_batch_inputs, self.num_workers)
         union_results = [element for sublist in all_results for element in sublist['results']]
         for res in union_results:

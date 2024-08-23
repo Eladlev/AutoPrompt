@@ -1,9 +1,5 @@
 from estimator.estimator_llm import LLMEstimator
-import json
-from estimator.estimator_vlm import VLMEstimator
-from random import random
-
-
+from eval.eval_im import ImageEvaluator
 def set_function_from_iterrow(func):
     def wrapper(dataset):
         dataset['score'] = dataset.apply(func, axis=1)
@@ -58,11 +54,13 @@ def set_multiscore_function(scores_dic, num_workers=1):
 
 
 def get_t2i_vlm_score_func(params):
-    evaluator = VLMEstimator(params)
+    evaluator = ImageEvaluator(params)
     evaluator.mode = 'score'
+    num_workers = params.num_workers
     def wrapper(dataset):
-        vlm_dataset = dataset.copy()
-        vlm_dataset = evaluator.apply_dataframe(vlm_dataset)
-        dataset.score = vlm_dataset.score
+        res = evaluator.dataset_invoke(dataset, num_workers)
+        for row in res:
+            dataset.loc[row['index'], 'score'] = row['result']['score']
+            dataset.loc[row['index'], 'score_reasoning'] = row['result']['reason']
         return dataset
     return wrapper

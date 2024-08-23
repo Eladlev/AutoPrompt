@@ -126,11 +126,11 @@ class OptimizationPipeline:
         prompt_input = copy.deepcopy(self.task_metadata)
         prompt_input.update({'error_analysis': last_history[-1]['analysis']})
         if self.config.eval.function_name == 'generator':
-            prompt_input['metrics_info'] = self.metrics_infohistory_prompt = '\n'.join([
-            self.eval.sample_to_text(sample,
-                                     num_errors_per_label=self.config.meta_prompts.num_err_prompt,
-                                     is_score=True) for sample in last_history])
-        prompt_input ["history"] = history_prompt
+            prompt_input['metrics_info'] = self.metrics_info
+        history_prompt = '\n'.join([self.eval.sample_to_text(sample,
+                                                             num_errors_per_label=self.config.meta_prompts.num_err_prompt,
+                                                             is_score=True) for sample in last_history])
+        prompt_input["history"] = history_prompt
         if 'label_schema' in self.config.dataset.keys():
             prompt_input["labels"] = json.dumps(self.config.dataset.label_schema)
         prompt_suggestion = self.meta_chain.chain.step_prompt.invoke(prompt_input)
@@ -140,7 +140,7 @@ class OptimizationPipeline:
         if len(self.dataset) < self.config.dataset.max_samples:
             self.sample_generator.generate_samples(self.dataset, prompt_suggestion, last_history,
                                                    self.batch_id,
-                    self.eval.sample_to_text, self.metrics_info)
+                                                   self.eval.sample_to_text, self.metrics_info)
             logging.info('Get new samples')
         self.cur_prompt = prompt_suggestion
 
@@ -205,7 +205,8 @@ class OptimizationPipeline:
             cur_batch = self.dataset.get_leq(self.batch_id)
             random_subset = cur_batch.sample(n=min(10, len(cur_batch)))[['text']]
             self.wandb_run.log(
-                {"Prompt": wandb.Html(f"<p>{self.cur_prompt['prompt']}</p>"), "Samples": wandb.Table(dataframe=random_subset)},
+                {"Prompt": wandb.Html(f"<p>{self.cur_prompt['prompt']}</p>"),
+                 "Samples": wandb.Table(dataframe=random_subset)},
                 step=self.batch_id)
 
         logging.info('Running annotator')

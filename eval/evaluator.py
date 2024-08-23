@@ -50,10 +50,8 @@ class Eval:
             return utils.set_multiscore_function({metric['metric_name']: metric['metric_function']
                                                   for metric in self.metric_handler.metrics},
                                                  num_workers=self.num_workers)
-        elif config.function_name == 'ranking':
-            return utils.set_ranking_function(config.function_params)
-        elif config.function_name == 't2i_vlm_score':
-            return utils.get_t2i_vlm_score_func(config)
+        elif self.score_function_name == 't2i_vlm_score':
+            return utils.get_t2i_vlm_score_func(self.config)
         else:
             raise NotImplementedError("Eval function not implemented")
 
@@ -99,6 +97,13 @@ class Eval:
                         metric_result += f"#{metric}: {row['score_{}'.format(metric)]}\n{metric} score reason: {row['reasoning_{}'.format(metric)]}\n"
                 txt_res += f"###Sample text\n{row['text']}\n###Agent response issues:\n{metric_result}\n"
             return txt_res
+        if self.score_function_name == 't2i_vlm_score':
+            error_df = error_df[:num_large_errors_per_label]
+            txt_res = ''
+            for index, row in error_df.iterrows():
+                txt_res += f"###Sample {index} score: {row['score']}\n###Sample {index} evaluator feedback:\n{row['score_reasoning']}\n#########\n"
+            return txt_res
+
 
         required_columns = ['annotation', 'text', 'score', 'prediction']
         label_schema = error_df['annotation'].unique()
@@ -129,7 +134,7 @@ class Eval:
         """
         prompt_str = dict_to_prompt_text(sample['prompt'], style='#')
         if is_score:
-            if 'score_info' in sample.keys():
+            if 'score_info' in sample.keys() and sample['score_info'] is not None:
                 score_str = dict_to_prompt_text(sample['score_info'])
             else:
                 score_str = f"Score: {sample['score']:.2f}\n"
@@ -166,8 +171,6 @@ class Eval:
             # TODO: Need to modify also the large_error_to_str and add there the reason for the error
         elif self.score_function_name == 'ranking':
             prompt_input['labels'] = self.label_schema
-        elif self.score_function_name == 't2i_vlm_score':
-            prompt_input['scores'] = self.dataset.score.values
 
         if self.analyzer is not None:
             analysis = self.analyzer.invoke(prompt_input)

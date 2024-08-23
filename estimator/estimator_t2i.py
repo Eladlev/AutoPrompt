@@ -2,7 +2,7 @@ from utils.llm_chain import ChainWrapper, get_chain_metadata
 from pathlib import Path
 from dataset.base_dataset import DatasetBase
 import pandas as pd
-from openai import OpenAI
+from utils.config import get_t2i_model
 import yaml
 
 LLM_ENV = yaml.safe_load(open('config/llm_env.yml', 'r'))
@@ -27,7 +27,7 @@ class T2IEstimator:
         else:
             self.cur_instruct = None
 
-        self.client = OpenAI(api_key=opt.get('api_key', LLM_ENV['openai']['OPENAI_API_KEY']))
+        self.image_generator = get_t2i_model(opt.t2i)
 
     @staticmethod
     def generate_sample_image(sample_id: int, url: str) -> str:
@@ -65,19 +65,6 @@ class T2IEstimator:
         image_desc_str = response.choices[0].message.content
         return image_desc_str
 
-    def generate_image_batches(self, prompt):
-
-        response = self.client.images.generate(
-            model="dall-e-3",
-            prompt=prompt,
-            size="1024x1024",
-            quality="hd",
-            n=1,
-        )
-
-        image_url = response.data[0].url
-        return image_url
-
     def calc_usage(self) -> float:
         """"
         Calculate the usage of the estimator
@@ -109,40 +96,8 @@ class T2IEstimator:
         Apply the estimator on a dataframe
         :param record: The record
         """
-        chain_input = ''
-        mini_batch_inputs = []
-        record[self.mode] = 'Discarded'
-        # prepare all the inputs for the chains
-        for i, row in record.iterrows():
-            chain_input += self.generate_sample_image(i, row['text'])
-            if ((i + 1) % self.mini_batch_size) == 0:
-                mini_batch_inputs.append({'batch_size': self.mini_batch_size,
-                                          'task_instruction': self.cur_instruct,
-                                          'samples': chain_input})
-                chain_input = ''
-        if not (chain_input == ''):
-            mini_batch_inputs.append({'batch_size': self.mini_batch_size,
-                                      'task_instruction': self.cur_instruct,
-                                      'samples': chain_input})
-
-        if self.chain is not None:
-            all_results = self.chain.batch_invoke(mini_batch_inputs, self.num_workers)
-            union_results = [element for sublist in all_results for element in sublist['results']]
-        else:
-            all_results = []
-            for ib, mini_batch_input in enumerate(mini_batch_inputs):
-                response = self.client.images.generate(
-                    model=self.opt.llm.name,
-                    # prompt=mini_batch_input["task_instruction"],
-                    prompt=mini_batch_input["samples"].split("Sample: ")[1].strip(),
-                    **self.opt.llm.model_kwargs)
-                image_url = response.data[0].url
-                sample_id = int(mini_batch_input["samples"].split(";")[0].replace("ID: ", ""))
-                all_results.append({"id": sample_id, "prediction": image_url})
-            union_results = all_results
-
-        for res in union_results:
-            record.loc[res['id'], self.mode] = res['prediction']
+        result = self.image_generator(self.cur_instruct['prompt'], num_images=len(record))
+        record[self.mode] = result
         return record
 
     def apply(self, dataset: DatasetBase, idx: int, leq: bool = False):
