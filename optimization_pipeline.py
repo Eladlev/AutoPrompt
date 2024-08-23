@@ -24,7 +24,7 @@ class OptimizationPipeline:
     """
 
     def __init__(self, config, task_description: str = None, initial_prompt: str or dict = None, output_path: str = ''
-                 , task_metadata: dict = None, prompt_metadata: dict = None):
+                 , task_metadata: dict = None):
         """
         Initialize a new instance of the ClassName class.
         :param config: The configuration file (EasyDict)
