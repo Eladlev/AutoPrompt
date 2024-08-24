@@ -7,6 +7,8 @@ class MetricMetadata(BaseModel):
     metric_score: float = Field(description="The score for the metric")
     metric_reason: str = Field(description="The reason for the metric score")
 
+class MetricEvaluation(BaseModel):
+    include_metrics: list[int] = Field(...)
 
 class MetricHandler:
     """
@@ -32,6 +34,9 @@ class MetricHandler:
         """
         return {t['metric_name']: t['metric_desc'] for t in self.metrics}
 
+    def chunk_list(lst, chunk_size):
+        return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+    
     def update_metrics(self, metrics_list):
         """
         Update metrics dictionary to merge metric_scale into metric_prompt
@@ -53,7 +58,31 @@ class MetricHandler:
         Returns:
             list[bool]: a list of boolean values indicating whether the metric at that index should be kept (1) or dropped (0), referencing to the metrics list above
         """
-        pass
+        chunked_metrics = [metrics[i:i + 5] for i in range(0, len(metrics), 5)]
+        task_description = self.task_description
+        all_evaluations = []
+        batch_inputs = []
+        metric_selection_prompt = f'''You are tasked with evaluating the consistency of metrics based on their descriptions and prompts. Your task is to analyze a set of metrics for their relevance, uniqueness, and measurability in the context of evaluating an AI assistant's performance.
+                Evaluate each metric based on the provided task descriptions, metric description and associated prompts with metrics. If the descriptions of prompts is logically consistent and clear, include the metric. If the combination is inconsistent or unclear, exclude the metric from the output.
+                For each metric, consider the following criteria:
+                1. Relevance: Is the metric directly related to assessing the performance of an AI assistant?
+                2. Uniqueness: Does the metric measure an aspect that is not already covered by other metrics in the set?
+                3. Measurability: Can the metric be objectively measured based on the provided scale and prompt?
+                4. Clarity: Is the metric description and prompt clear and unambiguous?
+                Please analyze each metric and task description and return a list of exactly {len(chunk)} integers where 1 indicates the metric should be included and 0 indicates it should be removed.
+                ###Task Descriptions: \n
+                {task_description}\n
+                ###Metric Descriptions and Prompts: \n
+                {chunk}\n'''
+        for chunk in chunked_metrics:
+            batch_inputs.append({'chunk': chunk, 'task_description': self.task_description})
+        chain = ChainWrapper(self.config.llm, metric_selection_prompt, MetricEvaluation)
+        all_results = chain.batch_invoke(batch_inputs, num_workers=1, get_index=True)
+        all_results = [res['result'].include_metrics for res in all_results]
+        for result in all_results:
+            all_evaluations.extend(result)
+        return all_evaluations
+
     
     def get_semantic_metric_clusters(self, metrics) -> list[set(int)]:
         """
