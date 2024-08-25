@@ -1,4 +1,5 @@
 from utils.llm_chain import ChainWrapper
+from typing import List
 from langchain_core.pydantic_v1 import BaseModel, Field
 import pandas as pd
 from utils.dedup import Dedup
@@ -9,6 +10,22 @@ class MetricMetadata(BaseModel):
 
 class MetricEvaluation(BaseModel):
     include_metrics: list[int] = Field(...)
+
+class MetricScale(BaseModel):
+    deficient_desc: str
+    adequate_desc: str
+    competent_desc: str
+    proficient_desc: str
+    exemplary_desc: str
+
+class Metric(BaseModel):
+    metric_name: str
+    metric_desc: str
+    metric_prompt: str
+    metric_scale: List[MetricScale]
+
+class MetricScores(BaseModel):
+    metrics_list: List[Metric]
 
 class MetricHandler:
     """
@@ -48,6 +65,30 @@ class MetricHandler:
             for metric_key, eval_prompt in metric_dict['metric_scale'][0].items():
                 metric_dict['metric_prompt'] += f'\nscore {score_translation[metric_key]}: {eval_prompt}'
             del metric_dict['metric_scale']
+    
+    def merge_metrics(self, metrics, cluster, task_description):
+        metrics_to_merge = [metrics[i] for i in cluster]
+
+        prompt = f"""You are an AI expert tasked with merging multiple related metrics into a single, comprehensive metric. Your goal is to create a new metric that captures the essence of all the input metrics while eliminating redundancy.
+
+                Given the following set of metrics:
+
+                {metrics_to_merge}
+
+                Create a single new metric that:
+                1. Combines the key aspects of all input metrics
+                2. Has a clear and concise name
+                3. Provides a comprehensive description
+                4. Includes a well-formulated evaluation prompt
+
+                Ensure that the new metric is relevant to task description :
+                {task_description}
+
+                Please return a single metric.
+                """
+        chain = ChainWrapper(self.config.llm, prompt, MetricScores)
+        response = chain.invoke({'metrics_to_merge': metrics_to_merge,'task_description': task_description})
+        return response.metrics_list
             
     def hard_filter_metrics(self, metrics) -> list[bool]:
         """
@@ -109,7 +150,14 @@ class MetricHandler:
         Returns:
             list[dict]: the new list of metric dictionaries containing metric_name, metric_desc and metric_prompt
         """
-        pass
+        result = []
+        for cluster in metric_clusters:
+            if len(cluster) > 1:
+                merged_metric = self.merge_metrics(metrics, cluster, self.task_description)
+                result.append(merged_metric)
+            else:
+                result.append(metrics[cluster[0]])
+        return result
     
 
     def generate_metrics(self) -> dict:
