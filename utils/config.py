@@ -7,12 +7,14 @@ from langchain_openai import ChatOpenAI
 from pathlib import Path
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain_community.chat_models import AzureChatOpenAI
-from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
 
 from langchain.chains import LLMChain
 import logging
 
 from openai import OpenAI
+import base64
+import os
+import requests
 
 LLM_ENV = yaml.safe_load(open('config/llm_env.yml', 'r'))
 
@@ -53,15 +55,16 @@ def get_llm(config: dict):
 
     elif config['type'].lower() == 'azure':
         return AzureChatOpenAI(temperature=temperature, azure_deployment=config['name'],
-                        openai_api_key=config.get('openai_api_key', LLM_ENV['azure']['AZURE_OPENAI_API_KEY']),
-                        azure_endpoint=config.get('azure_endpoint', LLM_ENV['azure']['AZURE_OPENAI_ENDPOINT']),
-                        openai_api_version=config.get('openai_api_version', LLM_ENV['azure']['OPENAI_API_VERSION']))
+                               openai_api_key=config.get('openai_api_key', LLM_ENV['azure']['AZURE_OPENAI_API_KEY']),
+                               azure_endpoint=config.get('azure_endpoint', LLM_ENV['azure']['AZURE_OPENAI_ENDPOINT']),
+                               openai_api_version=config.get('openai_api_version',
+                                                             LLM_ENV['azure']['OPENAI_API_VERSION']))
 
     elif config['type'].lower() == 'google':
         from langchain_google_genai import ChatGoogleGenerativeAI
         return ChatGoogleGenerativeAI(temperature=temperature, model=config['name'],
-                              google_api_key=LLM_ENV['google']['GOOGLE_API_KEY'],
-                              model_kwargs=model_kwargs)
+                                      google_api_key=LLM_ENV['google']['GOOGLE_API_KEY'],
+                                      model_kwargs=model_kwargs)
 
     elif config['type'].lower() == 'huggingfacepipeline':
         device = config.get('gpu_device', -1)
@@ -78,9 +81,11 @@ def get_llm(config: dict):
     else:
         raise NotImplementedError("LLM not implemented")
 
+
 def get_t2i_model(config: dict):
     if config['type'].lower() == 'openai':
         client = OpenAI(api_key=LLM_ENV['openai']['OPENAI_API_KEY'])
+
         def generate_images(prompt, num_images=1):
             response = client.images.generate(
                 model=config['name'],
@@ -91,7 +96,85 @@ def get_t2i_model(config: dict):
             )
 
             return [im.url for im in response.data]
+
         return generate_images
+    elif config['type'].lower() == 'stability':
+        api_key = LLM_ENV['stability']["STABILITY_API_KEY"]
+        api_host = LLM_ENV['stability'].get('API_HOST', 'https://api.stability.ai')
+
+        if config['name'] in ['stable-diffusion-xl-1024-v1-0', 'stable-diffusion-v1-6']:
+            engine_id = config['name']
+
+            def generate_images(prompt, num_images=1):
+                if api_key is None:
+                    raise Exception("Missing Stability API key.")
+
+                response = requests.post(
+                    f"{api_host}/v1/generation/{engine_id}/text-to-image",
+                    headers={
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "Authorization": f"Bearer {api_key}"
+                    },
+                    json={
+                        "text_prompts": [
+                            {
+                                "text": prompt
+                            }
+                        ],
+                        "cfg_scale": 7,
+                        "height": config['image_size'][1],
+                        "width": config['image_size'][0],
+                        "samples": num_images,
+                        "steps": 30,
+                    },
+                )
+
+                if response.status_code != 200:
+                    raise Exception("Non-200 response: " + str(response.text))
+
+                data = response.json()
+                files_location = []
+                im_num = len(os.listdir(config['output_path']))
+                for i, image in enumerate(data["artifacts"]):
+                    fn = f"{config['output_path']}/{im_num}_v1_txt2img_{i}.png"
+                    files_location.append(fn)
+                    with open(fn, "wb") as f:
+                        f.write(base64.b64decode(image["base64"]))
+                return files_location
+
+            return generate_images
+        elif config['name'] in ['ultra','core','sd3']:
+
+            def generate_images(prompt, num_images=1):
+                response = requests.post(
+                    f"https://api.stability.ai/v2beta/stable-image/generate/{config['name']}",
+                    headers={
+                        "authorization": f"Bearer {api_key}",
+                        "accept": "image/*"
+                    },
+                    files={"none": ''},
+                    data={
+                        "prompt": prompt,
+                        "output_format": "png",
+                    },
+                )
+
+
+                im_num = len(os.listdir(config['output_path']))
+                fn = f"{config['output_path']}/{im_num}_v1_txt2img_{0}.png"
+
+
+
+                if response.status_code == 200:
+                    with open(fn, 'wb') as file:
+                        file.write(response.content)
+                else:
+                    raise Exception(str(response.json()))
+                return [fn]
+            return generate_images
+        else:
+            raise NotImplementedError("Stability model not implemented")
 
 
 def load_yaml(yaml_path: str, as_edict: bool = True) -> edict:

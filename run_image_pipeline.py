@@ -7,14 +7,22 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config_path', default='config/config_diff/config_images.yml',
                     type=str, help='Configuration file path')
 parser.add_argument('--prompt',
-                    default='Generate an 8-bit style image of a golden retriever dog playing with a stick near a lake in summer',
+                    default='Draw a person with brown hair in a factory holding a map with a helmet, playful style,smiling, playful style, watercolor, pastel colors, trending on artstation, sharp focus, intricate details, highly detailed, by greg rutkowski',
+                    required=False, type=str, help='Prompt to use as initial.')
+parser.add_argument('--task_description',
+                    default='Draw <x> in a factory holding a map with a helmet, playful style, watercolor, pastel colors, trending on artstation, sharp focus, intricate details, highly detailed, by greg rutkowski',
                     required=False, type=str, help='Prompt to use as initial.')
 parser.add_argument('--load_path', default='', required=False, type=str, help='In case of loading from checkpoint')
 parser.add_argument('--output_dump', default='dump', required=False, type=str, help='Output to save checkpoints')
-parser.add_argument('--num_steps', default=4, type=int, help='Number of iterations')
+parser.add_argument('--num_steps', default=8, type=int, help='Number of iterations')
 
 opt = parser.parse_args()
 config_params = override_config(opt.config_path)
+
+if opt.task_description == '':
+    task_description = input("Describe the task: ")
+else:
+    task_description = opt.task_description
 
 if opt.prompt == '':
     initial_prompt = input("Initial prompt: ")

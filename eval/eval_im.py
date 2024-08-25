@@ -55,7 +55,7 @@ class ImageEvaluator:
         self.system_prompt = self.generate_system_message()
 
     def generate_source_prompt_message(self):
-        message_content = [{"type": "text", "text": "You are given images of a single object"}]
+        message_content = [{"type": "text", "text": "You are given images of a specific character or an object, we refer these images as the 'source images' and the object as <x>"}]
         for filename in os.listdir(self.source_images):
             # Construct full file path
             file_path = os.path.join(self.source_images, filename)
@@ -74,13 +74,19 @@ class ImageEvaluator:
         return SystemMessage(content="You are a helpful image generator evaluator that needs to evaluate the quality of the generated images given the user request")
 
     def generate_eval_message(self, url):
-        prompt_text = f"""The user ask for the following image:{self.task_description} 
+        prompt_text = f"""The user ask for the following image:{self.task_description}.
         The model generated the provided image in response. You should evaluate the quality of the generation according to the following criteria:
-        1. The object in the generated image should be exactly the same!! as in the source image. Focus on the main object in the source images!
-        2. The generated image should adhere the user prompt.
-        You should provide a score between 1 and 5 where 5 is only if the object in the generated image is exactly the same as in the source image and the generated image adheres to the user prompt.
-        You should also provide a feedback which explains exactly what the changes should be done in the generated image in order to make it closer to the source image and the user prompt.
-        This feedback should be highly details, you should assume that the model doesn't have access to the generated image and the source image, only to the provided feedback.
+        1. <x> should be exactly the same in the generated image and the source images!!
+        2. The generated image should adhere the user request.
+        You should provide a score between 1 and 10 where 10 is only if <x> is exactly the same as in the source image and the generated image adheres to the user prompt.
+        You should also provide a feedback.
+         The feedback guidelines:
+            - The feedback should explain the exact appearance of features in <x> that were not generate properly in the image. Do not use relative words, instead describe the features. For example instead of using 'bigger nose', describe the nose apperence 
+            - This feedback should be highly details, you should assume that the model doesn't have access to the generated image and the source image, only to the provided feedback.
+            - Do not use relative instructions like "more" or "less", instead describe exactly the character or object features that should be changed!!
+            - The Image generator model is familiar with famous characters and objects, you can use can use similarity to famous characters and objects to guide the model. 
+            - If <x> is a character focus on the face resemblance. 
+        
         The format of the response should be as follows:
         #Score: <score>
         #Feedback: <feedback>

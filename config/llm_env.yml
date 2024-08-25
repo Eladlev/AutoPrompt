@@ -10,3 +10,6 @@ azure:
 
 google:
   GOOGLE_API_KEY: ''
+
+stability:
+  STABILITY_API_KEY: ''

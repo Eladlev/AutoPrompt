@@ -1,6 +1,6 @@
 dataset:
     name: 'dataset'
-    max_samples: 3
+    max_samples: 1
 
 annotator:
     method : ''
@@ -9,10 +9,11 @@ predictor:
     method : 't2i'
     config:
         t2i:
-            type: 'OpenAI'
-            name: 'dall-e-2'
-            "image_size": "512x512"
+            type: 'stability'
+            name: 'core' #'stable-diffusion-xl-1024-v1-0'
+            "image_size": [1024,1024]
             "quality": "standard"
+            "output_path": ''
         mode: 'prediction'
 
 meta_prompts:
