@@ -3,7 +3,7 @@ Generate a list of {num_samples} challenging samples for the following task.
 ### Task description:
 {task_description}
 ### Task Instruction:
-{instruction}
+{prompt}
 ###
 The generated samples should be challenging and diverse such that using the task instruction as a prompt will result in the wrong result.
 

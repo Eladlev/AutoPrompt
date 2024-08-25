@@ -2,6 +2,7 @@ from utils.llm_chain import ChainWrapper, get_chain_metadata
 from pathlib import Path
 from dataset.base_dataset import DatasetBase
 import pandas as pd
+import copy
 
 class LLMEstimator:
     """
@@ -61,16 +62,23 @@ class LLMEstimator:
         chain_input = ''
         mini_batch_inputs = []
         record[self.mode] = 'Discarded'
+        if isinstance(self.cur_instruct, str):
+            batch_initial = {'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct}
+        else:
+            batch_initial = copy.deepcopy(self.cur_instruct)
+            batch_initial.update({'batch_size': self.mini_batch_size})
+
         # prepare all the inputs for the chains
         for i, row in record.iterrows():
             chain_input += self.generate_sample_text(i, row['text'])
             if ((i + 1) % self.mini_batch_size) == 0:
-                mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
-                                          'samples': chain_input})
+                cur_mini_batch = copy.deepcopy(batch_initial)
+                cur_mini_batch['samples'] = chain_input
+                mini_batch_inputs.append(cur_mini_batch)
                 chain_input = ''
         if not (chain_input == ''):
-            mini_batch_inputs.append({'batch_size': self.mini_batch_size, 'task_instruction': self.cur_instruct,
-                                      'samples': chain_input})
+            cur_mini_batch = copy.deepcopy(batch_initial)
+            cur_mini_batch['samples'] = chain_input
 
         all_results = self.chain.batch_invoke(mini_batch_inputs, self.num_workers)
         union_results = [element for sublist in all_results for element in sublist['results']]

@@ -1,3 +1,4 @@
+import copy
 import pandas as pd
 from metric_generator.metric_gen import MetricHandler
 from eval.evaluator import Eval
@@ -22,13 +23,15 @@ class OptimizationPipeline:
     4. eval - The eval is responsible to calculate the score and the large errors
     """
 
-    def __init__(self, config, task_description: str = None, initial_prompt: str = None, output_path: str = ''):
+    def __init__(self, config, task_description: str = None, initial_prompt: str or dict = None, output_path: str = ''
+                 , task_metadata: dict = None):
         """
         Initialize a new instance of the ClassName class.
         :param config: The configuration file (EasyDict)
         :param task_description: Describe the task that needed to be solved
         :param initial_prompt: Provide an initial prompt to solve the task
         :param output_path: The output dir to save dump, by default the dumps are not saved
+        :param task_metadata: Additional metadata on the task for the prompts
         """
 
         if config.use_wandb:  # In case of using W&B
@@ -50,6 +53,14 @@ class OptimizationPipeline:
         self.config = config
         self.meta_chain = MetaChain(config)
         self.initialize_dataset()
+        if task_metadata is None:
+            task_metadata = {'task_description': task_description}
+        else:
+            task_metadata['task_description'] = task_description
+        if isinstance(initial_prompt, str):
+            initial_prompt = {'prompt': initial_prompt}
+
+        self.task_metadata = task_metadata
 
         self.task_description = task_description
         self.cur_prompt = initial_prompt
@@ -60,10 +71,10 @@ class OptimizationPipeline:
         self.metrics_info = None
         if config.eval.function_name == 'generator':
             self.metric_handler = MetricHandler(config.metric_generator, self.meta_chain.chain.metric_generator,
-                                                task_description)
+                                                self.task_metadata)
             self.metrics_info = self.metric_handler.get_metrics_info()
         error_analysis = self.meta_chain.chain.get('error_analysis', None)
-        self.sample_generator = SampleGenerator(config.meta_prompts, task_description, self.meta_chain)
+        self.sample_generator = SampleGenerator(config.meta_prompts, task_metadata, self.meta_chain)
         self.eval = Eval(config.eval, error_analysis, self.metric_handler, self.dataset.label_schema)
         self.batch_id = 0
         self.patient = 0
@@ -112,16 +123,13 @@ class OptimizationPipeline:
             sorted_history = sorted(self.eval.history[self.config.meta_prompts.warmup - 1:], key=lambda x: x['score'],
                                     reverse=False)
             last_history = sorted_history[-self.config.meta_prompts.history_length:]
-        prompt_input = { "task_description": self.task_description,
-                        'error_analysis': last_history[-1]['analysis']}
-        if self.config.eval.function_name == 'generator':  # TODO: add score support for generator
-            is_score = False
+        prompt_input = copy.deepcopy(self.task_metadata)
+        prompt_input.update({'error_analysis': last_history[-1]['analysis']})
+        if self.config.eval.function_name == 'generator':
             prompt_input['metrics_info'] = self.metrics_info
-        else:
-            is_score = True
         history_prompt = '\n'.join([self.eval.sample_to_text(sample,
                                                              num_errors_per_label=self.config.meta_prompts.num_err_prompt,
-                                                             is_score=is_score) for sample in last_history])
+                                                             is_score=True) for sample in last_history])
         prompt_input["history"] = history_prompt
         if 'label_schema' in self.config.dataset.keys():
             prompt_input["labels"] = json.dumps(self.config.dataset.label_schema)
@@ -130,10 +138,10 @@ class OptimizationPipeline:
         self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
         self.batch_id += 1
         if len(self.dataset) < self.config.dataset.max_samples:
-            self.sample_generator.generate_samples(self.dataset, prompt_suggestion['prompt'], last_history,
+            self.sample_generator.generate_samples(self.dataset, prompt_suggestion, last_history,
                                                    self.batch_id, self.eval.sample_to_text, self.metrics_info)
             logging.info('Get new samples')
-        self.cur_prompt = prompt_suggestion['prompt']
+        self.cur_prompt = prompt_suggestion
 
     def stop_criteria(self):
         """
@@ -196,7 +204,7 @@ class OptimizationPipeline:
             cur_batch = self.dataset.get_leq(self.batch_id)
             random_subset = cur_batch.sample(n=min(10, len(cur_batch)))[['text']]
             self.wandb_run.log(
-                {"Prompt": wandb.Html(f"<p>{self.cur_prompt}</p>"), "Samples": wandb.Table(dataframe=random_subset)},
+                {"Prompt": wandb.Html(f"<p>{self.cur_prompt['prompt']}</p>"), "Samples": wandb.Table(dataframe=random_subset)},
                 step=self.batch_id)
 
         logging.info('Running annotator')
@@ -212,7 +220,7 @@ class OptimizationPipeline:
         self.eval.eval_score()
         logging.info('Calculating Score')
         large_errors = self.eval.extract_errors()
-        self.eval.add_history(self.cur_prompt, self.task_description)
+        self.eval.add_history(self.cur_prompt, self.task_metadata)
         if self.config.use_wandb:
             large_errors = large_errors.sample(n=min(6, len(large_errors)))
             correct_samples = self.eval.extract_correct()
