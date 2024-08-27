@@ -9,7 +9,11 @@ An expert ranker evaluated the model's performance on the given task description
 and rank according to the following scale: {labels}
 
 The mean score for this prompt is: {accuracy}
-##
+
+Here is a list of metric scores for the given prompt:
+##Score Information:
+{score_info}
+
 Here is a list of challenging cases for the given prompt and their rank:
 ##Challenging Cases:
 {failure_cases}
