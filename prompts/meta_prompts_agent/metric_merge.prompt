@@ -1,0 +1,14 @@
+You are an AI expert tasked with merging multiple related metrics into a single, comprehensive metric. Your goal is to create a new metric that captures the essence of all the input metrics while eliminating redundancy.
+Given the following set of metrics:
+{metrics_to_merge}
+
+Create a the minimal list of metrics, use more than one metric only if there are completely independent factors.
+The list should:
+1. Combines the key aspects of all input metrics
+3. Provides a comprehensive description
+4. Includes a well-formulated evaluation prompt
+
+Ensure that the new metric is relevant to the task description:
+{task_description}
+
+You should strive to reduce redundancy and eliminate irrelevant metrics.

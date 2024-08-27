@@ -31,4 +31,4 @@ else:
 
 best_generation_prompt = agent_pipeline.optimize_agent(opt.task_description, opt.initial_system_prompt)
 print('\033[92m' + 'Calibrated prompt score:', str(best_generation_prompt['score']) + '\033[0m')
-print('\033[92m' + 'Calibrated prompt:', best_generation_prompt['prompt'] + '\033[0m')
+print('\033[92m' + 'Calibrated prompt:', best_generation_prompt['prompt']['prompt'] + '\033[0m')

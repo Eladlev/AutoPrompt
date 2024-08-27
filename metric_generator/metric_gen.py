@@ -10,31 +10,13 @@ class MetricMetadata(BaseModel):
     metric_score: float = Field(description="The score for the metric")
     metric_reason: str = Field(description="The reason for the metric score")
 
-class MetricEvaluation(BaseModel):
-    include_metrics: list[int] = Field(...)
-
-class MetricScale(BaseModel):
-    deficient_desc: str
-    adequate_desc: str
-    competent_desc: str
-    proficient_desc: str
-    exemplary_desc: str
-
-class Metric(BaseModel):
-    metric_name: str
-    metric_desc: str
-    metric_prompt: str
-    metric_scale: List[MetricScale]
-
-class MetricScores(BaseModel):
-    metrics_list: List[Metric]
 
 class MetricHandler:
     """
     A Class responsible for handling and generating metrics
     """
 
-    def __init__(self, config, metric_generator: ChainWrapper, task_metadata: dict):
+    def __init__(self, config, chains: dict, task_metadata: dict):
         """
         Initialize a new instance of the MetricHandler class.
         :param config: The configuration file (EasyDict)
@@ -42,7 +24,8 @@ class MetricHandler:
         :task_metadata: The task metadata
         """
         self.config = config
-        self.metric_generator = metric_generator
+        self.metric_generator = chains['metric_generator']
+        self.metric_merge = chains['metric_merge']
         self.dedup = Dedup(self.config)
         self.task_metadata = task_metadata
         self.metrics = self.generate_metrics()
@@ -84,66 +67,8 @@ class MetricHandler:
                 metric_dict['metric_prompt'] += f'\nscore {score_translation[metric_key]}: {eval_prompt}'
             del metric_dict['metric_scale']
 
-    def merge_metrics(self, metrics, cluster, task_description):
-        metrics_to_merge = [metrics[i] for i in cluster]
 
-        prompt = f"""You are an AI expert tasked with merging multiple related metrics into a single, comprehensive metric. Your goal is to create a new metric that captures the essence of all the input metrics while eliminating redundancy.
-
-                Given the following set of metrics:
-
-                {metrics_to_merge}
-
-                Create a single new metric that:
-                1. Combines the key aspects of all input metrics
-                2. Has a clear and concise name
-                3. Provides a comprehensive description
-                4. Includes a well-formulated evaluation prompt
-
-                Ensure that the new metric is relevant to task description :
-                {task_description}
-
-                Please return a single metric.
-                """
-        chain = ChainWrapper(self.config.llm, prompt, MetricScores)
-        response = chain.invoke({'metrics_to_merge': metrics_to_merge,'task_description': task_description})
-        return response.metrics_list
-
-    def hard_filter_metrics(self, metrics) -> list[bool]:
-        """
-        Produces a list of boolean values corresponding to whether the metric should be dropped (0) or not (1)
-        based on relevance to task description
-        Args:
-            metrics (list[dict]): list of metric dictionaries containing metric_name, metric_desc and metric_prompt
-        Returns:
-            list[bool]: a list of boolean values indicating whether the metric at that index should be kept (1) or dropped (0), referencing to the metrics list above
-        """
-        chunked_metrics = [metrics[i:i + 5] for i in range(0, len(metrics), 5)]
-        task_description = self.task_description
-        all_evaluations = []
-        batch_inputs = []
-        metric_selection_prompt = f'''You are tasked with evaluating the consistency of metrics based on their descriptions and prompts. Your task is to analyze a set of metrics for their relevance, uniqueness, and measurability in the context of evaluating an AI assistant's performance.
-                Evaluate each metric based on the provided task descriptions, metric description and associated prompts with metrics. If the descriptions of prompts is logically consistent and clear, include the metric. If the combination is inconsistent or unclear, exclude the metric from the output.
-                For each metric, consider the following criteria:
-                1. Relevance: Is the metric directly related to assessing the performance of an AI assistant?
-                2. Uniqueness: Does the metric measure an aspect that is not already covered by other metrics in the set?
-                3. Measurability: Can the metric be objectively measured based on the provided scale and prompt?
-                4. Clarity: Is the metric description and prompt clear and unambiguous?
-                Please analyze each metric and task description and return a list of exactly {len(chunk)} integers where 1 indicates the metric should be included and 0 indicates it should be removed.
-                ###Task Descriptions: \n
-                {task_description}\n
-                ###Metric Descriptions and Prompts: \n
-                {chunk}\n'''
-        for chunk in chunked_metrics:
-            batch_inputs.append({'chunk': chunk, 'task_description': self.task_description})
-        chain = ChainWrapper(self.config.llm, metric_selection_prompt, MetricEvaluation)
-        all_results = chain.batch_invoke(batch_inputs, num_workers=1, get_index=True)
-        all_results = [res['result'].include_metrics for res in all_results]
-        for result in all_results:
-            all_evaluations.extend(result)
-        return all_evaluations
-
-
-    def get_semantic_metric_clusters(self, metrics) -> list[set(int)]:
+    def get_semantic_metric_clusters(self, metrics) -> list[list[int]]:
         """
         Groups metrics in clusters based on semantic similarity using the Dedup class
         Args:
@@ -171,8 +96,18 @@ class MetricHandler:
         result = []
         for cluster in metric_clusters:
             if len(cluster) > 1:
-                merged_metric = self.merge_metrics(metrics, cluster, self.task_description)
-                result.append(merged_metric)
+                cur_cluster_metrics = copy.deepcopy([metrics[i] for i in cluster])
+                chain_params = copy.deepcopy(self.task_metadata)
+                for metric in cur_cluster_metrics:
+                    metric.pop('metric_prompt')
+                cur_cluster_metrics = {metric['metric_name']: metric['metric_desc'] for metric in cur_cluster_metrics}
+
+                chain_params.update({'num_metrics': self.config.num_metrics,
+                                     'metrics_to_merge': self.metric_to_text(cur_cluster_metrics)})
+                merged_metric = self.metric_merge.invoke(chain_params)
+                merged_metric = merged_metric['metrics_list']
+                self.update_metrics(merged_metric)
+                result += merged_metric
             else:
                 result.append(metrics[cluster[0]])
         return result
@@ -186,16 +121,10 @@ class MetricHandler:
         chain_params.update({'num_metrics': self.config.num_metrics})
         metrics = self.metric_generator.invoke(chain_params)
         metrics = metrics['metrics_list']
-
         self.update_metrics(metrics)
-
-        metrics_filter = self.hard_filter_metrics(metrics)
-
-        metrics[:] = [metric_subdict for metric_subdict, keep_metric in zip(metrics, metrics_filter) if keep_metric]
-
         metric_clusters = self.get_semantic_metric_clusters(metrics)
         metric_clusters = [list(cluster) for cluster in metric_clusters]
-
+        # For each cluster, we prune and reduce the number of metrics
         metrics = self.sample_metrics(metrics, metric_clusters)
 
         for metric in metrics:
