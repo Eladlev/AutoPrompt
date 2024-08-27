@@ -1,8 +1,10 @@
 from utils.llm_chain import ChainWrapper
+from typing import List
 from langchain_core.pydantic_v1 import BaseModel, Field
 import pandas as pd
 import copy
 
+from utils.dedup import Dedup
 
 class MetricMetadata(BaseModel):
     metric_score: float = Field(description="The score for the metric")
@@ -14,7 +16,7 @@ class MetricHandler:
     A Class responsible for handling and generating metrics
     """
 
-    def __init__(self, config, metric_generator: ChainWrapper, task_metadata: dict):
+    def __init__(self, config, chains: dict, task_metadata: dict):
         """
         Initialize a new instance of the MetricHandler class.
         :param config: The configuration file (EasyDict)
@@ -22,7 +24,9 @@ class MetricHandler:
         :task_metadata: The task metadata
         """
         self.config = config
-        self.metric_generator = metric_generator
+        self.metric_generator = chains['metric_generator']
+        self.metric_merge = chains['metric_merge']
+        self.dedup = Dedup(self.config)
         self.task_metadata = task_metadata
         self.metrics = self.generate_metrics()
 
@@ -48,6 +52,9 @@ class MetricHandler:
         text += '####End of metrics info\n'
         return text
 
+    def chunk_list(lst, chunk_size):
+        return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+
     def update_metrics(self, metrics_list):
         """
         Update metrics dictionary to merge metric_scale into metric_prompt
@@ -60,6 +67,52 @@ class MetricHandler:
                 metric_dict['metric_prompt'] += f'\nscore {score_translation[metric_key]}: {eval_prompt}'
             del metric_dict['metric_scale']
 
+
+    def get_semantic_metric_clusters(self, metrics) -> list[list[int]]:
+        """
+        Groups metrics in clusters based on semantic similarity using the Dedup class
+        Args:
+            metrics (list[dict]): list of metric dictionaries containing metric_name, metric_desc and metric_prompt
+        """
+        new_dedup = self.dedup.copy()
+        metrics_text = []
+        for metric_subdict in metrics:
+            curr_metric_text = f"{metric_subdict['metric_name']}. {metric_subdict['metric_desc']}"
+            metrics_text.append(curr_metric_text)
+        records = pd.DataFrame(metrics_text, columns=['text'])
+        return new_dedup.cluster_data(records)
+
+    def sample_metrics(self, metrics, metric_clusters) -> list[dict]:
+        """
+        Samples a single metric for each metric cluster with size > 1. For clusters of size = 1, the single metric is kept as is.
+        The sample metric for a size > 1 cluster is synthetically generated using an LLM to be most representative of the metric clusters.
+
+        Args:
+            metrics (list[dict]): list of metric dictionaries containing metric_name, metric_desc and metric_prompt
+            metric_clusters (list[list[int]]): list of metric cluster, where each sublist is an individual cluster containing the 0-indexed indices of the metrics that belong to a given cluster, referencing to the original metrics list
+        Returns:
+            list[dict]: the new list of metric dictionaries containing metric_name, metric_desc and metric_prompt
+        """
+        result = []
+        for cluster in metric_clusters:
+            if len(cluster) > 1:
+                cur_cluster_metrics = copy.deepcopy([metrics[i] for i in cluster])
+                chain_params = copy.deepcopy(self.task_metadata)
+                for metric in cur_cluster_metrics:
+                    metric.pop('metric_prompt')
+                cur_cluster_metrics = {metric['metric_name']: metric['metric_desc'] for metric in cur_cluster_metrics}
+
+                chain_params.update({'num_metrics': self.config.num_metrics,
+                                     'metrics_to_merge': self.metric_to_text(cur_cluster_metrics)})
+                merged_metric = self.metric_merge.invoke(chain_params)
+                merged_metric = merged_metric['metrics_list']
+                self.update_metrics(merged_metric)
+                result += merged_metric
+            else:
+                result.append(metrics[cluster[0]])
+        return result
+
+
     def generate_metrics(self) -> dict:
         """
         Generate new metrics
@@ -69,6 +122,11 @@ class MetricHandler:
         metrics = self.metric_generator.invoke(chain_params)
         metrics = metrics['metrics_list']
         self.update_metrics(metrics)
+        metric_clusters = self.get_semantic_metric_clusters(metrics)
+        metric_clusters = [list(cluster) for cluster in metric_clusters]
+        # For each cluster, we prune and reduce the number of metrics
+        metrics = self.sample_metrics(metrics, metric_clusters)
+
         for metric in metrics:
             prompt = f'{metric["metric_prompt"]}\nThe following input should be evaluated according to the metric guidelines. \n###Evaluated input:\n{{sample}}\n###End'
             metric['metric_function'] = self.build_score_function(prompt)

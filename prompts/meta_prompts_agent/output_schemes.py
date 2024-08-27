@@ -18,10 +18,6 @@ class FlowDecomposition(BaseModel):
   code_flow: str = Field(description="A Python code that using the sub functions list compose them to solve the task")
 
 
-class MetricResults(BaseModel):
-    # The metric results
-    metric_name: str = Field(description="The metric name")
-    metric_prompt: str = Field(description="The metric prompt")
 
 initial_schema = step_samples_schema = {
     "description": "A List of all results",
@@ -267,7 +263,7 @@ metric_generator_schema = {
     "title": "Metrics_Object",
     "type": "object"
 }
-
+metric_merge_schema = metric_generator_schema
 
 def update_classification_prediction_schema(label_schema: list) -> dict:
     """

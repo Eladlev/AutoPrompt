@@ -70,7 +70,7 @@ class OptimizationPipeline:
         self.metric_handler = None
         self.metrics_info = None
         if config.eval.function_name == 'generator':
-            self.metric_handler = MetricHandler(config.metric_generator, self.meta_chain.chain.metric_generator,
+            self.metric_handler = MetricHandler(config.metric_generator, self.meta_chain.chain,
                                                 self.task_metadata)
             self.metrics_info = self.metric_handler.get_metrics_info()
         error_analysis = self.meta_chain.chain.get('error_analysis', None)
