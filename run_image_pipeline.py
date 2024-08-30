@@ -7,14 +7,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config_path', default='config/config_diff/config_images.yml',
                     type=str, help='Configuration file path')
 parser.add_argument('--prompt',
-                    default='Draw a person with brown hair in a factory holding a map with a helmet, playful style,smiling, playful style, watercolor, pastel colors, trending on artstation, sharp focus, intricate details, highly detailed, by greg rutkowski',
+                    default='Draw the dog happy on a boat with a captain hat, very sharp focus, super realistic DSLR style with HDR, with very intricate details',
                     required=False, type=str, help='Prompt to use as initial.')
 parser.add_argument('--task_description',
-                    default='Draw <x> in a factory holding a map with a helmet, playful style, watercolor, pastel colors, trending on artstation, sharp focus, intricate details, highly detailed, by greg rutkowski',
+                    default='Draw <x> on a boat with a captain hat, playful style, pastel colors, sharp focus, highly detailed, highly realistic DSLR style',
                     required=False, type=str, help='Prompt to use as initial.')
 parser.add_argument('--load_path', default='', required=False, type=str, help='In case of loading from checkpoint')
 parser.add_argument('--output_dump', default='dump', required=False, type=str, help='Output to save checkpoints')
-parser.add_argument('--num_steps', default=8, type=int, help='Number of iterations')
+parser.add_argument('--num_steps', default=4, type=int, help='Number of iterations')
 
 opt = parser.parse_args()
 config_params = override_config(opt.config_path)

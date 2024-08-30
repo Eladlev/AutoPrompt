@@ -6,4 +6,4 @@ config/llm_env.yml
 /wandb
 .idea/
 dump/
-
+.ipynb_checkpoints/

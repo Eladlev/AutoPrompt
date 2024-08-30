@@ -10,7 +10,7 @@ predictor:
     config:
         t2i:
             type: 'stability'
-            name: 'core' #'stable-diffusion-xl-1024-v1-0'
+            name: 'core'
             "image_size": [1024,1024]
             "quality": "standard"
             "output_path": ''
@@ -22,13 +22,13 @@ meta_prompts:
 eval:
     function_name: 't2i_vlm_score'
     llm:
-        type: 'OpenAI'
-        name: 'gpt-4o'
+        type: 'google'
+        name: 'gemini-1.5-pro-latest'
     num_workers: 1
-    source_image_folder: '/Users/eladl/Downloads/test3'
+    source_image_folder: ''
     num_large_errors: 4
     error_threshold: 5
 llm:
-    type: 'OpenAI'
-    name: 'gpt-4o'
+    type: 'google'
+    name: 'gemini-1.5-pro-latest'
     temperature: 0.8

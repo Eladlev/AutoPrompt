@@ -90,6 +90,18 @@ class OptimizationPipeline:
         """
         logging.info('Initialize dataset')
         self.dataset = DatasetBase(self.config.dataset)
+
+        if self.config.predictor.method == 't2i':
+            dataset_csv_path = os.path.join(self.output_path, "dataset.csv")
+            num_rows = self.config.dataset.max_samples
+            empty_rows = [""]*num_rows
+            df = pd.DataFrame({
+                "id": list(range(num_rows)),
+                "text": empty_rows, "prediction": empty_rows, "annotation": empty_rows,
+                "metadata": empty_rows, "score": empty_rows, "batch_id": [0]*num_rows})
+            df.to_csv(dataset_csv_path, index=False, header=True)
+            self.config.dataset.initial_dataset = Path(dataset_csv_path)
+
         if 'initial_dataset' in self.config.dataset.keys():
             logging.info(f'Load initial dataset from {self.config.dataset.initial_dataset}')
             self.dataset.load_dataset(self.config.dataset.initial_dataset)
