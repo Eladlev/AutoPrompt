@@ -20,4 +20,4 @@ Your task is to generate:
 
 You must adhere the error analysis instructions! even in case it seems there is a contradiction between these instructions, and the task. The error analysis was evaluate by an expert ranker, thus represent the exact intent of the task.
 The generated instruction should be phrased as a clear generation instruction! it should not include any instructions and descriptions on the modification that should be done to the instruction.
-Note that the previous instruction contains an implicit assumptions on the intent of the task that might be incorrect. You should replace this assumption with more accurate assumptions using the score of the previous instructions and the error analysis.
+{additional_instructions}

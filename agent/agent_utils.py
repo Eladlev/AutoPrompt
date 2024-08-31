@@ -32,11 +32,12 @@ def load_tools(tools_path: str):
                 tools.append(value)
     return tools
 
-def get_tools_description(tools_path: str):
+def get_tools_description(tools: str or list):
     """
     Get the tools information
     """
-    tools = load_tools(tools_path)
+    if isinstance(tools, str):
+        tools = load_tools(tools)
     tools_dict = {tool.name: tool.description for tool in tools}
     return dict_to_prompt_text({tool.name: tool.description for tool in tools}), tools_dict
 

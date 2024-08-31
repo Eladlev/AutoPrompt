@@ -2,10 +2,10 @@ import random
 
 from agent.agent_instantiation import AgentNode, Variable, NodeType
 from utils.llm_chain import MetaChain
-from agent.agent_instantiation import FunctionBuilder
-import importlib
+from agent.agent_instantiation import FunctionBuilder, get_var_schema
 from collections import deque
 from agent.agent_utils import load_tools
+from agent.node_optimization import run_agent_optimization
 
 class MetaAgent:
     """
@@ -67,8 +67,8 @@ class MetaAgent:
         :param output_variables: The output variables
         :param cur_tools_metadata: The metadata of the tools
         """
-        meta_data_str = MetaAgent.get_var_schema(output_variables, 'yaml')
-        input_str = MetaAgent.get_var_schema(input_variables, 'list')
+        meta_data_str = get_var_schema(output_variables, 'yaml')
+        input_str = get_var_schema(input_variables, 'list')
         tools_str = MetaAgent.extract_tool_str(cur_tools_metadata)
         initial_prompt = self.meta_chain.chain.build_agent_init.invoke({
             'task_description': task_description,
@@ -112,7 +112,10 @@ class MetaAgent:
         Apply the agent optimization (initial optimization)
         :param node: The node to optimize
         """
-
+        new_prompt_info = run_agent_optimization(node, 'dump', self.config,
+                               [tool for tool in self.tools if tool.name in node.function_metadata['tools']])
+        new_agent_function = self.function_builder.build_agent_function(node.function_metadata)
+        node.update_local_scope({'agent_function': new_agent_function})
         # Currently this is a mock functon! TODO: Implement the optimization
         random_int = random.randint(0, 5)
         if random_int < 3:
@@ -133,8 +136,8 @@ class MetaAgent:
         tools_str = MetaAgent.extract_tool_str(cur_tools_metadata)
         flow_decomposition = self.meta_chain.chain.breaking_flow.invoke(
             {'function_name': node.function_metadata['name'],
-             'inputs': MetaAgent.get_var_schema(node.function_metadata['inputs']),
-             'outputs': MetaAgent.get_var_schema(node.function_metadata['outputs']),
+             'inputs': get_var_schema(node.function_metadata['inputs']),
+             'outputs': get_var_schema(node.function_metadata['outputs']),
              'tools': tools_str,
              'task_description': node.function_metadata['function_description'],
              'analysis': 'The agent score: {}, analysis: {}'.format(node.quality['score'], node.quality['analysis'])

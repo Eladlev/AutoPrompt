@@ -33,8 +33,10 @@ class AgentNode:
         """
         Update the local scope of the node
         """
+        if self.local_scope is None:
+            self.local_scope = {}
         # exec(self.function_implementation, globals(), local_scope)
-        self.local_scope = local_scope
+        self.local_scope.update(local_scope)
 
     def instantiate_node(self, input_globals):
         """
@@ -102,3 +104,25 @@ class FunctionBuilder:
                                    function_implementation=function_info['code'])
         agent_node.update_local_scope(local_scope)
         return agent_node
+
+def get_var_schema(var_metadata: list[Variable], style='yaml'):
+    """
+    Rephrase the schema and providing a string in the given provided style
+    :param var_metadata: The metadata of the variables
+    :param style: The style of the output (yaml, json, plain)
+    """
+    if style == 'json':
+        output_schema = '{'
+        for var in var_metadata:
+            output_schema += '\n'
+            output_schema += '{}: {{type: {}, description: {}}},'.format(var.name, var.type, var.description)
+        output_schema += '\n}\n'
+    elif style == 'yaml':
+        output_schema = ''
+        for var in var_metadata:
+            output_schema += '{}: {} #{}\n'.format(var.name, var.type, var.description)
+    else:
+        output_schema = ''
+        for var in var_metadata:
+            output_schema += '{}: {} \n'.format(var.name, var.description)
+    return output_schema[:-1]

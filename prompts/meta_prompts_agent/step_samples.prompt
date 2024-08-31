@@ -25,3 +25,4 @@ Your task is to generate {num_samples} by following this guidelines:
     2. targeting weakness that are different from the existing examples in the failure cases
 5. The number of challenging samples with respect to each metrics should be almost balanced (i.e. the same number of samples for each metric)
 6. The generated samples should include only the sample content without additional information! (like the model prediction and the ground truth)
+7. The sample should contain only an input for the agent.

@@ -109,7 +109,7 @@ class OptimizationPipeline:
             self.eval.history[min(self.config.meta_prompts.warmup - 1, len(self.eval.history) - 1):],
             key=lambda x: x['score'],
             reverse=False)
-        return {'prompt': sorted_history[-1]['prompt'], 'score': sorted_history[-1]['score']}
+        return sorted_history[-1]
 
     def run_step_prompt(self):
         """

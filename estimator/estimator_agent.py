@@ -1,8 +1,7 @@
 from utils.llm_chain import ChainWrapper, set_callbck
 from dataset.base_dataset import DatasetBase
 import pandas as pd
-from agent.meta_agent import load_tools
-from agent.agent_utils import build_agent, batch_invoke
+from agent.agent_utils import build_agent, batch_invoke, load_tools
 from utils.config import get_llm
 
 class AgentEstimator:
@@ -26,7 +25,10 @@ class AgentEstimator:
             self.cur_instruct = opt.instruction
         else:
             self.cur_instruct = None
-        self.tools = load_tools(opt.tools_path)
+        if 'tools' in opt.keys():
+            self.tools = opt.tools
+        else:
+            self.tools = load_tools(opt.tools_path)
         self.llm = get_llm(opt.llm)
         self.chain_yaml_extraction = ChainWrapper(opt.llm, 'prompts/meta_prompts_agent/extract_yaml.prompt', None, None)
         self.total_usage = 0
@@ -48,8 +50,21 @@ class AgentEstimator:
         all_results = batch_invoke(self.agent, batch_inputs, self.num_workers, self.usage_callback)
         self.total_usage += sum([res['usage'] for res in all_results])
         for res in all_results:
-            record.loc[res['index'], self.mode] = res['result']['output']
+            record.loc[res['index'], self.mode] = self.sample_output_to_str(res['result'])
         return record
+
+    @staticmethod
+    def sample_output_to_str(sample_output: dict) -> str:
+        """
+        Convert the sample output to a string
+        :param sample_output: The sample output
+        :return: The string representation
+        """
+        intermediate_str = ''
+        for i, intermediate in enumerate(sample_output['intermediate_steps']):
+            intermediate_str += f"#Intermediate step {i+1}: {intermediate[0].log[:-2]}"
+            intermediate_str += f"#Result step {i + 1}: {intermediate[1]['result']}\n"
+        return f"##Agent intermediate steps:\n{intermediate_str}\n##Agent final output:\n{sample_output['output']}"
 
     def apply(self, dataset: DatasetBase, idx: int, leq: bool = False):
         """
