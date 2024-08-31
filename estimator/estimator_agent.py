@@ -50,7 +50,8 @@ class AgentEstimator:
         all_results = batch_invoke(self.agent, batch_inputs, self.num_workers, self.usage_callback)
         self.total_usage += sum([res['usage'] for res in all_results])
         for res in all_results:
-            record.loc[res['index'], self.mode] = self.sample_output_to_str(res['result'])
+            record.loc[res['index'], self.mode] = res['result'] if res['result'] is \
+                                                                   None else self.sample_output_to_str(res['result'])
         return record
 
     @staticmethod

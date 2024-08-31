@@ -116,14 +116,9 @@ class MetaAgent:
                                [tool for tool in self.tools if tool.name in node.function_metadata['tools']])
         new_agent_function = self.function_builder.build_agent_function(node.function_metadata)
         node.update_local_scope({'agent_function': new_agent_function})
-        # Currently this is a mock functon! TODO: Implement the optimization
-        random_int = random.randint(0, 5)
-        if random_int < 3:
-            node.quality = {'updated': True, 'score': 60, 'analysis': 'the model struggle with the task'}
-        elif random_int == 3:
-            node.quality = {'updated': True, 'score': 80, 'analysis': 'the model is doing well'}
-        else:
-            node.quality = {'updated': True, 'score': 90, 'analysis': 'the model is doing very well'}
+        node.quality = {'updated': True, 'score': new_prompt_info['score'],
+                        'analysis': new_prompt_info['analysis'], 'score_info': new_prompt_info['score_info'],
+                        'metrics_info': new_prompt_info['metrics_info']}
         return node.function_metadata['name']
 
     def apply_flow_decomposition(self, node: AgentNode):
