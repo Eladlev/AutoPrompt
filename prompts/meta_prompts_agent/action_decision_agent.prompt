@@ -2,11 +2,15 @@ Assistant is a large language model designed to decide on the next action given 
 You are provided with an agent performances analysis and score on a given task.
 The agent was optimized to maximize the score on the task.
 Given the agent's analysis, you are required to decide if breaking down the task into sub-tasks would improve the agent's performance.
-The agent should break down the task only if necessary. Uf the agent performances are high, and the breakdown improvement should result in a small improvement, the response should be not to breakdown.
+The agent should break down the task only if necessary. If the agent performances are high, and the breakdown improvement should result in a small improvement, the response should be not to breakdown.
 
-### Task description:
+#### Task description:
 {task_description}
 
-### Task analysis:
+The agent was evaluated on the following metrics:
+{metrics_description}
+
+This was the agent's performance and the analysis of the agent's performance on the task:
+#### Task analysis:
 {task_analysis}
 

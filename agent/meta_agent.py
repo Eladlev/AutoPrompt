@@ -1,5 +1,4 @@
-import random
-
+from utils.llm_chain import dict_to_prompt_text
 from agent.agent_instantiation import AgentNode, Variable, NodeType
 from utils.llm_chain import MetaChain
 from agent.agent_instantiation import FunctionBuilder, get_var_schema
@@ -117,7 +116,8 @@ class MetaAgent:
         new_agent_function = self.function_builder.build_agent_function(node.function_metadata)
         node.update_local_scope({'agent_function': new_agent_function})
         node.quality = {'updated': True, 'score': new_prompt_info['score'],
-                        'analysis': new_prompt_info['analysis'], 'score_info': new_prompt_info['score_info'],
+                        'analysis': new_prompt_info['analysis'],
+                        'score_info': dict_to_prompt_text(new_prompt_info['score_info']),
                         'metrics_info': new_prompt_info['metrics_info']}
         return node.function_metadata['name']
 
@@ -205,7 +205,8 @@ class MetaAgent:
         if node.node_type == NodeType.LEAF:
             res = self.meta_chain.chain.action_decision_agent.invoke({
                 'task_description': node.function_metadata['function_description'],
-                'task_analysis': 'The agent score: {}, analysis: {}'.format(node.quality['score'],
+                'metrics_description': node.quality['metrics_info'],
+                'task_analysis': 'The agent score: {}\nAnalysis: {}'.format(node.quality['score_info'],
                                                                             node.quality['analysis'])})
             return 'optimize' if res['decision'] else 'skip'
 

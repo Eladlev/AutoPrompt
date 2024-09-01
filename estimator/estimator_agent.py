@@ -64,7 +64,10 @@ class AgentEstimator:
         intermediate_str = ''
         for i, intermediate in enumerate(sample_output['intermediate_steps']):
             intermediate_str += f"#Intermediate step {i+1}: {intermediate[0].log[:-2]}"
-            intermediate_str += f"#Result step {i + 1}: {intermediate[1]['result']}\n"
+            if isinstance(intermediate[1], str):
+                intermediate_str += f"#Result step {i + 1}: {intermediate[1]}\n"
+            elif 'result' in intermediate[1].keys():
+                intermediate_str += f"#Result step {i + 1}: {intermediate[1]['result']}\n"
         return f"##Agent intermediate steps:\n{intermediate_str}\n##Agent final output:\n{sample_output['output']}"
 
     def apply(self, dataset: DatasetBase, idx: int, leq: bool = False):

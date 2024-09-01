@@ -1,3 +1,5 @@
+import copy
+
 from utils.config import override_config
 from optimization_pipeline import OptimizationPipeline
 from agent.agent_utils import get_tools_description
@@ -65,12 +67,14 @@ def run_agent_optimization(node: AgentNode, output_dump: str,
     """
 
     config_params = override_config(config_path)
-    predictor_config = load_predictor_config('agent', config_base)
+    config_base = copy.deepcopy(config_base)
+    mode = 'agent' if agent_tools else 'chat'
+    predictor_config = load_predictor_config(mode, config_base)
     predictor_config['config']['tools'] = agent_tools
     config_params.metric_generator.metrics = [get_schema_metric(node.function_metadata['outputs'])]
     config_params.predictor = predictor_config
     config_params.meta_prompts.folder = Path('prompts/meta_prompts_agent')
-    if config_params.predictor.method == 'agent':
+    if mode == 'agent':
         # node.function_metadata['tools']
         tools_description, tools = get_tools_description(agent_tools)
         initial_prompt = {'prompt': node.function_metadata['prompt'], 'task_tools_description': tools_description}
