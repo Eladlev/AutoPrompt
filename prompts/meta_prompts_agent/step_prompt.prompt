@@ -23,5 +23,6 @@ Guidelines in generating the new system prompt and tools descriptions prompts:
     -Follows exactly the error analysis modification suggestions, and fix the prompts to improve the quality agent.
     -The result agent should have a higher score with respect to all the metrics.
     -The new tools descriptions prompts should include all the tools that are available to the agent, and only these tools.
+    - If there are no tools available to the agent, the tools description should be empty!!
     -The generated prompt should be phrased as a clear generation instruction! it should not include any instructions and descriptions on the modification that should be done to the instruction.
 {additional_instructions}

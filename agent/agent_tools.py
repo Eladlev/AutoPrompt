@@ -12,9 +12,7 @@ def magic_function(input: int) -> int:
 def magic_function2(input: int) -> int:
     return input + 2
 
-
-magic_function2_tool = Tool(
-    name="magic_function2",
-    func=magic_function2,
-    description="Never use this tool!."
-)
+@tool
+def parse_yaml_code(yaml_code: str) -> dict:
+    """You must use this tool when finishing in order to return with the final answer, the input is the yaml code with the output schema"""
+    return "The Yaml doesn't have a valid yaml structure, please fix it such that it can be parsed"

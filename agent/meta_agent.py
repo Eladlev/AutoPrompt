@@ -4,19 +4,21 @@ from utils.llm_chain import MetaChain
 from agent.agent_instantiation import FunctionBuilder, get_var_schema
 from collections import deque
 from agent.agent_utils import load_tools
-from agent.node_optimization import run_agent_optimization
+from agent.node_optimization import run_agent_optimization, run_flow_optimization
+
 
 class MetaAgent:
     """
     The MetaAgent class is responsible to optimize any given agent
     """
 
-    def __init__(self, config):
+    def __init__(self, config, output_path: str = ''):
         """
         Initialize a new instance of the MetaAgent class.
         :param config: The configuration file (EasyDict)
         """
         self.config = config
+        self.output_path = output_path
         self.meta_chain = MetaChain(config)
         self.code_tree = None
         self.code_root = None
@@ -24,7 +26,6 @@ class MetaAgent:
         self.tools = load_tools(self.config.agent_config.tools_path)
         self.tools_metadata = {t.name: t.description for t in self.tools}
         self.function_builder = FunctionBuilder(config, self.tools)
-        self.apply_flow_optimization = self.apply_agent_optimization  # TODO: Mock function, implement the optimization
 
     @staticmethod
     def get_var_schema(var_metadata: list[Variable], style='yaml'):
@@ -77,7 +78,7 @@ class MetaAgent:
         })
         return initial_prompt['prompt']
 
-    def make_tree_code_runnable(self, global_scope=None):
+    def make_tree_code_runnable(self, global_scope: dict = {}):
         """
         Make the code tree runnable
         :param global_scope: The global scope to run the code tree
@@ -112,13 +113,33 @@ class MetaAgent:
         :param node: The node to optimize
         """
         new_prompt_info = run_agent_optimization(node, 'dump', self.config,
-                               [tool for tool in self.tools if tool.name in node.function_metadata['tools']])
+                                                 [tool for tool in self.tools if
+                                                  tool.name in node.function_metadata['tools']])
         new_agent_function = self.function_builder.build_agent_function(node.function_metadata)
         node.update_local_scope({'agent_function': new_agent_function})
         node.quality = {'updated': True, 'score': new_prompt_info['score'],
                         'analysis': new_prompt_info['analysis'],
                         'score_info': dict_to_prompt_text(new_prompt_info['score_info']),
                         'metrics_info': new_prompt_info['metrics_info']}
+        return node.function_metadata['name']
+
+    def apply_flow_optimization(self, node: AgentNode):
+        """
+        Apply the flow optimization
+        :param node: The node to optimize
+        """
+        # Apply the meta-chain to get the flow optimization
+        try:
+            result = self.make_tree_code_runnable(globals())
+        except Exception as e:
+            analysis = f'The given code is not runnable, the compiler provide the following error: {str(e)}'
+
+        res = self.meta_chain.chain['updating_flow'].invoke(
+            {'task_description': node.function_metadata['function_description'],
+             'code_block': node.function_implementation,
+             'analysis': analysis})
+        # exec('root(input="What is the return policy")')
+        node.function_implementation = res['code']
         return node.function_metadata['name']
 
     def apply_flow_decomposition(self, node: AgentNode):

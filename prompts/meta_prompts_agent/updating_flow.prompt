@@ -1,7 +1,7 @@
 Assistant is a large language model designed to fix code bugs.
-You are provided with the following task:
+You are provided with the following function description:
 {task_description}
-This was the previous code block implementation:
+This was the previous code block implementation of the function:
 ##
 {code_block}
 ##
@@ -10,4 +10,5 @@ Here is the analysis of the previous implementation performance:
 {analysis}
 ##
 
-Please rewrite the code block to fix the bug. You must preserve the function name, inputs, outputs, and also use the exact same subfunctions as the previous implementation.
+Please rewrite the code block to fix the bug.
+You must preserve the function name, inputs, outputs, and also use the exact same subfunctions as the previous implementation!!!

@@ -149,9 +149,13 @@ action_decision_agent_schema = {
             "title": "decision",
             "type": "boolean"
         },
+        "reason": {
+            "description": "The reason for the decision",
+            "title": "reason",
+            "type": "string"}
     },
     "required": [
-        "decision",
+        "decision", "reason"
     ],
     "title": "decision",
     "type": "object"
@@ -283,5 +287,8 @@ def step_prompt_parser(response: dict) -> dict:
     :return: The parsed response
     """
     tools_metadata = {t['tool_name']: t['description'] for t in response['tools_description']}
+    if len(tools_metadata) == 0:
+        return {'prompt': response['prompt'], 'tools_description': "The agent doesn't have any available tool!!",
+                'tools_metadata': tools_metadata}
     description_str = dict_to_prompt_text(tools_metadata)
     return {'prompt': response['prompt'], 'tools_description': description_str,  'tools_metadata': tools_metadata}
