@@ -3,7 +3,6 @@ from dataset.base_dataset import DatasetBase
 import pandas as pd
 from agent.agent_utils import build_agent, batch_invoke, load_tools
 from utils.config import get_llm
-import yaml
 
 
 class AgentEstimator:
@@ -34,6 +33,7 @@ class AgentEstimator:
         self.llm = get_llm(opt.llm)
         self.chain_yaml_extraction = ChainWrapper(opt.llm, 'prompts/meta_prompts_agent/extract_yaml.prompt', None, None)
         self.total_usage = 0
+
     def calc_usage(self) -> float:
         """"
         Calculate the usage of the estimator
@@ -69,12 +69,12 @@ class AgentEstimator:
             return sample_output['text']
         intermediate_str = ''
         for i, intermediate in enumerate(sample_output['intermediate_steps']):
-            intermediate_str += f"#Intermediate step {i+1}: {intermediate[0].log[:-2]}"
+            intermediate_str += f"#Intermediate step {i + 1}: {intermediate[0].log[:-2]}"
             if isinstance(intermediate[1], str):
                 intermediate_str += f"#Result step {i + 1}: {intermediate[1]}\n"
             elif 'result' in intermediate[1].keys():
                 intermediate_str += f"#Result step {i + 1}: {intermediate[1]['result']}\n"
-        output = yaml.dump(sample_output['output'])
+        output = sample_output['output']
         return f"##Agent intermediate steps:\n{intermediate_str}\n##Agent final output:\n```yaml {output}```"
 
     def apply(self, dataset: DatasetBase, idx: int, leq: bool = False):

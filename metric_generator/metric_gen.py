@@ -30,8 +30,10 @@ class MetricHandler:
         self.dedup = Dedup(self.config)
         self.task_metadata = task_metadata
         self.metrics = config.get('metrics', [])
-        self.num_metrics = self.config.num_metrics - len(self.metrics)
-        self.generate_metrics()
+        self.num_metrics = self.config.num_metrics
+        init_metrics = config.get('init_metrics', True)
+        if init_metrics:
+            self.generate_metrics()
 
     def get_metrics_info(self, as_text=True) -> dict or str:
         """
@@ -115,14 +117,21 @@ class MetricHandler:
                 result.append(metrics[cluster[0]])
         return result
 
+    def get_metrics(self) -> List[dict]:
+        """
+        Get the metrics
+        """
+
+        return [{k: v for k, v in d.items() if k != 'metric_function'} for d in self.metrics]
 
     def generate_metrics(self) -> dict:
         """
         Generate new metrics
         """
-        if self.num_metrics > 0:
+        number_of_remaining_metrics = self.num_metrics - len(self.metrics)
+        if number_of_remaining_metrics > 0:
             chain_params = copy.deepcopy(self.task_metadata)
-            chain_params.update({'num_metrics': self.config.num_metrics})
+            chain_params.update({'num_metrics': number_of_remaining_metrics})
             #TODO: provide the predefined metrics as input for the generation (remove redundant metrics)
             metrics = self.metric_generator.invoke(chain_params)
             metrics = metrics['metrics_list']

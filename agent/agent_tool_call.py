@@ -14,9 +14,27 @@ from langchain_core.outputs import ChatGeneration, Generation
 import yaml
 
 from langchain_core.agents import AgentActionMessageLog, AgentFinish
-
+import re
 from typing import List, Union
 from langchain_core.agents import AgentAction
+
+def extract_yaml_content(variable):
+    # Check if the input is a string
+    variable = yaml.safe_load(variable)
+    if isinstance(variable, str):
+        # Define the regex pattern to match ```yaml <content>```
+        pattern = r'```yaml\s*(.*?)\s*```'
+
+        # Search for the pattern in the string
+        match = re.search(pattern, variable, re.DOTALL)
+
+        # If a match is found, return the extracted content
+        if match:
+            return yaml.safe_load(match.group(1).strip())
+        else:
+            raise ValueError("No YAML content found in the input string")
+    else:
+        return variable
 
 
 def parse_ai_message_to_tool_action(
@@ -66,8 +84,8 @@ def parse_ai_message_to_tool_action(
         log = f"\nInvoking: `{function_name}` with `{tool_input}`\n{content_msg}\n"
         if function_name == 'parse_yaml_code':
             try:
-                inputs = yaml.safe_load(tool_input['yaml_code'])
-                return AgentFinish(return_values={'output': inputs}, log=log)
+                inputs = extract_yaml_content(tool_input['yaml_code'])
+                return AgentFinish(return_values={'output': tool_input['yaml_code']}, log=log)
             except:
                 pass
 

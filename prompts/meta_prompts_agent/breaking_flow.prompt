@@ -20,6 +20,9 @@ Guidelines for the subtasks:
 2. Focus on quality and verification subtasks
 3. Use the analysis to understand the previous implementation core issues and try to solve them by breaking down the task
 
+The result should contain only the main function **without** the subtasks functions!!!
+
+When breaking the flow do not split the `parse_yaml_code` function, this tool **must** be available to all subtasks.
 
 The inputs for the generated function are:
 ##

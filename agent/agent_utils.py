@@ -13,25 +13,8 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain.agents.format_scratchpad.tools import (
     format_to_tool_messages,
 )
-from agent.agent_tool_call import ToolsAgentOutputParser
+from agent.agent_tool_call import ToolsAgentOutputParser, extract_yaml_content
 
-
-def extract_yaml_content(variable):
-    # Check if the input is a string
-    if isinstance(variable, str):
-        # Define the regex pattern to match ```yaml <content>```
-        pattern = r'```yaml\s*(.*?)\s*```'
-
-        # Search for the pattern in the string
-        match = re.search(pattern, variable, re.DOTALL)
-
-        # If a match is found, return the extracted content
-        if match:
-            return yaml.safe_load(match.group(1).strip())
-        else:
-            return None
-    else:
-        return variable
 
 def parse(response: dict):
     result = extract_yaml_content(response['output'])

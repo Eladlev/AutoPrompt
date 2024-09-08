@@ -22,13 +22,11 @@ opt = parser.parse_args()
 
 
 config_params = override_config(opt.config_path)
-if (opt.load_dump != ''):  # load the state from the checkpoint
+if (opt.load_dump != '') and os.path.isfile(os.path.join(opt.load_dump, 'state.pkl')):  # load the state from the checkpoint
     agent_pipeline = pickle.load(open(os.path.join(opt.load_dump, 'state.pkl'), 'rb'))
 else:
     agent_pipeline = AgentOptimization(config_params,  output_path=opt.output_dump)
     if opt.task_description == '' and opt.initial_system_prompt == '':
         task_description = input("Please provide either a task description or an agent system prompt\nTask description: ")
 
-best_generation_prompt = agent_pipeline.optimize_agent(opt.task_description, opt.initial_system_prompt)
-print('\033[92m' + 'Calibrated prompt score:', str(best_generation_prompt['score']) + '\033[0m')
-print('\033[92m' + 'Calibrated prompt:', best_generation_prompt['prompt']['prompt'] + '\033[0m')
+agent_pipeline.optimize_agent(opt.task_description, opt.initial_system_prompt)

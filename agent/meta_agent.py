@@ -112,7 +112,7 @@ class MetaAgent:
         Apply the agent optimization (initial optimization)
         :param node: The node to optimize
         """
-        new_prompt_info = run_agent_optimization(node, 'dump', self.config,
+        new_prompt_info = run_agent_optimization(node, self.output_path, self.config,
                                                  [tool for tool in self.tools if
                                                   tool.name in node.function_metadata['tools']])
         new_agent_function = self.function_builder.build_agent_function(node.function_metadata)
@@ -126,21 +126,34 @@ class MetaAgent:
     def apply_flow_optimization(self, node: AgentNode):
         """
         Apply the flow optimization
+        Currently it is very basic optimization- If there is any bug, it tries to fix the flow by updating the function
+        However it use the same sub-component and not try to replace them
         :param node: The node to optimize
         """
         # Apply the meta-chain to get the flow optimization
+        local_scope = {}
         try:
-            result = self.make_tree_code_runnable(globals())
+            local_scope = self.make_tree_code_runnable(local_scope)
+            need_optimization = run_flow_optimization(node, self.output_path, local_scope, self.config,
+                                                      [tool for tool in self.tools if
+                                                       tool.name in node.function_metadata['tools']])
+            analysis = node.quality['analysis']
         except Exception as e:
             analysis = f'The given code is not runnable, the compiler provide the following error: {str(e)}'
+            need_optimization = True
+
+        optimization_step_left = node.quality.get('optimization_step_left', 2)  # TODO: remove coded value
+        if not need_optimization and optimization_step_left > 0:
+            node.quality['updated'] = True
+            return []
 
         res = self.meta_chain.chain['updating_flow'].invoke(
             {'task_description': node.function_metadata['function_description'],
              'code_block': node.function_implementation,
              'analysis': analysis})
-        # exec('root(input="What is the return policy")')
+        node.quality['optimization_step_left'] = optimization_step_left - 1
         node.function_implementation = res['code']
-        return node.function_metadata['name']
+        return [node.function_metadata['name']]
 
     def apply_flow_decomposition(self, node: AgentNode):
         """
@@ -162,6 +175,8 @@ class MetaAgent:
         node_results = []
         for child in flow_decomposition.sub_functions_list:
             # create the agent
+            if 'parse_yaml_code' not in child.tools_list:
+                child.tools_list.append('parse_yaml_code')
             initial_prompt = self.get_initial_system_prompt(child.function_description,
                                                             child.input_variables,
                                                             child.output_variables,
@@ -200,7 +215,7 @@ class MetaAgent:
 
         elif node.node_type == NodeType.INTERNAL:
             if not node.quality['updated']:  # In this case we need to optimize the flow
-                stack_update = [self.apply_flow_optimization(node)]
+                stack_update = self.apply_flow_optimization(node)
             else:  # TODO: add support in replacing components support
                 stack_update = []
         else:
