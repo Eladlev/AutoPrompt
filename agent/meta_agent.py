@@ -1,23 +1,24 @@
-import random
-
+from utils.llm_chain import dict_to_prompt_text
 from agent.agent_instantiation import AgentNode, Variable, NodeType
 from utils.llm_chain import MetaChain
-from agent.agent_instantiation import FunctionBuilder
-import importlib
+from agent.agent_instantiation import FunctionBuilder, get_var_schema
 from collections import deque
 from agent.agent_utils import load_tools
+from agent.node_optimization import run_agent_optimization, run_flow_optimization
+
 
 class MetaAgent:
     """
     The MetaAgent class is responsible to optimize any given agent
     """
 
-    def __init__(self, config):
+    def __init__(self, config, output_path: str = ''):
         """
         Initialize a new instance of the MetaAgent class.
         :param config: The configuration file (EasyDict)
         """
         self.config = config
+        self.output_path = output_path
         self.meta_chain = MetaChain(config)
         self.code_tree = None
         self.code_root = None
@@ -25,7 +26,6 @@ class MetaAgent:
         self.tools = load_tools(self.config.agent_config.tools_path)
         self.tools_metadata = {t.name: t.description for t in self.tools}
         self.function_builder = FunctionBuilder(config, self.tools)
-        self.apply_flow_optimization = self.apply_agent_optimization  # TODO: Mock function, implement the optimization
 
     @staticmethod
     def get_var_schema(var_metadata: list[Variable], style='yaml'):
@@ -67,8 +67,8 @@ class MetaAgent:
         :param output_variables: The output variables
         :param cur_tools_metadata: The metadata of the tools
         """
-        meta_data_str = MetaAgent.get_var_schema(output_variables, 'yaml')
-        input_str = MetaAgent.get_var_schema(input_variables, 'list')
+        meta_data_str = get_var_schema(output_variables, 'yaml')
+        input_str = get_var_schema(input_variables, 'list')
         tools_str = MetaAgent.extract_tool_str(cur_tools_metadata)
         initial_prompt = self.meta_chain.chain.build_agent_init.invoke({
             'task_description': task_description,
@@ -78,7 +78,7 @@ class MetaAgent:
         })
         return initial_prompt['prompt']
 
-    def make_tree_code_runnable(self, global_scope=None):
+    def make_tree_code_runnable(self, global_scope: dict = {}):
         """
         Make the code tree runnable
         :param global_scope: The global scope to run the code tree
@@ -112,16 +112,48 @@ class MetaAgent:
         Apply the agent optimization (initial optimization)
         :param node: The node to optimize
         """
-
-        # Currently this is a mock functon! TODO: Implement the optimization
-        random_int = random.randint(0, 5)
-        if random_int < 3:
-            node.quality = {'updated': True, 'score': 60, 'analysis': 'the model struggle with the task'}
-        elif random_int == 3:
-            node.quality = {'updated': True, 'score': 80, 'analysis': 'the model is doing well'}
-        else:
-            node.quality = {'updated': True, 'score': 90, 'analysis': 'the model is doing very well'}
+        new_prompt_info = run_agent_optimization(node, self.output_path, self.config,
+                                                 [tool for tool in self.tools if
+                                                  tool.name in node.function_metadata['tools']])
+        new_agent_function = self.function_builder.build_agent_function(node.function_metadata)
+        node.update_local_scope({'agent_function': new_agent_function})
+        node.quality = {'updated': True, 'score': new_prompt_info['score'],
+                        'analysis': new_prompt_info['analysis'],
+                        'score_info': dict_to_prompt_text(new_prompt_info['score_info']),
+                        'metrics_info': new_prompt_info['metrics_info']}
         return node.function_metadata['name']
+
+    def apply_flow_optimization(self, node: AgentNode):
+        """
+        Apply the flow optimization
+        Currently it is very basic optimization- If there is any bug, it tries to fix the flow by updating the function
+        However it use the same sub-component and not try to replace them
+        :param node: The node to optimize
+        """
+        # Apply the meta-chain to get the flow optimization
+        local_scope = {}
+        try:
+            local_scope = self.make_tree_code_runnable(local_scope)
+            need_optimization = run_flow_optimization(node, self.output_path, local_scope, self.config,
+                                                      [tool for tool in self.tools if
+                                                       tool.name in node.function_metadata['tools']])
+            analysis = node.quality['analysis']
+        except Exception as e:
+            analysis = f'The given code is not runnable, the compiler provide the following error: {str(e)}'
+            need_optimization = True
+
+        optimization_step_left = node.quality.get('optimization_step_left', 2)  # TODO: remove coded value
+        if not need_optimization and optimization_step_left > 0:
+            node.quality['updated'] = True
+            return []
+
+        res = self.meta_chain.chain['updating_flow'].invoke(
+            {'task_description': node.function_metadata['function_description'],
+             'code_block': node.function_implementation,
+             'analysis': analysis})
+        node.quality['optimization_step_left'] = optimization_step_left - 1
+        node.function_implementation = res['code']
+        return [node.function_metadata['name']]
 
     def apply_flow_decomposition(self, node: AgentNode):
         """
@@ -133,8 +165,8 @@ class MetaAgent:
         tools_str = MetaAgent.extract_tool_str(cur_tools_metadata)
         flow_decomposition = self.meta_chain.chain.breaking_flow.invoke(
             {'function_name': node.function_metadata['name'],
-             'inputs': MetaAgent.get_var_schema(node.function_metadata['inputs']),
-             'outputs': MetaAgent.get_var_schema(node.function_metadata['outputs']),
+             'inputs': get_var_schema(node.function_metadata['inputs']),
+             'outputs': get_var_schema(node.function_metadata['outputs']),
              'tools': tools_str,
              'task_description': node.function_metadata['function_description'],
              'analysis': 'The agent score: {}, analysis: {}'.format(node.quality['score'], node.quality['analysis'])
@@ -143,6 +175,8 @@ class MetaAgent:
         node_results = []
         for child in flow_decomposition.sub_functions_list:
             # create the agent
+            if 'parse_yaml_code' not in child.tools_list:
+                child.tools_list.append('parse_yaml_code')
             initial_prompt = self.get_initial_system_prompt(child.function_description,
                                                             child.input_variables,
                                                             child.output_variables,
@@ -181,7 +215,7 @@ class MetaAgent:
 
         elif node.node_type == NodeType.INTERNAL:
             if not node.quality['updated']:  # In this case we need to optimize the flow
-                stack_update = [self.apply_flow_optimization(node)]
+                stack_update = self.apply_flow_optimization(node)
             else:  # TODO: add support in replacing components support
                 stack_update = []
         else:
@@ -207,7 +241,8 @@ class MetaAgent:
         if node.node_type == NodeType.LEAF:
             res = self.meta_chain.chain.action_decision_agent.invoke({
                 'task_description': node.function_metadata['function_description'],
-                'task_analysis': 'The agent score: {}, analysis: {}'.format(node.quality['score'],
+                'metrics_description': node.quality['metrics_info'],
+                'task_analysis': 'The agent score: {}\nAnalysis: {}'.format(node.quality['score_info'],
                                                                             node.quality['analysis'])})
             return 'optimize' if res['decision'] else 'skip'
 

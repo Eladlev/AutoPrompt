@@ -34,7 +34,8 @@ class Eval:
         self.history = []
         self.analyzer = analyzer
         self.config = config
-        self.score_func = self.get_eval_function()
+        self.score_func = None
+        self.get_eval_function()
 
     def get_eval_function(self):
         """
@@ -43,13 +44,14 @@ class Eval:
         :return: The function implementation on a record
         """
         if self.score_function_name == 'accuracy':
-            return utils.set_function_from_iterrow(lambda record: record['annotation'] == record['prediction'])
+            self.score_func = utils.set_function_from_iterrow(
+                lambda record: record['annotation'] == record['prediction'])
         elif self.score_function_name == 'ranking':
-            return utils.set_ranking_function(self.config.function_params)
+            self.score_func = utils.set_ranking_function(self.config.function_params)
         elif self.score_function_name == 'generator':
-            return utils.set_multiscore_function({metric['metric_name']: metric['metric_function']
-                                                  for metric in self.metric_handler.metrics},
-                                                 num_workers=self.num_workers)
+            self.score_func = utils.set_multiscore_function({metric['metric_name']: metric['metric_function']
+                                                             for metric in self.metric_handler.metrics},
+                                                            num_workers=self.num_workers)
         else:
             raise NotImplementedError("Eval function not implemented")
 
@@ -133,6 +135,7 @@ class Eval:
             return f"####\n##Prompt info:\n{prompt_str}##Prompt score:\n{score_str}#################\n"
         else:
             return f"####\n##Prompt info:\n{prompt_str}\n{self.large_error_to_str(sample['errors'], num_errors_per_label)}####"
+
     def add_history(self, prompt: dict, task_metadata: dict):
         """
         Add the current step information to the history

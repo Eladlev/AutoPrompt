@@ -3,8 +3,8 @@ from utils.config import get_llm
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import Dict
-from langchain_core.pydantic_v1 import BaseModel, Field
 from agent.agent_utils import build_agent
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class Variable(BaseModel):
@@ -33,8 +33,10 @@ class AgentNode:
         """
         Update the local scope of the node
         """
+        if self.local_scope is None:
+            self.local_scope = {}
         # exec(self.function_implementation, globals(), local_scope)
-        self.local_scope = local_scope
+        self.local_scope.update(local_scope)
 
     def instantiate_node(self, input_globals):
         """
@@ -72,7 +74,7 @@ class FunctionBuilder:
         wrap the agent in a function
         :param agent_info: The metadata of the agent
         """
-        agent = build_agent(self.llm, self.tools, self.chain_yaml_extraction, agent_info)
+        agent = build_agent(self.llm, self.tools, agent_info, is_debug=False)
 
         def new_function(**kwargs):
             # Pre-processing: Log the call
@@ -81,7 +83,15 @@ class FunctionBuilder:
                 input_str += '{}: {}\n'.format(t, v)
             input_str = input_str[:-1]
             results = agent.invoke({'input': input_str})
-            return results
+            final_res = []
+            for var in agent_info['outputs']:
+                if var.name not in results:
+                    final_res.append('Variable {} not found in the results'.format(var.name))
+                else:
+                    final_res.append(results[var.name])
+            if len(final_res) == 1:
+                return final_res[0]
+            return final_res
 
         return new_function
 
@@ -102,3 +112,25 @@ class FunctionBuilder:
                                    function_implementation=function_info['code'])
         agent_node.update_local_scope(local_scope)
         return agent_node
+
+def get_var_schema(var_metadata: list[Variable], style='yaml'):
+    """
+    Rephrase the schema and providing a string in the given provided style
+    :param var_metadata: The metadata of the variables
+    :param style: The style of the output (yaml, json, plain)
+    """
+    if style == 'json':
+        output_schema = '{'
+        for var in var_metadata:
+            output_schema += '\n'
+            output_schema += '{}: {{type: {}, description: {}}},'.format(var.name, var.type, var.description)
+        output_schema += '\n}\n'
+    elif style == 'yaml':
+        output_schema = ''
+        for var in var_metadata:
+            output_schema += '{}: {} #{}\n'.format(var.name, var.type, var.description)
+    else:
+        output_schema = ''
+        for var in var_metadata:
+            output_schema += '{}: {} \n'.format(var.name, var.description)
+    return output_schema[:-1]

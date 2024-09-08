@@ -17,12 +17,10 @@ class AgentOptimization:
         """
         Initialize a new instance of the ClassName class.
         :param config: The configuration file (EasyDict)
-        :param task_description: Describe the task that needed to be solved
-        :param initial_prompt: Provide an initial prompt to solve the task
         :param output_path: The output dir to save dump, by default the dumps are not saved
         """
         self.optimization_stack = []
-        self.meta_agent = MetaAgent(config)
+        self.meta_agent = MetaAgent(config, output_path)
         self.output_path = output_path
 
     def optimize_agent(self, task_description: str = None, initial_prompt: str = None):

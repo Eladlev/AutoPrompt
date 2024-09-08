@@ -109,7 +109,7 @@ class OptimizationPipeline:
             self.eval.history[min(self.config.meta_prompts.warmup - 1, len(self.eval.history) - 1):],
             key=lambda x: x['score'],
             reverse=False)
-        return {'prompt': sorted_history[-1]['prompt'], 'score': sorted_history[-1]['score']}
+        return sorted_history[-1]
 
     def run_step_prompt(self):
         """
@@ -172,9 +172,10 @@ class OptimizationPipeline:
             return
         logging.info('Save state')
         self.dataset.save_dataset(self.output_path / 'dataset.csv')
+        metrics = self.metric_handler.get_metrics() if self.metric_handler is not None else []
         state = {'history': self.eval.history, 'batch_id': self.batch_id,
                  'prompt': self.cur_prompt, 'task_description': self.task_description,
-                 'patient': self.patient}
+                 'patient': self.patient, 'metrics': metrics}
         pickle.dump(state, open(self.output_path / 'history.pkl', 'wb'))
 
     def load_state(self, path: str):
@@ -191,6 +192,11 @@ class OptimizationPipeline:
             self.cur_prompt = state['prompt']
             self.task_description = state['task_description']
             self.patient = state['patient']
+            if state['metrics'] is not None:
+                self.metric_handler.metrics = state['metrics']
+                self.metric_handler.generate_metrics()
+                self.eval.get_eval_function()
+
 
     def step(self, current_iter, total_iter):
         """

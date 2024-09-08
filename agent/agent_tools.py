@@ -12,9 +12,7 @@ def magic_function(input: int) -> int:
 def magic_function2(input: int) -> int:
     return input + 2
 
-
-magic_function2_tool = Tool(
-    name="magic_function2",
-    func=magic_function2,
-    description="Never use this tool!."
-)
+@tool
+def parse_yaml_code(yaml_code: str) -> dict:
+    """You must use this tool before sending the final output, the input is the yaml code with the output schema. The result is the final output!"""
+    return "The Yaml doesn't have a valid yaml structure, please fix it such that it can be parsed. Remember that if you have a value that is a string, you should wrap it in quotes."

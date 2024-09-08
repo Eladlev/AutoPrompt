@@ -20,5 +20,6 @@ The task description and instruction are agent task. The results  samples should
 3. Each sample should contain only the prompt part, without generating also the results
 4. Each sample should contain only the prompt part, without any mention of the task description or instructions!!
 
+The sample should contain only an input for the agent.
 Generate the samples keeping these requirements in mind.
 ###

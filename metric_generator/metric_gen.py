@@ -26,9 +26,14 @@ class MetricHandler:
         self.config = config
         self.metric_generator = chains['metric_generator']
         self.metric_merge = chains['metric_merge']
+
         self.dedup = Dedup(self.config)
         self.task_metadata = task_metadata
-        self.metrics = self.generate_metrics()
+        self.metrics = config.get('metrics', [])
+        self.num_metrics = self.config.num_metrics
+        init_metrics = config.get('init_metrics', True)
+        if init_metrics:
+            self.generate_metrics()
 
     def get_metrics_info(self, as_text=True) -> dict or str:
         """
@@ -102,7 +107,7 @@ class MetricHandler:
                     metric.pop('metric_prompt')
                 cur_cluster_metrics = {metric['metric_name']: metric['metric_desc'] for metric in cur_cluster_metrics}
 
-                chain_params.update({'num_metrics': self.config.num_metrics,
+                chain_params.update({'num_metrics': self.num_metrics,
                                      'metrics_to_merge': self.metric_to_text(cur_cluster_metrics)})
                 merged_metric = self.metric_merge.invoke(chain_params)
                 merged_metric = merged_metric['metrics_list']
@@ -112,25 +117,39 @@ class MetricHandler:
                 result.append(metrics[cluster[0]])
         return result
 
+    def get_metrics(self) -> List[dict]:
+        """
+        Get the metrics
+        """
+
+        return [{k: v for k, v in d.items() if k != 'metric_function'} for d in self.metrics]
 
     def generate_metrics(self) -> dict:
         """
         Generate new metrics
         """
-        chain_params = copy.deepcopy(self.task_metadata)
-        chain_params.update({'num_metrics': self.config.num_metrics})
-        metrics = self.metric_generator.invoke(chain_params)
-        metrics = metrics['metrics_list']
-        self.update_metrics(metrics)
-        metric_clusters = self.get_semantic_metric_clusters(metrics)
-        metric_clusters = [list(cluster) for cluster in metric_clusters]
-        # For each cluster, we prune and reduce the number of metrics
-        metrics = self.sample_metrics(metrics, metric_clusters)
+        number_of_remaining_metrics = self.num_metrics - len(self.metrics)
+        if number_of_remaining_metrics > 0:
+            chain_params = copy.deepcopy(self.task_metadata)
+            chain_params.update({'num_metrics': number_of_remaining_metrics})
+            #TODO: provide the predefined metrics as input for the generation (remove redundant metrics)
+            metrics = self.metric_generator.invoke(chain_params)
+            metrics = metrics['metrics_list']
+            self.update_metrics(metrics)
+            metric_clusters = self.get_semantic_metric_clusters(metrics)
+            metric_clusters = [list(cluster) for cluster in metric_clusters]
+            # For each cluster, we prune and reduce the number of metrics
+            self.metrics += self.sample_metrics(metrics, metric_clusters)
 
-        for metric in metrics:
-            prompt = f'{metric["metric_prompt"]}\nThe following input should be evaluated according to the metric guidelines. \n###Evaluated input:\n{{sample}}\n###End'
+        for metric in self.metrics:
+            if 'task_tools_description' in self.task_metadata.keys():
+                prompt = f"""{metric["metric_prompt"]}\n\n\nThe following input should be evaluated according to the metric guidelines. The input consists of
+1. User request
+2. The agent response including the tools usage with all the intermediate steps and the model final output.
+###Evaluated input:\n{{sample}}\n###End"""
+            else:
+                prompt = f'{metric["metric_prompt"]}\nThe following input which consists of user request and model response, should be evaluated according to the metric guidelines. \n###Evaluated input:\n{{sample}}\n###End'
             metric['metric_function'] = self.build_score_function(prompt)
-        return metrics
 
     def build_score_function(self, metric_prompt: str):
         """

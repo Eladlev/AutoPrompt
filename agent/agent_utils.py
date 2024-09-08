@@ -9,6 +9,17 @@ from tqdm import trange, tqdm
 import concurrent.futures
 import logging
 from utils.llm_chain import dict_to_prompt_text
+from langchain_core.runnables import RunnablePassthrough
+from langchain.agents.format_scratchpad.tools import (
+    format_to_tool_messages,
+)
+from agent.agent_tool_call import ToolsAgentOutputParser, extract_yaml_content
+
+
+def parse(response: dict):
+    result = extract_yaml_content(response['output'])
+    return result
+
 
 def load_tools(tools_path: str):
     """
@@ -32,12 +43,15 @@ def load_tools(tools_path: str):
                 tools.append(value)
     return tools
 
-def get_tools_description(tools_path: str):
+def get_tools_description(tools: str or list):
     """
     Get the tools information
     """
-    tools = load_tools(tools_path)
+    if isinstance(tools, str):
+        tools = load_tools(tools)
     tools_dict = {tool.name: tool.description for tool in tools}
+    if len(tools_dict) == 0:
+        return "The agent doesn't have any available tool!!", tools_dict
     return dict_to_prompt_text({tool.name: tool.description for tool in tools}), tools_dict
 
 
@@ -50,22 +64,19 @@ def parse_yaml(response: dict):
     return yaml.safe_load(content)
 
 
-def parse(text: str) -> dict:
-    return json.loads(text)
-
 
 def extract_response(text: dict) -> dict:
     return {'response': text['text']}
 
 
-def build_agent(llm, tools, chain_yaml_extraction, agent_info, intermediate_steps=False):
+def build_agent(llm, tools, agent_info, intermediate_steps=False, is_debug=True):
     """
     Build an agent from metadata
     :param agent_info: The metadata of the agent
     :param llm: The language model
     :param tools: The available tools for the agent
-    :param chain_yaml_extraction: The chain for extracting the YAML
     :param intermediate_steps: If True, return intermediate steps
+    :param is_debug: If True, print intermediate steps and remove the yaml parsing
     """
     if 'tools' not in agent_info.keys():
         cur_tools = tools
@@ -88,12 +99,22 @@ def build_agent(llm, tools, chain_yaml_extraction, agent_info, intermediate_step
                 ("placeholder", "{agent_scratchpad}"),
             ]
         )
+        llm_with_tools = llm.bind_tools(cur_tools)
 
-        agent = create_tool_calling_agent(llm, cur_tools, prompt)
-        # agent = agent | StrOutputParser() | parse
-        agent_executor = AgentExecutor(
-            agent=agent, tools=cur_tools, verbose=True, return_intermediate_steps=intermediate_steps
+        agent = (
+                RunnablePassthrough.assign(
+                    agent_scratchpad=lambda x: format_to_tool_messages(x["intermediate_steps"])
+                )
+                | prompt
+                | llm_with_tools
+                | ToolsAgentOutputParser()
         )
+
+        agent_executor = AgentExecutor(
+            agent=agent, tools=cur_tools, verbose=True, return_intermediate_steps=intermediate_steps)
+
+        if not is_debug:
+            agent_executor = agent_executor | parse
     else:
         prompt = ChatPromptTemplate.from_messages(
             [
@@ -104,10 +125,12 @@ def build_agent(llm, tools, chain_yaml_extraction, agent_info, intermediate_step
                 ("human", "{input}"),
             ]
         )
-        agent = LLMChain(llm=llm, prompt=prompt)
+        agent_executor = LLMChain(llm=llm, prompt=prompt)
         # TODO: Remove the chain_yaml_extraction, the results should directly the YAML
-        agent_executor = agent | extract_response \
-                         | chain_yaml_extraction.chain | parse_yaml
+        # agent_executor = agent | extract_response \
+        #                  | chain_yaml_extraction.chain | parse_yaml
+        # agent_executor = AgentExecutor(
+        #     agent=agent, tools=cur_tools, verbose=True)  # return_intermediate_steps=intermediate_steps
 
     return agent_executor
 

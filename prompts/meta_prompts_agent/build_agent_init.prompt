@@ -18,4 +18,4 @@ The result system prompt should describe the input variables and structure
 
 The agent output structure should be a valid YAML structure with the following structure:
 {yaml_schema}
-The result system prompt must explicitly describe the desires YAML output!
+The result system prompt must explicitly guide the model to call the 'parse_yaml_code' function before returning the final answer, with a valid YAML code, containing the YAML output!
