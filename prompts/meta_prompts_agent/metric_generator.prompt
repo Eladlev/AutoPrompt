@@ -10,13 +10,20 @@ The task is perform by an LLM agent that provide with the following tools:
 {task_tools_description}
 ###
 
-
 Generate all possible metrics that would be important to assess whether this agent performed the above task perfectly or not.
 Focus on challenge metrics for LLM agents, but customize them for the specific task and tools provided above.
 
 Make sure that these metrics are:
 1. Comprehensive, i.e., they cover all possible scenarios in which our assistant could fail in performing the above task
 2. General, i.e., do not depend on the specifics of the task description and task instructions. Hence, these should be applicable to any large language model performing such a task.
+
+The metric prompt and the metric description must be clear, concise, and unambiguous, explaining in details what the metric is testing, and provide all the needed information.
+Assume that the metric prompt and the metric description does not have access to the task description or the task description tools, therefore, it should be self-contained.
+The metric prompt should clearly indicate that the scale is between 1 and 5, where 1 is complete failure and 5 is perfect completion.
+
+You should also provide the following information for each metric:
+1. Category: Which part of the agent flow the metric is testing (e.g., RAG, Tools, input, output, etc.)
+2. end2end: Whether the metric is testing the end-to-end performance of the agent or is it testing a sub-component of the agent.
 
 If the metric evaluate aspect which include tools, make sure to include to tools description in the metric prompt.
 Also make sure that the total number of metrics generated are exactly {num_metrics}!!

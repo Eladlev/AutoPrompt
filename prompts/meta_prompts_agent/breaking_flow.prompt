@@ -22,8 +22,6 @@ Guidelines for the subtasks:
 
 The result should contain only the main function **without** the subtasks functions!!!
 
-When breaking the flow do not split the `parse_yaml_code` function, this tool **must** be available to all subtasks.
-
 The inputs for the generated function are:
 ##
 {inputs}

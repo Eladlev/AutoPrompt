@@ -1,12 +1,12 @@
 import copy
 from utils.config import override_config
 from optimization_pipeline import OptimizationPipeline
-from agent.agent_utils import get_tools_description
+from agent.agent_utils import get_tools_description, batch_invoke
 from agent.agent_instantiation import AgentNode, get_var_schema
 import os
 from easydict import EasyDict as edict
 from pathlib import Path
-from utils.llm_chain import dict_to_prompt_text
+from utils.llm_chain import dict_to_prompt_text, get_dummy_callback
 
 
 def get_schema_metric(output_schema: str):
@@ -77,8 +77,8 @@ def init_optimization(node: AgentNode, output_dump: str,
     config_params.predictor = predictor_config
     config_params.meta_prompts.folder = Path('prompts/meta_prompts_agent')
     config_params.metric_generator['init_metrics'] = init_metrics
-
-    tools_description, tools = get_tools_description(agent_tools)
+    available_tools = [tool for tool in agent_tools if not tool.name == 'parse_yaml_code']
+    tools_description, tools = get_tools_description(available_tools)
     initial_prompt = {'prompt': node.function_metadata['prompt'], 'task_tools_description': tools_description}
     task_metadata = {'task_tools_description': tools_description,
                      'tools_names': '\n'.join([tool for tool in tools.keys()]),
@@ -90,6 +90,17 @@ def init_optimization(node: AgentNode, output_dump: str,
                                                output_path=os.path.join(output_dump, node.function_metadata['name']),
                                                task_metadata=task_metadata)
     return generation_pipeline
+
+
+def run_exec(params: dict):
+    """
+    Run the execution string
+    :param params: input to the function
+    """
+    exec_string = 'prediction = ' + params['input']
+    local_scope = params['local_scope']
+    exec(exec_string, local_scope)
+    return local_scope['prediction']
 
 
 def run_agent_optimization(node: AgentNode, output_dump: str,
@@ -137,22 +148,27 @@ def run_flow_optimization(node: AgentNode, dump_root_path: str,
     data_records = generation_pipeline.dataset.records
     need_optimization = False
     optimization_message = ''
+
+    batch_inputs = []
+    # prepare all the inputs for the to execute the flow and the run in parallel
     for i, record in data_records.iterrows():
-        ### Fix it!!! This should not work
         text = f'"""{record["text"]}"""'
-        try:
-            exec(f"prediction = {node.function_metadata['name']}(input={text})", local_scope)
-        except Exception as e:
-            data_records.loc[i] = 'error while running the flow: ' + str(e)
+        function_text = f"{node.function_metadata['name']}(input={text})"
+        batch_inputs.append({'input': function_text, 'local_scope': local_scope})
+    all_results = batch_invoke(run_exec, batch_inputs, generation_pipeline.predictor.num_workers, get_dummy_callback)
+
+    for res in all_results:
+        if res['error'] is not None:
             need_optimization = True
-            optimization_message = data_records.loc[i]
-            break
-        data_records.loc[i] = local_scope['prediction']
+            optimization_message = res['error']
+            data_records.loc[res['index'], 'prediction'] = res['error']
+        else:
+            data_records.loc[res['index'], 'prediction'] = res['result']['result']
 
     if need_optimization:
         node.quality.update({'score': 0, 'score_info': 'The function has a bug', 'analysis': optimization_message})
     else:
         generation_pipeline.eval.dataset = data_records
-        score = generation_pipeline.eval.eval_score()
+        score = generation_pipeline.eval.eval_score(kwargs={'end2end': True})
         node.quality.update({'score': score, 'score_info': dict_to_prompt_text(generation_pipeline.eval.score_info)})
     return need_optimization

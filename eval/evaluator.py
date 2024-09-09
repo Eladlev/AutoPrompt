@@ -49,24 +49,30 @@ class Eval:
         elif self.score_function_name == 'ranking':
             self.score_func = utils.set_ranking_function(self.config.function_params)
         elif self.score_function_name == 'generator':
-            self.score_func = utils.set_multiscore_function({metric['metric_name']: metric['metric_function']
-                                                             for metric in self.metric_handler.metrics},
-                                                            num_workers=self.num_workers)
+            metric_dic = {metric['metric_name']:
+                              {'function': metric['metric_function'], 'is_metric_end2end': metric['is_metric_end2end']}
+                          for metric in self.metric_handler.metrics}
+            self.score_func = utils.set_multiscore_function(metric_dic, num_workers=self.num_workers)
         else:
             raise NotImplementedError("Eval function not implemented")
 
-    def eval_score(self) -> float:
+    def eval_score(self, kwargs=None) -> float:
         """
         Calculate the score on each row and return the mean score.
+        :param kwargs: The arguments for the score function
         :return: The mean score
         """
         # filter out the discarded samples
         self.dataset = self.dataset[(self.dataset['prediction'] != 'Discarded') &
                                     (self.dataset['annotation'] != 'Discarded')]
-        self.dataset = self.score_func(self.dataset)
+        if kwargs is None:
+            self.dataset = self.score_func(self.dataset)
+        else:
+            self.dataset = self.score_func(self.dataset, **kwargs)
         if self.score_function_name == 'generator':
             self.score_info = {metric['metric_name']: self.dataset['score_{}'.format(metric['metric_name'])].mean()
-                               for metric in self.metric_handler.metrics}
+                               for metric in self.metric_handler.metrics if
+                               'score_{}'.format(metric['metric_name']) in self.dataset.columns}
         self.mean_score = self.dataset['score'].mean()
         return self.mean_score
 

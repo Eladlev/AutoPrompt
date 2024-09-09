@@ -49,10 +49,10 @@ class AgentEstimator:
         # prepare all the inputs for the chains
         for i, row in record.iterrows():
             batch_inputs.append({'input': row['text']})
-        all_results = batch_invoke(self.agent, batch_inputs, self.num_workers, self.usage_callback)
+        all_results = batch_invoke(self.agent.invoke, batch_inputs, self.num_workers, self.usage_callback)
         self.total_usage += sum([res['usage'] for res in all_results])
         for res in all_results:
-            record.loc[res['index'], self.mode] = res['result'] if res['result'] is \
+            record.loc[res['index'], self.mode] = res['error'] if res['result'] is \
                                                                    None else self.sample_output_to_str(res['result'])
         return record
 

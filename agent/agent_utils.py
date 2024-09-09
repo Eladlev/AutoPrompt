@@ -135,10 +135,10 @@ def build_agent(llm, tools, agent_info, intermediate_steps=False, is_debug=True)
     return agent_executor
 
 
-def batch_invoke(agent: AgentExecutor, inputs: list[dict], num_workers: int, callback) -> list[dict]:
+def batch_invoke(agent_function, inputs: list[dict], num_workers: int, callback) -> list[dict]:
     """
     Invoke the chain on a batch of inputs either async or not
-    :param agent: The agent
+    :param agent_function: The agent invoking function
     :param inputs: The list of all inputs
     :param num_workers: The number of workers
     :param callback: Langchain callback
@@ -151,15 +151,17 @@ def batch_invoke(agent: AgentExecutor, inputs: list[dict], num_workers: int, cal
 
     def process_sample_with_progress(sample):
         i, sample = sample
+        error = None
         with callback() as cb:
             try:
-                result = agent.invoke(sample)
+                result = agent_function(sample)
             except Exception as e:
                 logging.error('Error in chain invoke: {}'.format(e))
                 result = None
+                error = {'output': 'Error while running: ' + str(e)}
             accumulate_usage = cb.total_cost
         pbar.update(1)  # Update the progress bar
-        return {'index': i, 'result': result, 'usage': accumulate_usage}
+        return {'index': i, 'result': result, 'usage': accumulate_usage, 'error': error}
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
         with tqdm(total=len(inputs), desc="Processing samples") as pbar:

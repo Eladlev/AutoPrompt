@@ -232,10 +232,21 @@ metric_generator_schema = {
                     "type": "string"
                 },
                 "metric_prompt": {
-                    "description": "A prompt that will be used as input to an external evaluator agent to evaluate the assistant's performance based on the metric name and metric description generated above. This prompt should start with the phrase: 'Evaluate the performance of our agent using a five-point assessment scale that emphasizes', followed by a few words about the metric name and description, followed by another sentence starting with the phrase: 'Assign a single score of either 1, 2, 3, 4, or 5, with each level representing different degrees of perfection with respect to the', followed by just a few words again summarizing the metric name and description.",
+                    "description": "A prompt that will be used as input to an external evaluator to evaluate the assistant's performance on this metric.",
                     "title": "Metric_Prompt",
                     "type": "string"
                 },
+                "metric_category": {
+                    "description": "Determine which part of the agent flow this metric is assessing (e.g., RAG, Tools, input, output, etc.)",
+                    "title": "Metric_Category",
+                    "type": "string"
+                },
+                "is_metric_end2end": {
+                    "description": "Determine if the metric is testing the end-to-end performance of the agent or is it testing a sub-component of the agent.",
+                    "title": "Is_Metric_End2End",
+                    "type": "boolean"
+                },
+
                 "metric_scale": {
                     "description": "A list of descriptions for each scale of assessment from 1 to 5 for the given metric. Note that in the above metric prompt structure, 1 represents the lowest level of performance and 5 represents the best level of performance.",
                     "items": {

@@ -143,7 +143,7 @@ class MetaAgent:
             need_optimization = True
 
         optimization_step_left = node.quality.get('optimization_step_left', 2)  # TODO: remove coded value
-        if not need_optimization and optimization_step_left > 0:
+        if not need_optimization or optimization_step_left == 0:
             node.quality['updated'] = True
             return []
 
@@ -161,7 +161,7 @@ class MetaAgent:
         :param node: The node to optimize
         """
         # Apply the meta-chain to get the flow decomposition
-        cur_tools_metadata = {t: self.tools_metadata[t] for t in node.function_metadata['tools']}
+        cur_tools_metadata = {t: self.tools_metadata[t] for t in node.function_metadata['tools'] if not t == 'parse_yaml_code'}
         tools_str = MetaAgent.extract_tool_str(cur_tools_metadata)
         flow_decomposition = self.meta_chain.chain.breaking_flow.invoke(
             {'function_name': node.function_metadata['name'],

@@ -12,3 +12,7 @@ Ensure that the new metric is relevant to the task description:
 {task_description}
 
 You should strive to reduce redundancy and eliminate irrelevant metrics.
+
+You should also provide the following information for each final metric:
+1. Category: Which part of the agent flow the metric is testing (e.g., RAG, Tools, input, output, etc.)
+2. end2end: Whether the metric is testing the end-to-end performance of the agent or is it testing a sub-component of the agent.
