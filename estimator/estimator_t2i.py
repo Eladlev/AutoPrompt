@@ -97,13 +97,8 @@ class T2IEstimator:
         Apply the estimator on a dataframe
         :param records: The record
         """
-        # num_images = len(records)
-        # prompt = self.cur_instruct['prompt']
         img_urls = self.image_generator(prompt=self.cur_instruct['prompt'],
                                         num_images=len(records))
-        # prompts = [self.cur_instruct['prompt']]*num_images
-        # img_urls = asyncio.run(self.image_generator(prompts))
-        # img_urls = [im.url for response in responses for im in response.data]
         records[self.mode] = img_urls
         return records
 
