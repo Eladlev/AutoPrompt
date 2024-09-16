@@ -4,6 +4,7 @@ from dataset.base_dataset import DatasetBase
 import pandas as pd
 from utils.config import get_t2i_model
 import yaml
+import asyncio
 
 LLM_ENV = yaml.safe_load(open('config/llm_env.yml', 'r'))
 
@@ -91,14 +92,18 @@ class T2IEstimator:
         #                           chain_metadata['json_schema'],
         #                           chain_metadata['parser_func'])
 
-    def apply_dataframe(self, record: pd.DataFrame):
+    def apply_dataframe(self, records: pd.DataFrame):
         """
         Apply the estimator on a dataframe
-        :param record: The record
+        :param records: The record
         """
-        result = self.image_generator(self.cur_instruct['prompt'], num_images=len(record))
-        record[self.mode] = result
-        return record
+        num_images = len(records)
+        prompts = [self.cur_instruct['prompt']]*num_images
+        responses = asyncio.run(self.image_generator(prompts))
+        revised_prompts = [im.revised_prompt for response in responses for im in response.data]
+        img_urls = [im.url for response in responses for im in response.data]
+        records[self.mode] = img_urls
+        return records
 
     def apply(self, dataset: DatasetBase, idx: int, leq: bool = False):
         """

@@ -15,6 +15,7 @@ from openai import OpenAI
 import base64
 import os
 import requests
+import asyncio
 
 LLM_ENV = yaml.safe_load(open('config/llm_env.yml', 'r'))
 
@@ -86,7 +87,8 @@ def get_t2i_model(config: dict):
     if config['type'].lower() == 'openai':
         client = OpenAI(api_key=LLM_ENV['openai']['OPENAI_API_KEY'])
 
-        def generate_images(prompt, num_images=1):
+        async def generate_images_async(prompt, num_images=1):
+            # def generate_images(prompt, num_images=1):
             response = client.images.generate(
                 model=config['name'],
                 prompt=prompt,
@@ -94,10 +96,20 @@ def get_t2i_model(config: dict):
                 quality=config['quality'],
                 n=num_images,
             )
+            # return [im.url for im in response.data]
+            return response
 
-            return [im.url for im in response.data]
+        async def run_image_generation_batch(prompts):
+            tasks = [generate_images_async(prompt, num_images=1) for prompt in prompts]
+            responses = await asyncio.gather(*tasks)
+            # url_list = [im.data.url for im in responses]
+            # for idx, result in enumerate(results):
+            #     print(f"Images for prompt {prompts[idx]}: {result}")
+            return responses
 
-        return generate_images
+        # return generate_images
+        return run_image_generation_batch
+
     elif config['type'].lower() == 'stability':
         api_key = LLM_ENV['stability']["STABILITY_API_KEY"]
         api_host = LLM_ENV['stability'].get('API_HOST', 'https://api.stability.ai')
@@ -144,7 +156,7 @@ def get_t2i_model(config: dict):
                 return files_location
 
             return generate_images
-        elif config['name'] in ['ultra','core','sd3']:
+        elif config['name'] in ['ultra', 'core', 'sd3']:
 
             def generate_images(prompt, num_images=1):
                 response = requests.post(
@@ -160,11 +172,8 @@ def get_t2i_model(config: dict):
                     },
                 )
 
-
                 im_num = len(os.listdir(config['output_path']))
                 fn = f"{config['output_path']}/{im_num}_v1_txt2img_{0}.png"
-
-
 
                 if response.status_code == 200:
                     with open(fn, 'wb') as file:
