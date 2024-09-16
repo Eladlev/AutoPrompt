@@ -4,7 +4,7 @@ dataset:
     records_path: null
     initial_dataset: ''
     label_schema: ["Yes", "No"]
-    max_samples: 3
+    max_samples: 1
     semantic_sampling: False # Change to True in case you don't have M1. Currently there is an issue with faiss and M1
 
 annotator:
@@ -52,6 +52,9 @@ eval:
         name: 'gpt-3.5-turbo-1106'
 
 llm:
+#    type: 'gemini'
+#    name: 'gemini-1.5-pro-latest'
+#    temperature: 0.8
     type: 'openai'
     name: 'gpt-4o'
     temperature: 0.8

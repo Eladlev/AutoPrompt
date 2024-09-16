@@ -15,6 +15,7 @@ from openai import OpenAI
 import base64
 import os
 import requests
+import asyncio
 
 LLM_ENV = yaml.safe_load(open('config/llm_env.yml', 'r'))
 
@@ -86,7 +87,18 @@ def get_t2i_model(config: dict):
     if config['type'].lower() == 'openai':
         client = OpenAI(api_key=LLM_ENV['openai']['OPENAI_API_KEY'])
 
-        def generate_images(prompt, num_images=1):
+        def generate_single_image(prompt):
+            response = client.images.generate(
+                model=config['name'],
+                prompt=prompt,
+                size=config['image_size'],
+                quality=config['quality'],
+                n=1,
+            )
+            img_url = [im.url for im in response.data]
+            return img_url
+
+        async def generate_images_async(prompt, num_images=1):
             response = client.images.generate(
                 model=config['name'],
                 prompt=prompt,
@@ -94,10 +106,25 @@ def get_t2i_model(config: dict):
                 quality=config['quality'],
                 n=num_images,
             )
+            return response
 
-            return [im.url for im in response.data]
+        async def run_image_generation_batch(prompts):
+            tasks = [generate_images_async(prompt, num_images=1) for prompt in prompts]
+            responses = await asyncio.gather(*tasks)
+            url_list = [im.url for response in responses for im in response.data]
+            revised_prompts = [im.revised_prompt for response in responses for im in response.data]
+            return url_list
+
+        def generate_images(prompt, num_images=1):
+            if num_images == 1:
+                img_urls = generate_single_image(prompt)
+            else:
+                prompts = [prompt]*num_images
+                img_urls = asyncio.run(run_image_generation_batch(prompts))
+            return img_urls
 
         return generate_images
+    
     elif config['type'].lower() == 'stability':
         api_key = LLM_ENV['stability']["STABILITY_API_KEY"]
         api_host = LLM_ENV['stability'].get('API_HOST', 'https://api.stability.ai')
@@ -144,7 +171,7 @@ def get_t2i_model(config: dict):
                 return files_location
 
             return generate_images
-        elif config['name'] in ['ultra','core','sd3']:
+        elif config['name'] in ['ultra', 'core', 'sd3']:
 
             def generate_images(prompt, num_images=1):
                 response = requests.post(
@@ -160,11 +187,8 @@ def get_t2i_model(config: dict):
                     },
                 )
 
-
                 im_num = len(os.listdir(config['output_path']))
                 fn = f"{config['output_path']}/{im_num}_v1_txt2img_{0}.png"
-
-
 
                 if response.status_code == 200:
                     with open(fn, 'wb') as file:

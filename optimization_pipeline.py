@@ -185,9 +185,13 @@ class OptimizationPipeline:
             return
         logging.info('Save state')
         self.dataset.save_dataset(self.output_path / 'dataset.csv')
-        state = {'history': self.eval.history, 'batch_id': self.batch_id,
-                 'prompt': self.cur_prompt, 'task_description': self.task_description,
-                 'patient': self.patient}
+        state = {
+            'history': self.eval.history,
+            'batch_id': self.batch_id,
+            'prompt': self.cur_prompt,
+            'task_description': self.task_description,
+            'patient': self.patient
+        }
         pickle.dump(state, open(self.output_path / 'history.pkl', 'wb'))
 
     def load_state(self, path: str):
