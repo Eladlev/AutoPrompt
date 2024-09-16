@@ -16,7 +16,7 @@ predictor:
             name: 'dall-e-3'
             "image_size": "1024x1024"
             "quality": "standard"
-            "output_path": '/Users/matanf/data/autoprompt/gen_images/test'
+            "output_path": 'dump/images'
         mode: 'prediction'
 
 meta_prompts:
@@ -30,7 +30,7 @@ eval:
 #        type: 'google'
 #        name: 'gemini-1.5-pro-latest'
     num_workers: 1
-    source_image_folder: '/Users/matanf/data/autoprompt/gen_images/source'
+    source_image_folder: '~/Desktop/source_images'
     num_large_errors: 4
     error_threshold: 5
 llm:

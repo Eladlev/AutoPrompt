@@ -87,8 +87,18 @@ def get_t2i_model(config: dict):
     if config['type'].lower() == 'openai':
         client = OpenAI(api_key=LLM_ENV['openai']['OPENAI_API_KEY'])
 
+        def generate_single_image(prompt):
+            response = client.images.generate(
+                model=config['name'],
+                prompt=prompt,
+                size=config['image_size'],
+                quality=config['quality'],
+                n=1,
+            )
+            img_url = [im.url for im in response.data]
+            return img_url
+
         async def generate_images_async(prompt, num_images=1):
-            # def generate_images(prompt, num_images=1):
             response = client.images.generate(
                 model=config['name'],
                 prompt=prompt,
@@ -96,20 +106,27 @@ def get_t2i_model(config: dict):
                 quality=config['quality'],
                 n=num_images,
             )
+            # def generate_images(prompt, num_images=1):
             # return [im.url for im in response.data]
             return response
 
         async def run_image_generation_batch(prompts):
             tasks = [generate_images_async(prompt, num_images=1) for prompt in prompts]
             responses = await asyncio.gather(*tasks)
-            # url_list = [im.data.url for im in responses]
-            # for idx, result in enumerate(results):
-            #     print(f"Images for prompt {prompts[idx]}: {result}")
-            return responses
+            url_list = [im.url for response in responses for im in response.data]
+            revised_prompts = [im.revised_prompt for response in responses for im in response.data]
+            return url_list
 
-        # return generate_images
-        return run_image_generation_batch
+        def generate_images(prompt, num_images=1):
+            if num_images == 1:
+                img_urls = generate_single_image(prompt)
+            else:
+                prompts = [prompt]*num_images
+                img_urls = asyncio.run(run_image_generation_batch(prompts))
+            return img_urls
 
+        return generate_images
+        # return run_image_generation_batch
     elif config['type'].lower() == 'stability':
         api_key = LLM_ENV['stability']["STABILITY_API_KEY"]
         api_host = LLM_ENV['stability'].get('API_HOST', 'https://api.stability.ai')
