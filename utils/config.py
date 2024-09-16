@@ -106,8 +106,6 @@ def get_t2i_model(config: dict):
                 quality=config['quality'],
                 n=num_images,
             )
-            # def generate_images(prompt, num_images=1):
-            # return [im.url for im in response.data]
             return response
 
         async def run_image_generation_batch(prompts):
@@ -126,7 +124,7 @@ def get_t2i_model(config: dict):
             return img_urls
 
         return generate_images
-        # return run_image_generation_batch
+    
     elif config['type'].lower() == 'stability':
         api_key = LLM_ENV['stability']["STABILITY_API_KEY"]
         api_host = LLM_ENV['stability'].get('API_HOST', 'https://api.stability.ai')

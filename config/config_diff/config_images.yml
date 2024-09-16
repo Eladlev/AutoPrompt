@@ -30,7 +30,7 @@ eval:
 #        type: 'google'
 #        name: 'gemini-1.5-pro-latest'
     num_workers: 1
-    source_image_folder: '~/Desktop/source_images'
+    source_image_folder: ''
     num_large_errors: 4
     error_threshold: 5
 llm:
