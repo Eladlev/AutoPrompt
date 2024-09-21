@@ -70,7 +70,7 @@ class AgentEstimator:
         intermediate_str = ''
         for i, intermediate in enumerate(sample_output['intermediate_steps']):
             intermediate_str += f"#Intermediate step {i + 1}: {intermediate[0].log[:-2]}"
-            if isinstance(intermediate[1], str):
+            if isinstance(intermediate[1], str) or isinstance(intermediate[1], int) or isinstance(intermediate[1], float):
                 intermediate_str += f"#Result step {i + 1}: {intermediate[1]}\n"
             elif 'result' in intermediate[1].keys():
                 intermediate_str += f"#Result step {i + 1}: {intermediate[1]['result']}\n"

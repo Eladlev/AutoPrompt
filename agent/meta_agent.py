@@ -5,6 +5,8 @@ from agent.agent_instantiation import FunctionBuilder, get_var_schema
 from collections import deque
 from agent.agent_utils import load_tools
 from agent.node_optimization import run_agent_optimization, run_flow_optimization
+from langchain.agents import Tool
+from agent.agent_tool_call import build_tool_function
 
 
 class MetaAgent:
@@ -78,7 +80,7 @@ class MetaAgent:
         })
         return initial_prompt['prompt']
 
-    def make_tree_code_runnable(self, global_scope: dict = {}):
+    def make_tree_code_runnable(self):
         """
         Make the code tree runnable
         :param global_scope: The global scope to run the code tree
@@ -99,13 +101,20 @@ class MetaAgent:
             return nodes_list
 
         tree_nodes_list = bfs_collect_nodes(self.code_tree)[::-1]
-        local_scope = {}
+        tools_names = [t.name for t in self.tools]
         for node_name in tree_nodes_list:
             cur_node = self.code_tree[node_name]['node']
-            cur_node.instantiate_node(global_scope)
-            local_scope[cur_node.function_metadata['name']] = cur_node.local_scope[cur_node.function_metadata['name']]
-            global_scope.update(local_scope)
-        return global_scope  # usage example:  exec('root(input="What is the return policy")', global_scope)
+            cur_node.instantiate_node(self.tools)
+            cur_name = cur_node.function_metadata['name']
+            tool_function = build_tool_function(cur_node.function_implementation)
+
+            cur_tool = Tool(name=cur_name, func=tool_function,
+                            description=cur_node.function_metadata['function_description'])
+            tool_index = tools_names.index(cur_name) if cur_name in tools_names else -1
+            if tool_index == -1:
+                self.tools.append(cur_tool)
+            else:
+                self.tools[tool_index] = cur_tool
 
     def apply_agent_optimization(self, node: AgentNode):
         """
@@ -131,29 +140,20 @@ class MetaAgent:
         :param node: The node to optimize
         """
         # Apply the meta-chain to get the flow optimization
-        local_scope = {}
-        try:
-            local_scope = self.make_tree_code_runnable(local_scope)
-            need_optimization = run_flow_optimization(node, self.output_path, local_scope, self.config,
-                                                      [tool for tool in self.tools if
-                                                       tool.name in node.function_metadata['tools']])
-            analysis = node.quality['analysis']
-        except Exception as e:
-            analysis = f'The given code is not runnable, the compiler provide the following error: {str(e)}'
-            need_optimization = True
 
-        optimization_step_left = node.quality.get('optimization_step_left', 2)  # TODO: remove coded value
-        if not need_optimization or optimization_step_left == 0:
-            node.quality['updated'] = True
-            return []
+        self.make_tree_code_runnable()
+        new_prompt_info = run_flow_optimization(node, self.output_path, self.config,
+                                                [tool for tool in self.tools if
+                                                 tool.name in node.function_metadata['tools']])
 
-        res = self.meta_chain.chain['updating_flow'].invoke(
-            {'task_description': node.function_metadata['function_description'],
-             'code_block': node.function_implementation,
-             'analysis': analysis})
-        node.quality['optimization_step_left'] = optimization_step_left - 1
-        node.function_implementation = res['code']
-        return [node.function_metadata['name']]
+        new_agent_function = self.function_builder.build_agent_function(node.function_metadata)
+        node.update_local_scope({'agent_function': new_agent_function})
+        node.quality = {'updated': True, 'score': new_prompt_info['score'],
+                        'analysis': new_prompt_info['analysis'],
+                        'score_info': dict_to_prompt_text(new_prompt_info['score_info']),
+                        'metrics_info': new_prompt_info['metrics_info']}
+
+        return []  # currently not trying to rebreak the flow if not optimized
 
     def apply_flow_decomposition(self, node: AgentNode):
         """
@@ -161,18 +161,20 @@ class MetaAgent:
         :param node: The node to optimize
         """
         # Apply the meta-chain to get the flow decomposition
-        cur_tools_metadata = {t: self.tools_metadata[t] for t in node.function_metadata['tools'] if not t == 'parse_yaml_code'}
+        cur_tools_metadata = {t: self.tools_metadata[t] for t in node.function_metadata['tools'] if
+                              not t == 'parse_yaml_code'}
         tools_str = MetaAgent.extract_tool_str(cur_tools_metadata)
+
         flow_decomposition = self.meta_chain.chain.breaking_flow.invoke(
             {'function_name': node.function_metadata['name'],
              'inputs': get_var_schema(node.function_metadata['inputs']),
              'outputs': get_var_schema(node.function_metadata['outputs']),
              'tools': tools_str,
              'task_description': node.function_metadata['function_description'],
-             'analysis': 'The agent score: {}, analysis: {}'.format(node.quality['score'], node.quality['analysis'])
-             })
+             'analysis': 'The agent score: {}, analysis: {}'.format(node.quality['score'], node.quality['analysis'])})
 
         node_results = []
+        new_tools_description = {}
         for child in flow_decomposition.sub_functions_list:
             # create the agent
             if 'parse_yaml_code' not in child.tools_list:
@@ -193,10 +195,14 @@ class MetaAgent:
             # Add the child to the code tree
             self.code_tree[child.function_name] = {'node': cur_node, 'children': []}
             self.code_tree[node.function_metadata['name']]['children'].append(child.function_name)
+            new_tools_description[child.function_name] = child.function_description
             node_results.append(cur_node.function_metadata['name'])
 
         node.node_type = NodeType.INTERNAL
-        node.function_implementation = flow_decomposition.code_flow
+        node.function_metadata['prompt'] = flow_decomposition.agent_prompt
+        node.function_metadata['tools'] = self.code_tree[node.function_metadata['name']]['children']
+        node.function_metadata['tools_metadata'] = new_tools_description
+        node.function_implementation = None
         node.quality['updated'] = False
         node.update_local_scope()
         node_results.append(node.function_metadata['name'])
@@ -207,6 +213,8 @@ class MetaAgent:
         Run the meta-prompts and get new prompt suggestion, estimated prompt score and a set of challenging samples
         for the new prompts
         """
+        self.make_tree_code_runnable()
+
         if node.node_type == NodeType.LEAF:
             if not node.quality['updated']:  # not previous set
                 stack_update = [self.apply_agent_optimization(node)]

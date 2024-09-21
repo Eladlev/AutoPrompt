@@ -178,7 +178,7 @@ class OptimizationPipeline:
                  'patient': self.patient, 'metrics': metrics}
         pickle.dump(state, open(self.output_path / 'history.pkl', 'wb'))
 
-    def load_state(self, path: str):
+    def load_state(self, path: str, retrain=False):
         """
         Load pretrain state
         """
@@ -187,16 +187,16 @@ class OptimizationPipeline:
             self.dataset.load_dataset(path / 'dataset.csv')
         if (path / 'history.pkl').is_file():
             state = pickle.load(open(path / 'history.pkl', 'rb'))
-            self.eval.history = state['history']
-            self.batch_id = state['batch_id']
-            self.cur_prompt = state['prompt']
-            self.task_description = state['task_description']
-            self.patient = state['patient']
+            if not retrain:
+                self.eval.history = state['history']
+                self.batch_id = state['batch_id']
+                self.cur_prompt = state['prompt']
+                self.task_description = state['task_description']
+                self.patient = state['patient']
             if state['metrics'] is not None:
                 self.metric_handler.metrics = state['metrics']
                 self.metric_handler.generate_metrics()
                 self.eval.get_eval_function()
-
 
     def step(self, current_iter, total_iter):
         """
@@ -210,7 +210,8 @@ class OptimizationPipeline:
             cur_batch = self.dataset.get_leq(self.batch_id)
             random_subset = cur_batch.sample(n=min(10, len(cur_batch)))[['text']]
             self.wandb_run.log(
-                {"Prompt": wandb.Html(f"<p>{self.cur_prompt['prompt']}</p>"), "Samples": wandb.Table(dataframe=random_subset)},
+                {"Prompt": wandb.Html(f"<p>{self.cur_prompt['prompt']}</p>"),
+                 "Samples": wandb.Table(dataframe=random_subset)},
                 step=self.batch_id)
 
         logging.info('Running annotator')

@@ -1,27 +1,30 @@
-Assistant is a large language model designed to write a code that break down every task.
-You are provided with the following task:
+Assistant is a large language model designed to break down every agent task.
+You are provided with the following agent task:
 {task_description}
 The list of available tools for the task and their description is:
 {tools}
 ##
-The previous implementation of the task try to solve the problem by using a single function that does everything.
+Examples for the task inputs are:
+{example_input}
+##
+The previous implementation of the task is using a naive ReACT implementation that reason and act iteratively until getting the desired output.
 Here is the analysis of the previous implementation:
 {analysis}
 ##
 
-To improve the quality of the code and make it more readable and maintainable, you should break down the task into subtasks.
+To improve the quality of the agent, you should break down the task to sub-agents tasks, each one of them will be provided to the agent as a tool.
+
+
 Your should conduct the following steps:
-1. Define a list of subtasks, each subtask is defined as a function with description. For each subtask function you need to provide the sublist of tools that needed is used by the subtask.
-2. Compose a Python function that uses all the subtasks functions and compose them to solve the prompt.
-The result should be a python function with the desired return output, each function that is used must be in kwargs format where the variable name is explicitly pass to the function!
+1. Define a list of sub-agents, each sub-agent is defined has a task description. For each sub-agent you need to provide the sublist of tools that needed is used by the sub-agent.
+2. Compose a new prompt that can use the sub-agents as tools to solve the task.
 
-Guidelines for the subtasks:
-1. Break down to the subtask only if it's necessary to get top quality result
-2. Focus on quality and verification subtasks
-3. Use the analysis to understand the previous implementation core issues and try to solve them by breaking down the task
-
-The result should contain only the main function **without** the subtasks functions!!!
-
+Guidelines for the breakdown:
+1. Break down to the minimal number of sub-agent, decompose only if it's necessary to get top quality result, try to cluster the tools to the sub-agents in a way that each sub-agent can solve a part of the task.
+2. Use the analysis to understand the agent core issues and try to solve them by breaking down the task
+3. The sub-agents can also perform task that doesn't require any tools, for example verifying and provide feedback on the correctness of the output.
+4. The agent prompt should guide the agent on the exact flow of the sub-agents, and how to use them to solve the task.
+5. Each one of the tools **must** be assigned to at least one sub-agent!!
 The inputs for the generated function are:
 ##
 {inputs}
@@ -31,4 +34,3 @@ The outputs for the expected function is:
 ##
 {outputs}
 ##
-The function name must be: {function_name}

@@ -6,16 +6,16 @@ from utils.llm_chain import dict_to_prompt_text
 
 
 class SubFunction(BaseModel):
-    function_name: str = Field(description="The subtask function name")
-    function_description: str = Field(description="The subtask function description")
+    function_name: str = Field(description="The sub-agent name")
+    function_description: str = Field(description="The sub-agent task description")
     input_variables: List[Variable] = Field(description="input variables definition")
     output_variables: List[Variable] = Field(description="output variables definition")
     tools_list: List[str] = Field(description="A list of tools names that are used by the subtask function. You can only provide tools from the provided list!!")
 
 class FlowDecomposition(BaseModel):
   # Decomposing the task flow
-  sub_functions_list: List[SubFunction] = Field(description="The list of the required subfunctions that are needed to decompose the task")
-  code_flow: str = Field(description="A Python code that using the sub functions list compose them to solve the task")
+  sub_functions_list: List[SubFunction] = Field(description="The list of the required sub-agents that are needed to decompose the task")
+  agent_prompt: str = Field(description="The new prompt for the agent that can use the sub-agents as tools the task")
 
 
 

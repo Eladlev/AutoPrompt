@@ -33,8 +33,13 @@ def set_multiscore_function(scores_dic, num_workers=1):
     def wrapper(dataset, end2end=False):
         # end2end is a flag to indicate if the evaluation is only for the end2end metrics
         generation_dataset = dataset.copy()
-        generation_dataset['text'] = '###User input:\n' + generation_dataset['text'] + '\n####model prediction:\n' + \
-                                     generation_dataset['prediction']
+        if generation_dataset['annotation'].isna().all():
+            generation_dataset['text'] = '###User input:\n' + generation_dataset['text'] + '\n####model prediction:\n' + \
+                                         generation_dataset['prediction']
+        else:
+            generation_dataset['text'] = '###User input:\n' + generation_dataset['text'] + '\n####model prediction:\n' + \
+                                         generation_dataset['prediction'] + '\n###GT additional information:\n' + \
+                                         generation_dataset['annotation']
         if end2end:  # if we want to evaluate only the end2end metrics, filter the relevant metrics
             relevant_metrics = {metric_name: metric_data['function'] for metric_name, metric_data in scores_dic.items()
                                 if metric_data['is_metric_end2end']}

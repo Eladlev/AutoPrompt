@@ -158,7 +158,7 @@ def batch_invoke(agent_function, inputs: list[dict], num_workers: int, callback)
             except Exception as e:
                 logging.error('Error in chain invoke: {}'.format(e))
                 result = None
-                error = {'output': 'Error while running: ' + str(e)}
+                error = 'Error while running: ' + str(e)
             accumulate_usage = cb.total_cost
         pbar.update(1)  # Update the progress bar
         return {'index': i, 'result': result, 'usage': accumulate_usage, 'error': error}

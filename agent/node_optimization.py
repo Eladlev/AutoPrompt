@@ -119,6 +119,7 @@ def run_agent_optimization(node: AgentNode, output_dump: str,
     """
 
     generation_pipeline = init_optimization(node, output_dump, config_base, agent_tools, config_path)
+    generation_pipeline.load_state(os.path.join(output_dump, node.function_metadata['name'])) #Load the state if it exists
     best_generation_prompt = generation_pipeline.run_pipeline(num_optimization_steps)
     best_generation_prompt['metrics_info'] = generation_pipeline.metrics_info
     node.function_metadata['prompt'] = best_generation_prompt['prompt']['prompt']
@@ -128,47 +129,25 @@ def run_agent_optimization(node: AgentNode, output_dump: str,
 
 
 def run_flow_optimization(node: AgentNode, dump_root_path: str,
-                          local_scope: dict,
                           config_base: edict = None,
                           agent_tools=None,
-                          config_path: str = 'config/config_diff/config_generation.yml'):
+                          config_path: str = 'config/config_diff/config_generation.yml',
+                          num_optimization_steps: int = 2):
     """
     Run the flow optimization
     :param node: The agent node
     :param config_path: The configuration
     :param dump_root_path: The dump root path
-    :param local_scope: The local scope
     :param config_base: The base configuration
     :param agent_tools: The available tools
+    :param num_optimization_steps: The number of optimization steps
     """
     generation_pipeline = init_optimization(node, dump_root_path, config_base,
                                             agent_tools, config_path, init_metrics=False)
-    generation_pipeline.load_state(os.path.join(dump_root_path, node.function_metadata['name']))
-
-    data_records = generation_pipeline.dataset.records
-    need_optimization = False
-    optimization_message = ''
-
-    batch_inputs = []
-    # prepare all the inputs for the to execute the flow and the run in parallel
-    for i, record in data_records.iterrows():
-        text = f'"""{record["text"]}"""'
-        function_text = f"{node.function_metadata['name']}(input={text})"
-        batch_inputs.append({'input': function_text, 'local_scope': local_scope})
-    all_results = batch_invoke(run_exec, batch_inputs, generation_pipeline.predictor.num_workers, get_dummy_callback)
-
-    for res in all_results:
-        if res['error'] is not None:
-            need_optimization = True
-            optimization_message = res['error']
-            data_records.loc[res['index'], 'prediction'] = res['error']
-        else:
-            data_records.loc[res['index'], 'prediction'] = res['result']['result']
-
-    if need_optimization:
-        node.quality.update({'score': 0, 'score_info': 'The function has a bug', 'analysis': optimization_message})
-    else:
-        generation_pipeline.eval.dataset = data_records
-        score = generation_pipeline.eval.eval_score(kwargs={'end2end': True})
-        node.quality.update({'score': score, 'score_info': dict_to_prompt_text(generation_pipeline.eval.score_info)})
-    return need_optimization
+    generation_pipeline.load_state(os.path.join(dump_root_path, node.function_metadata['name']), retrain=True)
+    best_generation_prompt = generation_pipeline.run_pipeline(num_optimization_steps)
+    best_generation_prompt['metrics_info'] = generation_pipeline.metrics_info
+    node.function_metadata['prompt'] = best_generation_prompt['prompt']['prompt']
+    if 'tools_metadata' in best_generation_prompt['prompt']:
+        node.function_metadata['tools_metadata'] = best_generation_prompt['prompt']['tools_metadata']
+    return best_generation_prompt

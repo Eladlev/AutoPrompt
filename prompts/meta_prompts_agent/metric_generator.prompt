@@ -11,11 +11,12 @@ The task is perform by an LLM agent that provide with the following tools:
 ###
 
 Generate all possible metrics that would be important to assess whether this agent performed the above task perfectly or not.
-Focus on challenge metrics for LLM agents, but customize them for the specific task and tools provided above.
+Focus on challenge metrics for the specific task and tools provided above.
 
 Make sure that these metrics are:
-1. Comprehensive, i.e., they cover all possible scenarios in which our assistant could fail in performing the above task
-2. General, i.e., do not depend on the specifics of the task description and task instructions. Hence, these should be applicable to any large language model performing such a task.
+1. Comprehensive, i.e., they cover all possible scenarios in which our assistant could fail in performing the above task including testing specific sub-components and tools
+2. Unambiguous, i.e., it should be clear what the metric is testing
+3. Customize, i.e., the metrics should be specific to the task and tools provided above
 
 The metric prompt and the metric description must be clear, concise, and unambiguous, explaining in details what the metric is testing, and provide all the needed information.
 Assume that the metric prompt and the metric description does not have access to the task description or the task description tools, therefore, it should be self-contained.

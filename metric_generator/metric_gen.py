@@ -8,7 +8,7 @@ from utils.dedup import Dedup
 
 class MetricMetadata(BaseModel):
     metric_score: float = Field(description="The score for the metric")
-    metric_reason: str = Field(description="The reason for the metric score")
+    metric_reason: str = Field(description="The reason for the metric score. The reason should be detailed and provide a clear explanation for the exact reason that caused the score.")
 
 
 class MetricHandler:
@@ -124,7 +124,7 @@ class MetricHandler:
 
         return [{k: v for k, v in d.items() if k != 'metric_function'} for d in self.metrics]
 
-    def generate_metrics(self) -> dict:
+    def generate_metrics(self):
         """
         Generate new metrics
         """

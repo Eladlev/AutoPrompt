@@ -38,11 +38,12 @@ class AgentNode:
         # exec(self.function_implementation, globals(), local_scope)
         self.local_scope.update(local_scope)
 
-    def instantiate_node(self, input_globals):
+    def instantiate_node(self, tools):
         """
         Instantiate the node
         """
-        exec(self.function_implementation, input_globals, self.local_scope)
+        llm = get_llm(self.function_metadata['llm'])
+        self.function_implementation = build_agent(llm, tools, self.function_metadata, is_debug=True)
 
     def __getstate__(self):
         # Return a dictionary of picklable attributes
@@ -63,6 +64,7 @@ class FunctionBuilder:
         :param config_params: The configuration parameters
         :param tools: The available tools for the agent
         """
+        self.llm_config = config_params.llm
         self.llm = get_llm(config_params.llm)
         self.chain_yaml_extraction = ChainWrapper(config_params['llm'],
                                                   'prompts/meta_prompts_agent/extract_yaml.prompt',
@@ -111,6 +113,7 @@ class FunctionBuilder:
             agent_node = AgentNode(NodeType.INTERNAL, function_metadata=function_info,
                                    function_implementation=function_info['code'])
         agent_node.update_local_scope(local_scope)
+        agent_node.function_metadata['llm'] = dict(self.llm_config)
         return agent_node
 
 def get_var_schema(var_metadata: list[Variable], style='yaml'):

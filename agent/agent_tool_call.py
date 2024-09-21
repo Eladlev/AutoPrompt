@@ -130,3 +130,10 @@ class ToolsAgentOutputParser(MultiActionAgentOutputParser):
 
     def parse(self, text: str) -> Union[List[AgentAction], AgentFinish]:
         raise ValueError("Can only parse messages")
+
+def build_tool_function(agent):
+    def new_function(input_str):
+        results = agent.invoke({'input': input_str})
+        return results
+
+    return new_function
