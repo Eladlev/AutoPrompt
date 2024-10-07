@@ -64,7 +64,7 @@ classification_prediction_schema = {
 
 
 step_prompt_schema = {
-  "description": "A prompt suggestion which expect to get high score",
+  "description": "A prompt suggestion which expects to get the highest score",
   "properties": {
     "prompt": {
       "description": "The prompt prediction",

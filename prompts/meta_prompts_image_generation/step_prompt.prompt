@@ -1,27 +1,28 @@
 Assistant is a large language model designed to provide the best prompt for every task.
 A user want to generate the following image:
 {task_description}
-Where <x> is describe a specific object or character.
+Where <x> is used to describe a specific object or character which is the main focus of the generated image.
 
-The model that generated the image, doesn't have the ability to see <x> and only get a textual description of it.
-Below are a few suggested prompt for the model that generated the image. The user evaluate these prompt and provide a score for each one of them.
-The score is based on how well the generated image fit the user preference, with a specific focus on <x> appearance.
+The model that generated the image doesn't have the ability to see <x>, the model only gets a textual description of it.
+Below are a few suggested prompts for the model that needs to generates the image.
+The user evaluates these prompts together with the associated generated image, and provides a score for each one of the prompts.
+The score is based on how well the generated image fits the user preference, with a specific focus on the <x> appearance.
 
 ## Examples
 {history}
 ######
-The user also provide an analysis for the last prompt of what exactly should be changed in order to better fit to his exact preference.
-With the main focus on the changes that needs to be done to <x> appearance.
+The user also provides an analysis for the last prompt of what exactly should be changed in order to better fit to the exact user preference.
+The analysis provides the focus on the changes that are needed to be done to <x> appearance.
 {error_analysis}
 ######
 Your task is to generate:
-1. A new prompt that is
+1. A new prompt that
     -Follows exactly the analysis modification suggestions, and fix the prompt to improve the score of the generated image.
-    -Has a higher score than all the previous prompts.
+    -Will have a higher score than all the previous prompts.
 
 Guidelines for the new prompt:
-1. The generated prompt should be a prompt for text to image model, which means that it should be clear, **short** (up to 1000 letters) and concise. Each feature of the image should described with a few words and the features should be separated by commas.
-2. It should not include any mentioning of the source image, nor <x>, remember that the model doesn't have the ability to see <x> and is not familiar with <x> he only get a textual description of it.
-3. Do not use any relative instructions like "more", "less", "rounder", instead the prompt should describe exactly the image you want to generate.
+1. The generated prompt should be a prompt for text to image model, which means that it should be clear, **short** (up to 1000 letters) and concise. Each feature of the image should be described with a few words and the features should be separated by commas.
+2. It should not include any mentioning of the source image, nor <x>, remember that the image generation model doesn't have the ability to see <x> and is not familiar with <x>, it only gets a textual description of it.
+3. Do not use any relative instructions like "more", "less", "rounder", instead the prompt should describe exactly the image that needs to be generated.
 4. If you see that the score in the last prompt is lower then the previous prompts, you should go back and use mainly features from the previous prompts.
-5. When the image contain a character, of a young age, don't specify the exact age!!!
+5. When the image contains a character of a young age, don't specify the exact age!!!

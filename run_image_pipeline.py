@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings('ignore')
+
 from optimization_pipeline import OptimizationPipeline
 from utils.config import override_config
 import argparse
@@ -7,10 +10,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config_path', default='config/config_diff/config_images.yml',
                     type=str, help='Configuration file path')
 parser.add_argument('--prompt',
-                    default='Draw the dog on the moon in scuba diving gear, very sharp focus, super realistic DSLR style with HDR, with very intricate details',
+                    default='Draw the dog on a boat, happy in the wind, for a medium distance such that you can see the entire dog and most of the boat, in a lake with summer vibes and lush trees in the background, no collar or harness, just the dog, very sharp focus, super realistic DSLR style with HDR, with very intricate details',
                     required=False, type=str, help='Prompt to use as initial.')
 parser.add_argument('--task_description',
-                    default='Draw <x> on the moon in scuba diving gear, sharp focus, highly detailed, highly realistic DSLR style',
+                    default='Draw <x> on a boat, sharp focus, highly detailed, highly realistic DSLR style',
                     required=False, type=str, help='Prompt to use as initial.')
 parser.add_argument('--load_path', default='', required=False, type=str, help='In case of loading from checkpoint')
 parser.add_argument('--output_dump', default='dump', required=False, type=str, help='Output to save checkpoints')

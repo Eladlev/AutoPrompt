@@ -55,7 +55,8 @@ class ImageEvaluator:
         self.system_prompt = self.generate_system_message()
 
     def generate_source_prompt_message(self):
-        message_content = [{"type": "text", "text": "You are given images of a specific character or an object, we refer these images as the 'source images' and the object as <x>"}]
+        message_content = [{"type": "text",
+                            "text": "You are given images of a specific character or an object, we refer these images as the 'source images' and the object as <x>"}]
         for filename in os.listdir(self.source_images):
             # Construct full file path
             file_path = os.path.join(self.source_images, filename)
@@ -98,7 +99,7 @@ class ImageEvaluator:
         return HumanMessage(content=message_content)
 
 
-    def generate_prompt_meesage(self, url):
+    def generate_prompt_message(self, url):
         """
         Create a prompt message for the evaluator
         """
@@ -112,7 +113,7 @@ class ImageEvaluator:
         """
         Invoke the evaluator
         """
-        chain = self.generate_prompt_meesage(url) | self.llm
+        chain = self.generate_prompt_message(url) | self.llm
         result = chain.invoke({})
         return extract_score_and_feedback(result.content)
 
@@ -124,6 +125,6 @@ class ImageEvaluator:
         # prepare all the inputs for the chains
         for i, row in record.iterrows():
             batch_inputs.append({'sample_chain_input': '', 'index': i,
-                                 'chain': ImChainWrapper(self.generate_prompt_meesage(row['prediction']) | self.llm)})
+                                 'chain': ImChainWrapper(self.generate_prompt_message(row['prediction']) | self.llm)})
         all_results = sync_chain_batch_run(None, batch_inputs, num_workers, get_index=True)
         return all_results

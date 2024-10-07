@@ -97,8 +97,12 @@ class OptimizationPipeline:
             empty_rows = [""]*num_rows
             df = pd.DataFrame({
                 "id": list(range(num_rows)),
-                "text": empty_rows, "prediction": empty_rows, "annotation": empty_rows,
-                "metadata": empty_rows, "score": empty_rows, "batch_id": [0]*num_rows})
+                "text": empty_rows,
+                "prediction": empty_rows,
+                "annotation": empty_rows,
+                "metadata": empty_rows,
+                "score": empty_rows,
+                "batch_id": [0]*num_rows})
             df.to_csv(dataset_csv_path, index=False, header=True)
             self.config.dataset.initial_dataset = Path(dataset_csv_path)
 
@@ -148,6 +152,7 @@ class OptimizationPipeline:
         prompt_suggestion = self.meta_chain.chain.step_prompt.invoke(prompt_input)
         self.log_and_print(f'Previous prompt score:\n{self.eval.mean_score}\n#########\n')
         self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
+        [print(row.prediction) for _, row in self.dataset.records.iterrows()]
         self.batch_id += 1
         if len(self.dataset) < self.config.dataset.max_samples:
             self.sample_generator.generate_samples(self.dataset, prompt_suggestion, last_history,
@@ -225,9 +230,9 @@ class OptimizationPipeline:
                  "Samples": wandb.Table(dataframe=random_subset)},
                 step=self.batch_id)
 
-        logging.info('Running annotator')
-        records = self.annotator.apply(self.dataset, self.batch_id)
-        self.dataset.update(records)
+        # logging.info('Running annotator')
+        # records = self.annotator.apply(self.dataset, self.batch_id)
+        # self.dataset.update(records)
 
         self.predictor.cur_instruct = self.cur_prompt
         logging.info('Running Predictor')

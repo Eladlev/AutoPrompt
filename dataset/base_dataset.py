@@ -14,8 +14,13 @@ class DatasetBase:
 
     def __init__(self, config):
         if config.records_path is None:
-            self.records = pd.DataFrame(columns=['id', 'text', 'prediction',
-                                                 'annotation', 'metadata', 'score', 'batch_id'])
+            self.records = pd.DataFrame(columns=['id',
+                                                 'text',
+                                                 'prediction',
+                                                 'annotation',
+                                                 'metadata',
+                                                 'score',
+                                                 'batch_id'])
         else:
             self.records = pd.read_csv(config.records_path)
         dt_string = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
