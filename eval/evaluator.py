@@ -170,6 +170,8 @@ class Eval:
         elif self.score_function_name == 'ranking':
             prompt_input['labels'] = self.label_schema
         analysis = self.analyzer.invoke(prompt_input)
+        if analysis is None:
+            analysis = {'text': prompt_input['failure_cases']}
         self.history.append({'prompt': prompt, 'score': self.mean_score, 'score_info': self.score_info,
                              'errors': self.errors, 'confusion_matrix': conf_matrix, 'analysis': analysis['text']})
 

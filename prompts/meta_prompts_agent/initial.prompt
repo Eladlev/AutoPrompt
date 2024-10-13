@@ -1,8 +1,6 @@
 As an advanced language model you should create {num_samples} challenging with respect to the given metrics and unique prompts for the task outlined below.
 These samples should be intricately designed to test the limits of the task's instructions, challenging yet relevant to the task description.
 
-The task description and instruction are agent task. The results  samples should be input to the the agent.
-
 ### Task Description:
 {task_description}
 
@@ -14,12 +12,21 @@ The task description and instruction are agent task. The results  samples should
 ###
 {metrics_info}
 
+The current task is a subtask of the following general task:
+{sample_generation_additional_input}
+
+Here are few examples of the general task:
+{few_shot_examples}
+
 ### Requirements for Challenging Samples:
 1. Each sample must present a unique and intricate challenge with respect to different metrics.
 2. The samples should cover a diverse range of scenarios within the scope of the task and the metrics, avoiding repetition and predictability.
 3. Each sample should contain only the prompt part, without generating also the results
 4. Each sample should contain only the prompt part, without any mention of the task description or instructions!!
+5. Use the general task examples as a reference to understand the scope of the sub-task and the metrics.
+6. If the task requires attached files or url resources, you **must** use one of the files in the provided examples above.
 
 The sample should contain only an input for the agent.
 Generate the samples keeping these requirements in mind.
+Remember, if you provide any attached file it must be a file from the provided examples above!
 ###

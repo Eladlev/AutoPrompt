@@ -57,8 +57,12 @@ if not generation_config_params.eval.function_name == 'generator':
     generation_config_params.eval.function_params.instruction = best_prompt['prompt']
     generation_config_params.eval.function_params.label_schema = ranker_config_params.dataset.label_schema
 
+task_metadata = {}
 if generation_config_params.predictor.method == 'agent':
-    tools_description, tools = get_tools_description(generation_config_params.predictor.config.tools_path)
+    try:
+        tools_description, tools = get_tools_description(generation_config_params.predictor.config.tools_path)
+    except:
+        tools_description, tools = '', {}
     initial_prompt = {'prompt': initial_prompt, 'task_tools_description': tools_description}
     task_metadata = {'task_tools_description': tools_description,
                      'tools_names': '\n'.join([tool for tool in tools.keys()]),

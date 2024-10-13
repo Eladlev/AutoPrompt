@@ -50,6 +50,8 @@ class AgentNode:
         state = self.__dict__.copy()
         # Remove the non-picklable attribute
         del state['local_scope']
+        if 'function_implementation' in state:
+            del state['function_implementation']
         return state
 
 

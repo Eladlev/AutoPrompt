@@ -84,6 +84,10 @@ def init_optimization(node: AgentNode, output_dump: str,
                      'tools_names': '\n'.join([tool for tool in tools.keys()]),
                      'additional_instructions': get_parameters_str(node.function_metadata['inputs'],
                                                                    node.function_metadata['outputs'])}
+    if 'parent_description' in  node.function_metadata:
+        task_metadata['sample_generation_additional_input'] = node.function_metadata['parent_description']
+        config_params['meta_prompts']['few_shot_dataset'] = node.function_metadata['parent_dataset']
+        config_params['meta_prompts']['num_few_shot_samples'] = 4
 
     generation_pipeline = OptimizationPipeline(config_params, node.function_metadata['function_description'],
                                                initial_prompt,
@@ -107,7 +111,7 @@ def run_agent_optimization(node: AgentNode, output_dump: str,
                            config_base: edict,
                            agent_tools=None,
                            config_path: str = 'config/config_diff/config_generation.yml',
-                           num_optimization_steps: int = 2):
+                           num_optimization_steps: int = 3):
     """
     Run the agent optimization
     :param node: The agent node
@@ -122,6 +126,8 @@ def run_agent_optimization(node: AgentNode, output_dump: str,
     generation_pipeline.load_state(os.path.join(output_dump, node.function_metadata['name'])) #Load the state if it exists
     best_generation_prompt = generation_pipeline.run_pipeline(num_optimization_steps)
     best_generation_prompt['metrics_info'] = generation_pipeline.metrics_info
+    best_generation_prompt['samples'] = generation_pipeline.dataset.samples_to_text(
+        generation_pipeline.dataset.records.sample(2))
     node.function_metadata['prompt'] = best_generation_prompt['prompt']['prompt']
     if 'tools_metadata' in best_generation_prompt['prompt']:
         node.function_metadata['tools_metadata'] = best_generation_prompt['prompt']['tools_metadata']

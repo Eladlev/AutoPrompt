@@ -28,6 +28,8 @@ class AgentEstimator:
             self.cur_instruct = None
         if 'tools' in opt.keys():
             self.tools = opt.tools
+        elif 'tools_path' not in opt.keys():
+            self.tools = []
         else:
             self.tools = load_tools(opt.tools_path)
         self.llm = get_llm(opt.llm)

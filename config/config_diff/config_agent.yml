@@ -1,4 +1,5 @@
 agent_config:
     tools_path: 'agent/agent_tools.py'
+    max_level: 3
 meta_prompts:
     folder: 'prompts/meta_prompts_agent'

@@ -12,9 +12,9 @@ predictor:
         tools_path: 'agent/agent_tools.py'
         mini_batch_size: 1
         llm:
-            type: 'OpenAI'
+            type: 'azure'
             name: 'gpt-4o' #'gpt-3.5-turbo-1106'
-        num_workers: 3
+        num_workers: 1
 
 meta_prompts:
     folder: 'prompts/meta_prompts_generation'
@@ -23,13 +23,13 @@ meta_prompts:
 metric_generator:
         num_metrics: 3
         llm:
-            type: 'OpenAI'
+            type: 'azure'
             name: 'gpt-4o'
 
 eval:
     function_name: 'generator'
     error_threshold: 4
     llm:
-        type: 'OpenAI'
+        type: 'azure'
         name: 'gpt-4o'
 

@@ -1,7 +1,7 @@
 Assistant is a large language model designed to generate challenging language tasks.
 Given a list of {batch_size} prompts, you should generate a response according to the following task
 ### Task Instruction:
-{task_instruction}
+{prompt}
 
 ### list of samples:
 {samples}

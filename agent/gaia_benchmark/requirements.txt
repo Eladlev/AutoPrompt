@@ -1,0 +1,11 @@
+requests
+markdownify
+youtube-transcript-api
+pdfminer.six
+mammoth
+python-pptx
+beautifulsoup4
+pillow
+pathvalidate
+puremagic
+serpapi

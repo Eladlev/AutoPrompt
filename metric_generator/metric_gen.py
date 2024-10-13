@@ -8,7 +8,7 @@ from utils.dedup import Dedup
 
 class MetricMetadata(BaseModel):
     metric_score: float = Field(description="The score for the metric")
-    metric_reason: str = Field(description="The reason for the metric score. The reason should be detailed and provide a clear explanation for the exact reason that caused the score.")
+    metric_reason: str = Field(description="The reason for the metric score. The reason should be detailed and provide a clear explanation for the exact reason for the score reduction. If the score is not maximal provide feedback what needs to be improved in order to get to top perfomences")
 
 
 class MetricHandler:

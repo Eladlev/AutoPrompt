@@ -7,6 +7,7 @@ from agent.agent_utils import load_tools
 from agent.node_optimization import run_agent_optimization, run_flow_optimization
 from langchain.agents import Tool
 from agent.agent_tool_call import build_tool_function
+import os
 
 
 class MetaAgent:
@@ -129,7 +130,8 @@ class MetaAgent:
         node.quality = {'updated': True, 'score': new_prompt_info['score'],
                         'analysis': new_prompt_info['analysis'],
                         'score_info': dict_to_prompt_text(new_prompt_info['score_info']),
-                        'metrics_info': new_prompt_info['metrics_info']}
+                        'metrics_info': new_prompt_info['metrics_info'],
+                        'samples': new_prompt_info['samples']}
         return node.function_metadata['name']
 
     def apply_flow_optimization(self, node: AgentNode):
@@ -171,6 +173,7 @@ class MetaAgent:
              'outputs': get_var_schema(node.function_metadata['outputs']),
              'tools': tools_str,
              'task_description': node.function_metadata['function_description'],
+             'example_input': node.quality['samples'],
              'analysis': 'The agent score: {}, analysis: {}'.format(node.quality['score'], node.quality['analysis'])})
 
         node_results = []
@@ -192,6 +195,10 @@ class MetaAgent:
                                                              'prompt': initial_prompt,
                                                              'inputs': child.input_variables,
                                                              'outputs': child.output_variables})
+            cur_node.function_metadata['parent_description'] = node.function_metadata['function_description']
+            cur_node.function_metadata['parent_dataset'] = os.path.join(self.output_path, node.function_metadata['name']
+                                                                        , 'dataset.csv')
+            cur_node.function_metadata['level'] = node.function_metadata['level'] + 1
             # Add the child to the code tree
             self.code_tree[child.function_name] = {'node': cur_node, 'children': []}
             self.code_tree[node.function_metadata['name']]['children'].append(child.function_name)
@@ -246,7 +253,10 @@ class MetaAgent:
         if node.quality['updated'] is False:
             return 'optimize'
         # If the node is a leaf,decide if to breakdown the agent to a flow
+        node_level = node.function_metadata.get('level', 0)
         if node.node_type == NodeType.LEAF:
+            if len(node.function_metadata['tools']) <= 2 or node_level >= self.config.agent_config.max_level:
+                return 'skip'
             res = self.meta_chain.chain.action_decision_agent.invoke({
                 'task_description': node.function_metadata['function_description'],
                 'metrics_description': node.quality['metrics_info'],
@@ -291,6 +301,7 @@ class MetaAgent:
                                                           'prompt': initial_prompt,
                                                           'inputs': [input_variable],
                                                           'outputs': [output_variable]})
+        root_node.function_metadata['level'] = 0
         self.code_tree = {'root': {'node': root_node, 'children': []}}
         return root_node.function_metadata['name']
 

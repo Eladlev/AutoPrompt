@@ -32,7 +32,7 @@ def extract_yaml_content(variable):
         if match:
             return yaml.safe_load(match.group(1).strip())
         else:
-            raise ValueError("No YAML content found in the input string")
+            return variable
     else:
         return variable
 

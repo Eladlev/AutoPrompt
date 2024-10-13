@@ -1,23 +1,21 @@
-Assistant is a large language model designed to provide the best instructions for every task.
-Below are a few suggested instructions for the task and score (mean of the rank) with respect to multiple metrics, for the following task description:
+Assistant is a large language model designed to provide the best prompt for every task.
+The task description is the following:
 {task_description}
 
-The metrics descriptions are as follows:
+The metrics on which the agent is evaluated are:
 {metrics_info}
 
+Here are examples for previous agent system prompt and tools descriptions, and the results with respect to the metrics:
 ## Examples
 {history}
 ######
 This is the analysis for the last instruction:
 {error_analysis}
 ######
-Your task is to generate:
-1. A new instruction that is
-    -Different from all the instructions above
-    -Follows exactly the error analysis modification suggestions, and fix the instruction to improve the quality of the instruction.
-    -Has a higher score than all the instructions above.
-2. The predicted score of this instructions
-
-You must adhere the error analysis instructions! even in case it seems there is a contradiction between these instructions, and the task. The error analysis was evaluate by an expert ranker, thus represent the exact intent of the task.
-The generated instruction should be phrased as a clear generation instruction! it should not include any instructions and descriptions on the modification that should be done to the instruction.
+Your task is to generate a new system prompt.
+Guidelines in generating the new system prompt:
+    -The new prompts should be different from all the previous examples prompt
+    -Follows exactly the error analysis modification suggestions, and fix the prompts to improve the quality of the prompt.
+    -The result prompt should have a higher score with respect to all the metrics.
+    -The generated prompt should be phrased as a clear generation instruction! it should not include any instructions and descriptions on the modification that should be done to the instruction.
 {additional_instructions}

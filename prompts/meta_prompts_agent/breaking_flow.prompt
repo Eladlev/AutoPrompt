@@ -4,6 +4,11 @@ You are provided with the following agent task:
 The list of available tools for the task and their description is:
 {tools}
 ##
+The inputs for the agent is:
+{inputs}
+And the outputs for the agent is:
+{outputs}
+##
 Examples for the task inputs are:
 {example_input}
 ##
@@ -20,17 +25,14 @@ Your should conduct the following steps:
 2. Compose a new prompt that can use the sub-agents as tools to solve the task.
 
 Guidelines for the breakdown:
-1. Break down to the minimal number of sub-agent, decompose only if it's necessary to get top quality result, try to cluster the tools to the sub-agents in a way that each sub-agent can solve a part of the task.
-2. Use the analysis to understand the agent core issues and try to solve them by breaking down the task
-3. The sub-agents can also perform task that doesn't require any tools, for example verifying and provide feedback on the correctness of the output.
-4. The agent prompt should guide the agent on the exact flow of the sub-agents, and how to use them to solve the task.
-5. Each one of the tools **must** be assigned to at least one sub-agent!!
-The inputs for the generated function are:
-##
-{inputs}
-##
+1. Break down to the **minimal** number of sub-agent, decompose only if it's necessary to get top quality result.
+2. Cluster the tools to the sub-agents in a way that each sub-agent can solve a part of the task.
+3. Use the analysis to understand the agent core issues and try to solve them by breaking down the task
+4. The sub-agents can also perform task that doesn't require any tools, for example verifying and provide feedback on the correctness of the output.
+5. The agent prompt should guide the agent on the exact flow of the sub-agents, and how to use them to solve the task.
+6. Each one of the tools **must** be assigned to at least one sub-agent!!
 
-The outputs for the expected function is:
-##
-{outputs}
-##
+As a rule of thumb, braking down the task to 2-4 sub-agents is a good start!!
+
+
+

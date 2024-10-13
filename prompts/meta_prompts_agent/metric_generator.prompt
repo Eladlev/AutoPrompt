@@ -21,6 +21,7 @@ Make sure that these metrics are:
 The metric prompt and the metric description must be clear, concise, and unambiguous, explaining in details what the metric is testing, and provide all the needed information.
 Assume that the metric prompt and the metric description does not have access to the task description or the task description tools, therefore, it should be self-contained.
 The metric prompt should clearly indicate that the scale is between 1 and 5, where 1 is complete failure and 5 is perfect completion.
+If there are multiple tools, one of the metric should evaluate that the correct tool is used for the correct task.
 
 You should also provide the following information for each metric:
 1. Category: Which part of the agent flow the metric is testing (e.g., RAG, Tools, input, output, etc.)

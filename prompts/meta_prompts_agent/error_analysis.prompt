@@ -22,12 +22,14 @@ Here is a list of challenging cases for the given prompt and the reason for the 
 {failure_cases}
 
 ###
-Note that the ranker labels are __absolutely correct__, but the prompts (task descriptions) may be incorrect and need modification.
-Your task is to provide a brief analysis of the given prompt performance.
+Note that the ranker feedbacks are __absolutely correct__, but the prompts (task and tools description) needs to be modified.
+Your task is to provide a detailed analysis of the given prompt and tools description performances.
 Guidelines:
 1. The analysis should contain only the following information:
-    - A summary of the common mistakes of the prompt and the ways he can be improve his generation.
-2. The analysis should be detailed, and provide details on all the issues.
+    - A summary of the common mistakes of the prompt and the tools description and the ways he can be improve his generation.
+2. The analysis should be detailed with a clear explanation of how the prompt and tools description can be improved.
 3. If there are issues in with tools usage, you should explicitly mention them.
+4. If there is a repetition of specific issues, you should mention them explicitly.
+5. If the model does not use the proper tools in some cases, you should mention the correct tools and how the tool description should be modified in order to improve the model's performance.
 ###
 Analysis:

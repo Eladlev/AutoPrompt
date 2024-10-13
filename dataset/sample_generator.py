@@ -1,6 +1,7 @@
 from dataset.base_dataset import DatasetBase
 from easydict import EasyDict as edict
 import copy
+import pandas as pd
 
 
 class SampleGenerator:
@@ -33,6 +34,12 @@ class SampleGenerator:
             batch_input['metrics_info'] = metrics_text
         batch_inputs = self.generate_samples_batch(batch_input, self.config.num_initialize_samples,
                                                    self.config.samples_generation_batch)
+        if 'few_shot_dataset' in self.config:
+            dataset_few_shot = pd.read_csv(self.config.few_shot_dataset)
+            for batch in batch_inputs:
+                dataset_few_shot = dataset_few_shot.sample(self.config.num_few_shot_samples)
+                extra_samples_text = DatasetBase.samples_to_text(dataset_few_shot)
+                batch['few_shot_examples'] = extra_samples_text
 
         samples_batches = self.meta_chain.chain.initial.batch_invoke(batch_inputs, self.config.num_workers)
         samples_list = [element for sublist in samples_batches for element in sublist['samples']]

@@ -82,11 +82,11 @@ classification_prediction_schema = {
 
 step_prompt_schema = {"title": "Suggested_Prompt", "type": "object", "properties": {
     "prompt": {"title": "Prompt", "description": "The agent system prompt description", "type": "string"},
-    "tools_description": {"title": "Tools Description", "description": "The tools description", "type": "array",
+    "tools_description": {"title": "Tools Description", "description": "The new modified tools description", "type": "array",
                           "items": {"$ref": "#/definitions/Tool_Prompt"}}}, "required": ["prompt", "tools_description"],
                       "definitions": {"Tool_Prompt": {"title": "Tool_Prompt", "type": "object", "properties": {
                           "tool_name": {"title": "Tool Name", "description": "The tool name", "type": "string"},
-                          "description": {"title": "Description", "description": "The tool description",
+                          "description": {"title": "Description", "description": "The modify tool description",
                                           "type": "string"}}, "required": ["tool_name", "description"]}}}
 
 breaking_flow_schema = FlowDecomposition
