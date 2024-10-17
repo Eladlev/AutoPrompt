@@ -58,6 +58,12 @@ class AgentEstimator:
                                                                    None else self.sample_output_to_str(res['result'])
         return record
 
+    def build_agent(self):
+        """
+        Build the agent
+        """
+        self.agent = build_agent(self.llm, self.tools,
+                                 self.cur_instruct, intermediate_steps=True)
     @staticmethod
     def sample_output_to_str(sample_output: dict) -> str:
         """
@@ -88,8 +94,7 @@ class AgentEstimator:
         :param leq: If True, apply on all the batches up to idx (includes), otherwise apply only on idx
         """
 
-        self.agent = build_agent(self.llm, self.tools,
-                                 self.cur_instruct, intermediate_steps=True)
+        self.build_agent()
 
         if leq:
             batch_records = dataset.get_leq(idx)

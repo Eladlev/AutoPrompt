@@ -75,7 +75,8 @@ class ChainWrapper:
                 if hasattr(e, 'status_code') and e.status_code == 401:
                     raise e
                 else:
-                    logging.error('Error in chain invoke: {}'.format(e.user_message))
+                    #logging.error('Error in chain invoke: {}'.format(e.user_message))
+
                     result = None
             self.accumulate_usage += cb.total_cost
             return result

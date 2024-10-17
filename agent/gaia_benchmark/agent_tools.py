@@ -248,8 +248,7 @@ def visualizer(image_path: str, question: Optional[str] = None) -> str:
         add_note = True
         question = "Please write a detailed caption for this image."
 
-    base64_image = encode_image(image_path)
-
+    base64_image = base64.b64encode(open(image_path, 'rb').read()).decode('ascii')
     payload = {
         "model": "gpt-4o-mini",
         "messages": [
@@ -274,8 +273,9 @@ def visualizer(image_path: str, question: Optional[str] = None) -> str:
     ENDPOINT = f"{LLM_ENV['azure']['AZURE_OPENAI_ENDPOINT']}/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-02-15-preview"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {LLM_ENV['azure']['AZURE_OPENAI_API_KEY']}"
+        "api-key": LLM_ENV['azure']['AZURE_OPENAI_API_KEY'],
     }
+
     response = requests.post(ENDPOINT, headers=headers, json=payload)
     try:
         output = response.json()['choices'][0]['message']['content']

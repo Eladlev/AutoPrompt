@@ -4,7 +4,7 @@ from utils.llm_chain import MetaChain
 from agent.agent_instantiation import FunctionBuilder, get_var_schema
 from collections import deque
 from agent.agent_utils import load_tools
-from agent.node_optimization import run_agent_optimization, run_flow_optimization
+from agent.node_optimization import run_agent_optimization, run_flow_optimization, init_optimization
 from langchain.agents import Tool
 from agent.agent_tool_call import build_tool_function
 import os
@@ -134,6 +134,23 @@ class MetaAgent:
                         'samples': new_prompt_info['samples']}
         return node.function_metadata['name']
 
+    def predict_records(self, records, task_description: str = '', initial_prompt: str = ''):
+        """
+        Predict the records
+        :param records: The records to predict
+        :param task_description: The task description (needed in case there is no state checkpoint)
+        :param initial_prompt: The initial prompt (needed in case there is no state checkpoint)
+        """
+        self.make_tree_code_runnable()
+        if not self.code_tree:
+            self.init_root(task_description, initial_prompt)
+        root_node = self.code_tree['root']['node']
+        generation_pipeline = init_optimization(root_node, self.output_path, self.config, [tool for tool in self.tools if
+                                                 tool.name in root_node.function_metadata['tools']], init_metrics=False)
+        generation_pipeline.predictor.cur_instruct = generation_pipeline.cur_prompt
+        generation_pipeline.predictor.build_agent()
+        results = generation_pipeline.predictor.apply_dataframe(records)
+        return results
     def apply_flow_optimization(self, node: AgentNode):
         """
         Apply the flow optimization
