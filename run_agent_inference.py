@@ -29,4 +29,6 @@ else:
     agent_pipeline = AgentOptimization(config_params,  output_path='')
 
 records = pd.read_csv(opt.inference_dataset)
-agent_pipeline.meta_agent.predict_records(records,task_description = opt.task_description, initial_prompt = opt.initial_system_prompt)
+records = agent_pipeline.meta_agent.predict_records(records,task_description = opt.task_description,
+                                                    initial_prompt = opt.initial_system_prompt)
+records.to_csv(opt.inference_dataset)
