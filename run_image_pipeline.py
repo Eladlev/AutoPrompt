@@ -1,5 +1,7 @@
 import warnings
-warnings.filterwarnings('ignore')
+from langchain._api import LangChainDeprecationWarning
+warnings.simplefilter("ignore", category=LangChainDeprecationWarning)
+warnings.simplefilter("ignore", UserWarning)
 
 from optimization_pipeline import OptimizationPipeline
 from utils.config import override_config

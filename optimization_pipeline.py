@@ -12,7 +12,7 @@ import json
 import logging
 import wandb
 from dataset.sample_generator import SampleGenerator
-
+from eval.eval_im import ImageEvaluator
 
 class OptimizationPipeline:
     """
@@ -23,8 +23,12 @@ class OptimizationPipeline:
     4. eval - The eval is responsible to calculate the score and the large errors
     """
 
-    def __init__(self, config, task_description: str = None, initial_prompt: str or dict = None, output_path: str = ''
-                 , task_metadata: dict = None):
+    def __init__(self,
+                 config,
+                 task_description: str = None,
+                 initial_prompt: str or dict = None,
+                 output_path: str = '',
+                 task_metadata: dict = None):
         """
         Initialize a new instance of the ClassName class.
         :param config: The configuration file (EasyDict)
@@ -70,7 +74,8 @@ class OptimizationPipeline:
         self.metric_handler = None
         self.metrics_info = None
         if config.eval.function_name == 'generator':
-            self.metric_handler = MetricHandler(config.metric_generator, self.meta_chain.chain.metric_generator,
+            self.metric_handler = MetricHandler(config.metric_generator,
+                                                self.meta_chain.chain.metric_generator,
                                                 self.task_metadata)
             self.metrics_info = self.metric_handler.get_metrics_info()
         error_analysis = self.meta_chain.chain.get('error_analysis', None)
@@ -78,6 +83,13 @@ class OptimizationPipeline:
         self.eval = Eval(config.eval, error_analysis, self.metric_handler, self.dataset.label_schema)
         self.batch_id = 0
         self.patient = 0
+
+        if config.eval.get("optimize_initial_prompt", False):
+            img_evaluator = ImageEvaluator(config.eval, mode="description")
+            prompt_suggestion = img_evaluator.generate_initial_image_generation_prompt(meta_chain=self.meta_chain)
+            prompt_suggestion = {'prompt': prompt_suggestion}
+            self.cur_prompt = prompt_suggestion
+
 
     @staticmethod
     def log_and_print(message):
@@ -106,7 +118,7 @@ class OptimizationPipeline:
             df.to_csv(dataset_csv_path, index=False, header=True)
             self.config.dataset.initial_dataset = Path(dataset_csv_path)
 
-        if 'initial_dataset' in self.config.dataset.keys():
+        if 'initial_dataset' in self.config.dataset.keys() and os.path.isfile(self.config.dataset.initial_dataset):
             logging.info(f'Load initial dataset from {self.config.dataset.initial_dataset}')
             self.dataset.load_dataset(self.config.dataset.initial_dataset)
 

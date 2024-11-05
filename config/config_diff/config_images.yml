@@ -30,9 +30,12 @@ eval:
 #        type: 'google'
 #        name: 'gemini-1.5-pro-latest'
     num_workers: 1
-    source_image_folder: '/path/to/source_images'
+    source_image_folder: ''
     num_large_errors: 4
     error_threshold: 5
+    optimize_initial_prompt: true
+    image_generation_meta_prompt_folder: 'prompts/meta_prompts_image_generation'
+    image_description_meta_prompts_folder: 'prompts/meta_prompts_image_description'
 llm:
 #    type: 'google'
 #    name: 'gemini-1.5-pro-latest'
