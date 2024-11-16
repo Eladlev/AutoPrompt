@@ -6,6 +6,7 @@ dependencies:
   - python=3.10.13
   - pip>=2.22.0
   - openai
+  - anthropic
   - langchain
   - pandas
   - wandb
@@ -20,4 +21,3 @@ dependencies:
       - pandas
       - easydict
       - pillow==10.2.0
-      - langchain-google-genai==0.0.9

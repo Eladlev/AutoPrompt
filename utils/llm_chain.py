@@ -156,8 +156,8 @@ class ChainWrapper:
         """
         Build the chain according to the LLM type
         """
-        if (self.llm_config.type.lower() == 'openai' or self.llm_config.type.lower() == 'azure') and self.json_schema is not None:
-            self.chain = create_structured_output_runnable(self.json_schema, self.llm, self.prompt)
+        if (self.llm_config.type.lower() in ['openai', 'azure', 'anthropic']) and self.json_schema is not None:
+            self.chain = self.prompt | self.llm.with_structured_output(self.json_schema)
         else:
             self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
 
