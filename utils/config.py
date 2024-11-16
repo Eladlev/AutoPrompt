@@ -57,6 +57,12 @@ def get_llm(config: dict):
         return ChatGoogleGenerativeAI(temperature=temperature, model=config['name'],
                               google_api_key=LLM_ENV['google']['GOOGLE_API_KEY'],
                               model_kwargs=model_kwargs)
+    
+    elif config['type'].lower() == 'anthropic':
+        from langchain_anthropic import ChatAnthropic
+        return ChatAnthropic(temperature=temperature, model=config['name'],
+                              api_key=LLM_ENV['anthropic']['ANTHROPIC_API_KEY'],
+                              model_kwargs=model_kwargs)
 
 
     elif config['type'].lower() == 'huggingfacepipeline':
