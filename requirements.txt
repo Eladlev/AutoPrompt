@@ -19,3 +19,4 @@ langchain-anthropic==0.3.0
 langchain-community==0.3.7
 langchain-google-genai==2.0.4
 pillow==10.2.0
+huggingface_hub==0.24.7
