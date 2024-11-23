@@ -35,15 +35,16 @@ def get_llm(config: dict):
         model_kwargs = {}
 
     if config['type'].lower() == 'openai':
+        api_base = LLM_ENV['openai']['OPENAI_API_BASE'] if LLM_ENV['openai']['OPENAI_API_BASE'] != '' else 'https://api.openai.com/v1'
         if LLM_ENV['openai']['OPENAI_ORGANIZATION'] == '':
             return ChatOpenAI(temperature=temperature, model_name=config['name'],
                               openai_api_key=config.get('openai_api_key', LLM_ENV['openai']['OPENAI_API_KEY']),
-                              openai_api_base=config.get('openai_api_base', 'https://api.openai.com/v1'),
+                              openai_api_base=config.get('openai_api_base', api_base),
                               model_kwargs=model_kwargs)
         else:
             return ChatOpenAI(temperature=temperature, model_name=config['name'],
                               openai_api_key=config.get('openai_api_key', LLM_ENV['openai']['OPENAI_API_KEY']),
-                              openai_api_base=config.get('openai_api_base', 'https://api.openai.com/v1'),
+                              openai_api_base=config.get('openai_api_base', api_base),
                               openai_organization=config.get('openai_organization', LLM_ENV['openai']['OPENAI_ORGANIZATION']),
                               model_kwargs=model_kwargs)
     elif config['type'].lower() == 'azure':
