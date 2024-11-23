@@ -1,10 +1,10 @@
 import yaml
 from easydict import EasyDict as edict
 from langchain.prompts import PromptTemplate
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from pathlib import Path
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
-from langchain_community.chat_models import AzureChatOpenAI
+from langchain_openai.chat_models import AzureChatOpenAI
 from langchain.chains import LLMChain
 import logging
 
