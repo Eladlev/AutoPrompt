@@ -111,6 +111,9 @@ class OptimizationPipeline:
         if 'label_schema' in self.config.dataset.keys():
             prompt_input["labels"] = json.dumps(self.config.dataset.label_schema)
         prompt_suggestion = self.meta_chain.step_prompt_chain.invoke(prompt_input)
+        if self.meta_chain.step_prompt_chain.llm_config.type == 'google':
+            if isinstance(prompt_suggestion, list) and len(prompt_suggestion) == 1:
+                prompt_suggestion = prompt_suggestion[0]['args']
         self.log_and_print(f'Previous prompt score:\n{self.eval.mean_score}\n#########\n')
         self.log_and_print(f'Get new prompt:\n{prompt_suggestion["prompt"]}')
         self.batch_id += 1

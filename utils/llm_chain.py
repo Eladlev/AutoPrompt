@@ -137,6 +137,9 @@ class ChainWrapper:
 
         def process_sample_with_progress(sample):
             result = self.invoke(sample)
+            if self.llm_config.type == 'google':
+                if isinstance(result, list) and len(result) == 1:
+                    result = result[0]['args']
             pbar.update(1)  # Update the progress bar
             return result
 
@@ -156,7 +159,7 @@ class ChainWrapper:
         """
         Build the chain according to the LLM type
         """
-        if (self.llm_config.type.lower() in ['openai', 'azure', 'anthropic']) and self.json_schema is not None:
+        if (self.llm_config.type.lower() in ['openai', 'azure', 'anthropic', 'google']) and self.json_schema is not None:
             self.chain = self.prompt | self.llm.with_structured_output(self.json_schema)
         else:
             self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
