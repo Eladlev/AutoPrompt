@@ -66,6 +66,16 @@ def get_llm(config: dict):
                               model_kwargs=model_kwargs)
 
 
+    elif config['type'].lower() == 'minimax':
+        api_key = config.get('minimax_api_key', LLM_ENV.get('minimax', {}).get('MINIMAX_API_KEY', ''))
+        api_base = config.get('minimax_api_base', LLM_ENV.get('minimax', {}).get('MINIMAX_API_BASE', 'https://api.minimax.io/v1'))
+        # MiniMax requires temperature in (0.0, 1.0]
+        minimax_temperature = max(temperature, 0.01)
+        return ChatOpenAI(temperature=minimax_temperature, model_name=config['name'],
+                          openai_api_key=api_key,
+                          openai_api_base=api_base,
+                          model_kwargs=model_kwargs)
+
     elif config['type'].lower() == 'huggingfacepipeline':
         device = config.get('gpu_device', -1)
         device_map = config.get('device_map', None)
