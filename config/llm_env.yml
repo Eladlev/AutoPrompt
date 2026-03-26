@@ -12,3 +12,7 @@ azure:
 
 google:
   GOOGLE_API_KEY: ''
+
+minimax:
+  MINIMAX_API_KEY: ''
+  MINIMAX_API_BASE: 'https://api.minimax.io/v1'

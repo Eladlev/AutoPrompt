@@ -97,7 +97,7 @@ pipenv sync
 Set your OpenAI API key  by updating the configuration file `config/llm_env.yml`
 - If you need help locating your API key, visit this [link](https://help.openai.com/en/articles/4936850-where-do-i-find-my-api-key).
 
-- We recommend using [OpenAI's GPT-4](https://platform.openai.com/docs/guides/gpt) for the LLM. Our framework also supports other providers and open-source models, as discussed [here](docs/installation.md#configure-your-llm).
+- We recommend using [OpenAI's GPT-4](https://platform.openai.com/docs/guides/gpt) for the LLM. Our framework also supports other providers including [MiniMax](https://www.minimax.io/) (M2.7 / M2.5 models), Anthropic, Google, Azure, and open-source models, as discussed [here](docs/installation.md#configure-your-llm).
 
 <br />
 

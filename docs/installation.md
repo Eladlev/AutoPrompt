@@ -29,7 +29,21 @@ pipenv sync
 
 Set your OpenAI API key in the configuration file `config/llm_env.yml`. For assistance locating your API key, visit this [link](https://help.openai.com/en/articles/4936850-where-do-i-find-my-api-key).
 
-- For LLM, we recommend using [OpenAI's GPT-4](https://platform.openai.com/docs/guides/gpt). Alternatively, configure Azure by setting llm type in `config/config_default.yml` to `"Azure"` and specifying the key in `config/llm_env.yml`. Our system also supports various LLMs, including open source models, through [Langchain Pipeline](https://python.langchain.com/docs/integrations/llms/huggingface_pipelines). Change the llm `type` to `"HuggingFacePipeline"` and specify the model ID in the llm `name` field.  
+- For LLM, we recommend using [OpenAI's GPT-4](https://platform.openai.com/docs/guides/gpt). Alternatively, configure Azure by setting llm type in `config/config_default.yml` to `"Azure"` and specifying the key in `config/llm_env.yml`. Our system also supports various LLMs, including open source models, through [Langchain Pipeline](https://python.langchain.com/docs/integrations/llms/huggingface_pipelines). Change the llm `type` to `"HuggingFacePipeline"` and specify the model ID in the llm `name` field.
+
+- **Configure MiniMax.** To use [MiniMax](https://www.minimax.io/) models (e.g., MiniMax-M2.7), set the llm `type` to `"MiniMax"` and `name` to the model identifier in `config/config_default.yml`. Add your MiniMax API key in `config/llm_env.yml` under the `minimax` section:
+  ```yaml
+  # config/config_default.yml
+  llm:
+      name: 'MiniMax-M2.7'
+      type: 'MiniMax'
+      temperature: 0.8
+
+  # config/llm_env.yml
+  minimax:
+      MINIMAX_API_KEY: 'your-api-key'
+      MINIMAX_API_BASE: 'https://api.minimax.io/v1'
+  ```
 
 - **Configure your Predictor**.  We employ a predictor to estimate prompt performance. The default predictor LLM is GPT-3.5. Configuration is located in the `predictor` section of `config/config_default.yml`.
 

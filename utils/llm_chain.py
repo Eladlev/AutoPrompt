@@ -49,7 +49,7 @@ class ChainWrapper:
         self.prompt = load_prompt(prompt_path)
         self.build_chain()
         self.accumulate_usage = 0
-        if self.llm_config.type.lower() == 'openai':
+        if self.llm_config.type.lower() in ['openai', 'minimax']:
             self.callback = get_openai_callback
         else:
             self.callback = get_dummy_callback
@@ -159,7 +159,7 @@ class ChainWrapper:
         """
         Build the chain according to the LLM type
         """
-        if (self.llm_config.type.lower() in ['openai', 'azure', 'anthropic', 'google']) and self.json_schema is not None:
+        if (self.llm_config.type.lower() in ['openai', 'azure', 'anthropic', 'google', 'minimax']) and self.json_schema is not None:
             self.chain = self.prompt | self.llm.with_structured_output(self.json_schema)
         else:
             self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
